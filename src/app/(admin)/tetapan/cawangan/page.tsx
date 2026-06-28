@@ -58,7 +58,7 @@ export default function CawanganTetapanPage() {
       nama: editVal.nama,
       alamat: editVal.alamat || null,
       no_telefon: editVal.no_telefon || null,
-      status: editVal.status,
+      status: editVal.status as 'Aktif' | 'Tidak Aktif' | undefined,
     }).eq('id', id)
     setMenyimpan(false)
     if (error) { setRalat('Gagal simpan. Cuba lagi.'); return }

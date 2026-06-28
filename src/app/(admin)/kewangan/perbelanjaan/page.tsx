@@ -72,7 +72,7 @@ export default function PerbelanjaanPage() {
       supabase.from('cawangan').select('id, nama').eq('status', 'Aktif').order('nama'),
     ])
 
-    const hasil = (data ?? []) as Perbelanjaan[]
+    const hasil = (data ?? []) as unknown as Perbelanjaan[]
     setSenarai(hasil)
     setCawangan(caw ?? [])
     setJumlahTotal(hasil.reduce((s, p) => s + p.jumlah, 0))

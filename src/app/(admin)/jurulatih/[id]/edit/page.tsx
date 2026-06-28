@@ -92,7 +92,7 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
       tarikh_mula: form.tarikh_mula || null,
       pengalaman_ringkas: form.pengalaman_ringkas || null,
       kelayakan: form.kelayakan || null,
-      status: form.status,
+      status: form.status as 'Aktif' | 'Tidak Aktif',
     }).eq('id', id)
     if (error) { setRalat('Gagal simpan. Sila cuba lagi.'); setMenyimpan(false); return }
     router.push(`/jurulatih/${id}`)

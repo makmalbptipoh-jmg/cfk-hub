@@ -71,7 +71,7 @@ export default function ImportPage() {
       nama_ibu_bapa: r.nama_ibu_bapa ?? 'Tidak diketahui',
       no_telefon: r.no_telefon ?? '—',
       tarikh_lahir: r.tarikh_lahir,
-      cawangan_daftar_id: null,
+      cawangan_daftar_id: null as unknown as string,
       jenis_kelas: 'Kumpulan' as const,
       yuran_bulanan: 70,
       sumber_daftar: 'GoogleForms' as const,

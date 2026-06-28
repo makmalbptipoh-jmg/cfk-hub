@@ -14,6 +14,7 @@ export interface Database {
           id: string
           nama: string
           alamat: string | null
+          no_telefon: string | null
           status: 'Aktif' | 'Tidak Aktif'
           created_at: string
         }
@@ -21,6 +22,7 @@ export interface Database {
           id?: string
           nama: string
           alamat?: string | null
+          no_telefon?: string | null
           status?: 'Aktif' | 'Tidak Aktif'
           created_at?: string
         }
@@ -28,9 +30,11 @@ export interface Database {
           id?: string
           nama?: string
           alamat?: string | null
+          no_telefon?: string | null
           status?: 'Aktif' | 'Tidak Aktif'
           created_at?: string
         }
+        Relationships: []
       }
       pengguna_profil: {
         Row: {
@@ -54,6 +58,7 @@ export interface Database {
           cawangan_id?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       pelajar: {
         Row: {
@@ -101,6 +106,7 @@ export interface Database {
           sumber_daftar?: 'GoogleForms' | 'Manual'
           created_at?: string
         }
+        Relationships: []
       }
       kehadiran: {
         Row: {
@@ -139,6 +145,7 @@ export interface Database {
           direkod_oleh?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       resit: {
         Row: {
@@ -192,6 +199,7 @@ export interface Database {
           direkod_oleh?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       jurulatih: {
         Row: {
@@ -239,6 +247,7 @@ export interface Database {
           status?: 'Aktif' | 'Tidak Aktif'
           created_at?: string
         }
+        Relationships: []
       }
       kehadiran_jurulatih: {
         Row: {
@@ -265,6 +274,7 @@ export interface Database {
           nota?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       bayaran_jurulatih: {
         Row: {
@@ -288,6 +298,7 @@ export interface Database {
           tahun_bayaran: number
           bilangan_sesi: number
           kadar_per_sesi: number
+          jumlah: number
           tarikh_bayar?: string | null
           status?: 'Sudah Bayar' | 'Belum Bayar'
           nota?: string | null
@@ -301,12 +312,14 @@ export interface Database {
           tahun_bayaran?: number
           bilangan_sesi?: number
           kadar_per_sesi?: number
+          jumlah?: number
           tarikh_bayar?: string | null
           status?: 'Sudah Bayar' | 'Belum Bayar'
           nota?: string | null
           direkod_oleh?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       kewangan_perbelanjaan: {
         Row: {
@@ -339,6 +352,7 @@ export interface Database {
           direkod_oleh?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       aset: {
         Row: {
@@ -380,6 +394,7 @@ export interface Database {
           nota?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       import_antrian: {
         Row: {
@@ -418,6 +433,7 @@ export interface Database {
           tarikh_submit?: string | null
           created_at?: string
         }
+        Relationships: []
       }
     }
     Views: {

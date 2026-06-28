@@ -82,7 +82,7 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
     const supabase = createClient()
     const { error } = await supabase
       .from('kehadiran')
-      .update({ status: editStatus })
+      .update({ status: editStatus as 'Hadir' | 'Tidak Hadir' | 'Cuti' })
       .eq('id', editId)
 
     if (!error) {
