@@ -1,0 +1,53 @@
+name: Backup Database Mingguan
+
+on:
+  schedule:
+    # Setiap Ahad 10:00 PG MYT (02:00 UTC)
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Sebab backup manual'
+        required: false
+        default: 'Manual trigger'
+
+jobs:
+  backup:
+    name: Backup Supabase Database
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Pasang PostgreSQL client
+        run: sudo apt-get install -y postgresql-client
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          FILENAME="cfk-hub-backup-${TIMESTAMP}.sql"
+          pg_dump "$DATABASE_URL" \
+            --no-owner \
+            --no-acl \
+            --schema=public \
+            --format=plain \
+            --file="${FILENAME}"
+          echo "BACKUP_FILE=${FILENAME}" >> $GITHUB_ENV
+          echo "Backup selesai: ${FILENAME} ($(du -sh ${FILENAME} | cut -f1))"
+
+      - name: Muat naik backup sebagai artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfk-hub-backup-${{ github.run_id }}
+          path: '*.sql'
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Ringkasan backup
+        run: |
+          echo "## Backup Selesai ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Fail:** ${{ env.BACKUP_FILE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tarikh:** $(date '+%d %B %Y, %H:%M MYT')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Simpan:** 90 hari" >> $GITHUB_STEP_SUMMARY

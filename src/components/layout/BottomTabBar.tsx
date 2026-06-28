@@ -1,0 +1,74 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { CalendarCheck, Users, Megaphone, LayoutDashboard } from 'lucide-react'
+
+const tabs = [
+  { href: '/kehadiran', label: 'Kehadiran', icon: CalendarCheck },
+  { href: '/pelajar', label: 'Pelajar', icon: Users },
+  { href: '/makluman', label: 'Makluman', icon: Megaphone },
+  { href: '/dashboard-jurulatih', label: 'Dashboard', icon: LayoutDashboard },
+]
+
+export function BottomTabBar() {
+  const pathname = usePathname()
+
+  const isActive = (href: string) => pathname.startsWith(href)
+
+  return (
+    <nav
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: '390px',
+        background: 'var(--sidebar-bg)',
+        borderRadius: '20px 20px 0 0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        height: '70px',
+        zIndex: 100,
+        boxShadow: '0 -4px 20px rgba(0,0,0,0.15)',
+        padding: '0 8px',
+      }}
+    >
+      {tabs.map((tab) => {
+        const Icon = tab.icon
+        const active = isActive(tab.href)
+        return (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '8px 16px',
+              borderRadius: '12px',
+              textDecoration: 'none',
+              color: active ? 'var(--accent)' : 'var(--sidebar-muted)',
+              transition: 'color 0.15s',
+              minWidth: '64px',
+            }}
+          >
+            <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: active ? 700 : 500,
+                letterSpacing: '0.02em',
+              }}
+            >
+              {tab.label}
+            </span>
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}
