@@ -110,6 +110,7 @@ export function Sidebar({ nama, email }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -164,6 +165,7 @@ export function Sidebar({ nama, email }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
               style={{
                 display: 'flex',
                 alignItems: 'center',
