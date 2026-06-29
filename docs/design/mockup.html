@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFK HUB — Mockup Reka Bentuk</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   PALET WARNA
+═══════════════════════════════════════ */
+:root {
+  --font: 'Plus Jakarta Sans', sans-serif;
+  --primary: #1E293B;
+  --accent: #84CC16;
+  --accent-dark: #4D7C0F;
+  --accent-text: #1E293B;
+  --bg: #F1F5F9;
+  --card: #FFFFFF;
+  --text: #0F172A;
+  --text-muted: #64748B;
+  --border: #E2E8F0;
+  --sidebar-text: #CBD5E1;
+  --sidebar-muted: #64748B;
+  --sidebar-active-bg: #84CC16;
+  --sidebar-active-text: #1E293B;
+  --radius-card: 10px;
+  --radius-btn: 6px;
+  --radius-badge: 20px;
+  --sidebar-width: 220px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-lg: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+
+/* Palet 2: Biru & Emas */
+.palette-2 {
+  --primary: #1E3A5F;
+  --accent: #F59E0B;
+  --accent-dark: #B45309;
+  --accent-text: #1E3A5F;
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --sidebar-text: #BFDBFE;
+  --sidebar-muted: #60A5FA;
+  --sidebar-active-bg: #F59E0B;
+  --sidebar-active-text: #1E3A5F;
+  --border: #DBEAFE;
+}
+
+/* Palet 3: Teal & Coral */
+.palette-3 {
+  --primary: #0F766E;
+  --accent: #F97316;
+  --accent-dark: #C2410C;
+  --accent-text: #FFFFFF;
+  --bg: #F0FDFA;
+  --card: #FFFFFF;
+  --sidebar-text: #99F6E4;
+  --sidebar-muted: #5EEAD4;
+  --sidebar-active-bg: #F97316;
+  --sidebar-active-text: #FFFFFF;
+  --border: #CCFBF1;
+}
+
+/* Reka Bentuk 2: Moden */
+.design-2 { --radius-card: 20px; --radius-btn: 12px; --radius-badge: 20px; }
+.design-2 .sidebar { border-radius: 0 24px 24px 0; }
+.design-2 .sidebar-nav-item { border-radius: 12px; margin: 2px 8px; }
+.design-2 .card { box-shadow: 0 0 0 1px var(--border); }
+
+/* Reka Bentuk 3: Kompak */
+.design-3 { --radius-card: 6px; --radius-btn: 4px; }
+.design-3 .sidebar { --sidebar-width: 60px; }
+.design-3 .sidebar-label { display: none; }
+.design-3 .sidebar-logo-text { display: none; }
+.design-3 .sidebar-nav-item { justify-content: center; padding: 10px; }
+.design-3 .sidebar-nav-item span:last-child { display: none; }
+.design-3 .sidebar-section-title { display: none; }
+.design-3 .widget-grid { grid-template-columns: repeat(4, 1fr); }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; }
+
+/* ═══════════════════════════════════════
+   CONTROL BAR (Pemilih Reka Bentuk & Palet)
+═══════════════════════════════════════ */
+.control-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: #0F172A; color: white; padding: 10px 20px;
+  display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.control-label { font-size: 11px; color: #94A3B8; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+.control-group { display: flex; align-items: center; gap: 8px; }
+.picker-btn {
+  padding: 5px 14px; border-radius: 6px; border: 1.5px solid #334155;
+  background: transparent; color: #CBD5E1; cursor: pointer; font-size: 12px;
+  font-family: var(--font); font-weight: 500; transition: all 0.15s;
+}
+.picker-btn:hover { border-color: #64748B; color: white; }
+.picker-btn.active { background: #1E40AF; border-color: #3B82F6; color: white; }
+.page-btn {
+  padding: 5px 12px; border-radius: 6px; border: 1.5px solid #334155;
+  background: transparent; color: #CBD5E1; cursor: pointer; font-size: 12px;
+  font-family: var(--font); font-weight: 500; transition: all 0.15s;
+}
+.page-btn:hover { border-color: #64748B; color: white; }
+.page-btn.active { background: #065F46; border-color: #10B981; color: white; }
+.control-divider { width: 1px; height: 24px; background: #334155; }
+.control-bar-title { font-weight: 700; color: #84CC16; font-size: 14px; margin-right: 8px; }
+
+/* ═══════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════ */
+.app-shell {
+  display: flex; min-height: 100vh; padding-top: 52px;
+}
+
+/* ═══════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════ */
+.sidebar {
+  width: var(--sidebar-width); background: var(--primary);
+  min-height: calc(100vh - 52px); position: fixed; left: 0; top: 52px;
+  display: flex; flex-direction: column; transition: width 0.2s;
+  overflow: hidden; z-index: 100;
+}
+.sidebar-logo {
+  padding: 20px 16px 16px; display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-logo-icon {
+  width: 36px; height: 36px; background: var(--accent); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.sidebar-logo-text { color: white; font-weight: 700; font-size: 15px; line-height: 1.2; }
+.sidebar-logo-text small { display: block; font-size: 10px; color: var(--sidebar-muted); font-weight: 400; }
+.sidebar-nav { padding: 12px 0; flex: 1; }
+.sidebar-section-title {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--sidebar-muted); padding: 12px 16px 4px;
+}
+.sidebar-nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+  color: var(--sidebar-text); cursor: pointer; transition: all 0.15s;
+  font-size: 13.5px; font-weight: 500; white-space: nowrap;
+}
+.sidebar-nav-item:hover { background: rgba(255,255,255,0.06); }
+.sidebar-nav-item.active {
+  background: var(--sidebar-active-bg); color: var(--sidebar-active-text);
+  font-weight: 600;
+}
+.sidebar-nav-item .icon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
+.sidebar-footer {
+  padding: 12px; border-top: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-user {
+  display: flex; align-items: center; gap: 10px; padding: 8px;
+  border-radius: 8px; cursor: pointer;
+}
+.sidebar-user:hover { background: rgba(255,255,255,0.06); }
+.sidebar-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px; color: var(--accent-text); flex-shrink: 0;
+}
+.sidebar-user-info { overflow: hidden; }
+.sidebar-user-name { color: white; font-size: 13px; font-weight: 600; }
+.sidebar-user-role { color: var(--sidebar-muted); font-size: 11px; }
+
+/* ═══════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════ */
+.main-content {
+  margin-left: var(--sidebar-width); flex: 1; min-height: calc(100vh - 52px);
+  transition: margin-left 0.2s;
+}
+.topbar {
+  background: var(--card); border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 56px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 52px; z-index: 50;
+}
+.topbar-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.topbar-breadcrumb { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-badge {
+  background: #FEF2F2; color: #EF4444; padding: 4px 10px;
+  border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.page-content { padding: 24px; }
+
+/* ═══════════════════════════════════════
+   KOMPONEN UI
+═══════════════════════════════════════ */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-card); box-shadow: var(--shadow); overflow: hidden;
+}
+.card-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.card-body { padding: 20px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+  border-radius: var(--radius-btn); border: none; cursor: pointer;
+  font-family: var(--font); font-size: 13px; font-weight: 600;
+  transition: all 0.15s; white-space: nowrap;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-accent { background: var(--accent); color: var(--accent-text); }
+.btn-accent:hover { background: var(--accent-dark); color: white; }
+.btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+.btn-outline:hover { border-color: var(--text-muted); }
+.btn-ghost { background: transparent; color: var(--text-muted); border: none; }
+.btn-danger { background: #EF4444; color: white; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: var(--radius-badge);
+  font-size: 11px; font-weight: 600;
+}
+.badge-hadir { background: #F0FDF4; color: #166534; }
+.badge-hadir::before { content: '●'; color: #84CC16; margin-right: 2px; }
+.badge-tidak-hadir { background: #FFF1F2; color: #9F1239; }
+.badge-tidak-hadir::before { content: '●'; color: #F87171; margin-right: 2px; }
+.badge-cuti { background: #FFFBEB; color: #92400E; }
+.badge-cuti::before { content: '●'; color: #FBBF24; margin-right: 2px; }
+.badge-aktif { background: #F0FDF4; color: #166534; }
+.badge-aktif::before { content: '●'; color: #84CC16; margin-right: 2px; }
+.badge-belum { background: #FFF1F2; color: #9F1239; }
+.badge-dibatal { background: #F8FAFC; color: #64748B; }
+
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em; }
+.form-control {
+  width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-btn); font-family: var(--font); font-size: 13.5px;
+  color: var(--text); background: var(--card); transition: border-color 0.15s;
+  outline: none;
+}
+.form-control:focus { border-color: var(--accent); }
+.form-select {
+  width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-btn); font-family: var(--font); font-size: 13.5px;
+  color: var(--text); background: var(--card); outline: none; cursor: pointer;
+}
+
+/* ═══════════════════════════════════════
+   TABLE
+═══════════════════════════════════════ */
+.table { width: 100%; border-collapse: collapse; }
+.table th {
+  background: #F8FAFC; padding: 10px 14px; text-align: left;
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+.table td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: #F8FAFC; }
+.table-name { font-weight: 600; color: var(--text); }
+.table-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+/* ═══════════════════════════════════════
+   WIDGET (Dashboard)
+═══════════════════════════════════════ */
+.widget-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+}
+.widget {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-card); box-shadow: var(--shadow); padding: 20px;
+  cursor: pointer; transition: box-shadow 0.15s;
+}
+.widget:hover { box-shadow: var(--shadow-lg); }
+.widget-icon { font-size: 22px; margin-bottom: 12px; }
+.widget-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; }
+.widget-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+.widget-sub { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+.widget-alert .widget-value { color: #EF4444; }
+.widget-accent .widget-value { color: var(--accent-dark); }
+
+/* ═══════════════════════════════════════
+   KEHADIRAN LIST (Jurulatih)
+═══════════════════════════════════════ */
+.attendance-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.attendance-item:last-child { border-bottom: none; }
+.attendance-item:hover { background: #F8FAFC; }
+.attendance-info { flex: 1; }
+.attendance-name { font-weight: 600; font-size: 14px; color: var(--text); }
+.attendance-branch { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.attendance-toggle { display: flex; gap: 6px; }
+.toggle-btn {
+  padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: transparent; cursor: pointer; font-size: 11px; font-weight: 600;
+  font-family: var(--font); transition: all 0.15s; color: var(--text-muted);
+}
+.toggle-btn.hadir-active { background: #F0FDF4; border-color: #84CC16; color: #166534; }
+.toggle-btn.tidak-active { background: #FFF1F2; border-color: #F87171; color: #9F1239; }
+.toggle-btn.cuti-active { background: #FFFBEB; border-color: #FBBF24; color: #92400E; }
+
+/* ═══════════════════════════════════════
+   SEARCH BAR
+═══════════════════════════════════════ */
+.search-bar {
+  display: flex; align-items: center; gap: 10px; padding: 0 0 16px;
+}
+.search-input-wrap { position: relative; flex: 1; }
+.search-input-wrap .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+.search-input {
+  width: 100%; padding: 9px 12px 9px 36px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-btn); font-family: var(--font); font-size: 13.5px;
+  color: var(--text); background: var(--card); outline: none;
+}
+.search-input:focus { border-color: var(--accent); }
+
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--card); border-radius: var(--radius-card);
+  width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+.modal-header {
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+}
+.modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.modal-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+.modal-body { padding: 20px 24px; }
+.modal-footer {
+  padding: 16px 24px; border-top: 1px solid var(--border);
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+.modal-info-box {
+  background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 8px;
+  padding: 12px 14px; margin-bottom: 16px; font-size: 13px; color: #92400E;
+}
+
+/* ═══════════════════════════════════════
+   MOBILE (Jurulatih)
+═══════════════════════════════════════ */
+.mobile-shell {
+  max-width: 390px; margin: 0 auto; min-height: calc(100vh - 52px);
+  background: var(--bg); position: relative;
+}
+.mobile-topbar {
+  background: var(--primary); padding: 16px; color: white;
+  position: sticky; top: 52px; z-index: 50;
+}
+.mobile-topbar-title { font-size: 17px; font-weight: 700; }
+.mobile-topbar-sub { font-size: 12px; color: var(--sidebar-text); margin-top: 4px; }
+.mobile-filter {
+  background: var(--card); padding: 12px 16px; display: flex; gap: 8px;
+  border-bottom: 1px solid var(--border); overflow-x: auto;
+}
+.chip {
+  padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border);
+  font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap;
+  font-family: var(--font); background: var(--card); color: var(--text-muted);
+}
+.chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.mobile-save-bar {
+  position: sticky; bottom: 0; background: var(--card);
+  border-top: 1px solid var(--border); padding: 12px 16px;
+}
+.mobile-tab-bar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 390px; background: var(--primary);
+  display: flex; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100;
+}
+.mobile-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 10px 0 8px; cursor: pointer; color: var(--sidebar-muted);
+  font-size: 10px; font-weight: 500; gap: 4px;
+}
+.mobile-tab.active { color: var(--accent); }
+.mobile-tab .tab-icon { font-size: 20px; }
+
+/* ═══════════════════════════════════════
+   PAGE VISIBILITY
+═══════════════════════════════════════ */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ═══════════════════════════════════════
+   LOGIN PAGE
+═══════════════════════════════════════ */
+.login-page {
+  min-height: calc(100vh - 52px); display: flex;
+  align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 80%, black) 100%);
+}
+.login-card {
+  background: var(--card); border-radius: var(--radius-card);
+  width: 100%; max-width: 380px; padding: 36px; box-shadow: var(--shadow-lg);
+}
+.login-logo {
+  display: flex; flex-direction: column; align-items: center; margin-bottom: 28px;
+}
+.login-logo-icon {
+  width: 56px; height: 56px; background: var(--accent); border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; margin-bottom: 12px;
+}
+.login-logo-name { font-size: 20px; font-weight: 700; color: var(--text); }
+.login-logo-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* ═══════════════════════════════════════
+   STEPPER
+═══════════════════════════════════════ */
+.stepper {
+  display: flex; align-items: center; margin-bottom: 28px;
+}
+.step {
+  display: flex; flex-direction: column; align-items: center; flex: 1;
+  position: relative;
+}
+.step-circle {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: var(--text-muted); background: var(--card);
+  position: relative; z-index: 2;
+}
+.step.done .step-circle { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.step.active .step-circle { border-color: var(--accent); color: var(--accent); background: var(--card); }
+.step-label { font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: center; }
+.step.active .step-label, .step.done .step-label { color: var(--text); font-weight: 600; }
+.step-line {
+  position: absolute; top: 14px; left: 50%; width: 100%;
+  height: 2px; background: var(--border);
+}
+.step.done .step-line { background: var(--accent); }
+
+/* ═══════════════════════════════════════
+   NOTICE BOX
+═══════════════════════════════════════ */
+.notice {
+  background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px;
+  padding: 12px 14px; font-size: 12px; color: #92400E; margin-bottom: 16px;
+}
+.notice-info { background: #EFF6FF; border-color: #BFDBFE; color: #1E40AF; }
+
+/* ═══════════════════════════════════════
+   GRID
+═══════════════════════════════════════ */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+.mt-8 { margin-top: 8px; }
+.text-muted { color: var(--text-muted); font-size: 13px; }
+.text-sm { font-size: 12px; }
+.fw-600 { font-weight: 600; }
+.fw-700 { font-weight: 700; }
+.section-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 14px; }
+
+/* No sidebar for login & mobile pages */
+.no-sidebar .sidebar { display: none; }
+.no-sidebar .main-content { margin-left: 0; }
+
+/* Color swatch for picker */
+.swatch {
+  display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: middle;
+}
+</style>
+</head>
+<body class="palette-1 design-1">
+
+<!-- ═══════════════════════════════════════
+     CONTROL BAR
+═══════════════════════════════════════ -->
+<div class="control-bar">
+  <span class="control-bar-title">♟ CFK HUB Mockup</span>
+  <div class="control-divider"></div>
+
+  <div class="control-group">
+    <span class="control-label">Reka Bentuk</span>
+    <button class="picker-btn active" onclick="setDesign(1, this)">Profesional</button>
+    <button class="picker-btn" onclick="setDesign(2, this)">Moden</button>
+    <button class="picker-btn" onclick="setDesign(3, this)">Kompak</button>
+  </div>
+
+  <div class="control-divider"></div>
+
+  <div class="control-group">
+    <span class="control-label">Palet Warna</span>
+    <button class="picker-btn active" onclick="setPalette(1, this)"><span class="swatch" style="background:#1E293B"></span>Arang &amp; Limau</button>
+    <button class="picker-btn" onclick="setPalette(2, this)"><span class="swatch" style="background:#1E3A5F"></span>Biru &amp; Emas</button>
+    <button class="picker-btn" onclick="setPalette(3, this)"><span class="swatch" style="background:#0F766E"></span>Teal &amp; Coral</button>
+  </div>
+
+  <div class="control-divider"></div>
+
+  <div class="control-group">
+    <span class="control-label">Halaman</span>
+    <button class="page-btn active" onclick="showPage('login', this)">Log Masuk</button>
+    <button class="page-btn" onclick="showPage('dashboard', this)">Dashboard</button>
+    <button class="page-btn" onclick="showPage('kehadiran', this)">Kehadiran</button>
+    <button class="page-btn" onclick="showPage('pelajar', this)">Pelajar</button>
+    <button class="page-btn" onclick="showPage('modal', this)">Modal Resit</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: LOG MASUK
+═══════════════════════════════════════ -->
+<div id="page-login" class="page active no-sidebar">
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">♟</div>
+        <div class="login-logo-name">CFK HUB</div>
+        <div class="login-logo-sub">Sistem Pengurusan Chess For Kids</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">E-MEL</label>
+        <input type="email" class="form-control" placeholder="contoh@cfk.edu.my" value="khatib@cfk.edu.my">
+      </div>
+      <div class="form-group" style="margin-bottom:24px">
+        <label class="form-label">KATA LALUAN</label>
+        <input type="password" class="form-control" placeholder="••••••••" value="••••••••">
+      </div>
+      <button class="btn btn-primary" style="width:100%; justify-content:center; padding:12px">Log Masuk</button>
+      <p style="text-align:center; margin-top:16px; font-size:12px; color:var(--text-muted)">
+        Terlupa kata laluan? Hubungi Admin.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: DASHBOARD ADMIN
+═══════════════════════════════════════ -->
+<div id="page-dashboard" class="page">
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">♟</div>
+        <div class="sidebar-logo-text sidebar-label">CFK HUB <small>Chess For Kids</small></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-title sidebar-label">UTAMA</div>
+        <div class="sidebar-nav-item active">
+          <span class="icon">📊</span><span>Dashboard</span>
+        </div>
+        <div class="sidebar-nav-item">
+          <span class="icon">👨‍🎓</span><span>Pelajar</span>
+        </div>
+        <div class="sidebar-nav-item">
+          <span class="icon">✅</span><span>Kehadiran</span>
+        </div>
+        <div class="sidebar-nav-item">
+          <span class="icon">💰</span><span>Bayaran &amp; Resit</span>
+        </div>
+        <div class="sidebar-nav-item">
+          <span class="icon">📈</span><span>Laporan</span>
+        </div>
+        <div class="sidebar-section-title sidebar-label" style="margin-top:8px">KEWANGAN</div>
+        <div class="sidebar-nav-item">
+          <span class="icon">💸</span><span>Kewangan</span>
+        </div>
+        <div class="sidebar-nav-item">
+          <span class="icon">🗂️</span><span>Aset</span>
+        </div>
+        <div class="sidebar-nav-item">
+          <span class="icon">📢</span><span>Makluman</span>
+        </div>
+        <div class="sidebar-section-title sidebar-label" style="margin-top:8px">SISTEM</div>
+        <div class="sidebar-nav-item">
+          <span class="icon">⚙️</span><span>Tetapan</span>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar">KH</div>
+          <div class="sidebar-user-info sidebar-label">
+            <div class="sidebar-user-name">Khatib</div>
+            <div class="sidebar-user-role">Admin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Dashboard</div>
+          <div class="topbar-breadcrumb">Jun 2026</div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-badge" onclick="showPage('modal', document.querySelector('.page-btn:last-child'))">⚠️ 5 belum bayar</div>
+          <button class="btn btn-accent btn-sm">+ Rekod Bayaran</button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Widgets -->
+        <div class="widget-grid">
+          <div class="widget widget-alert" onclick="showPage('modal', document.querySelectorAll('.page-btn')[4])">
+            <div class="widget-icon">💳</div>
+            <div class="widget-value">5</div>
+            <div class="widget-label">Pelajar Belum Bayar</div>
+            <div class="widget-sub">Bulan Jun 2026 ↗</div>
+          </div>
+          <div class="widget">
+            <div class="widget-icon">✅</div>
+            <div class="widget-value">38</div>
+            <div class="widget-label">Hadir Hari Ini</div>
+            <div class="widget-sub">4 cawangan</div>
+          </div>
+          <div class="widget widget-accent">
+            <div class="widget-icon">💰</div>
+            <div class="widget-value">RM 8,420</div>
+            <div class="widget-label">Pendapatan Jun</div>
+            <div class="widget-sub">Kumpulan + Personal</div>
+          </div>
+          <div class="widget">
+            <div class="widget-icon">👨‍🎓</div>
+            <div class="widget-value">142</div>
+            <div class="widget-label">Pelajar Aktif</div>
+            <div class="widget-sub">4 cawangan</div>
+          </div>
+        </div>
+
+        <!-- Kehadiran Hari Ini -->
+        <div class="grid-2 mb-24">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Kehadiran Hari Ini</div>
+              <button class="btn btn-ghost btn-sm">Lihat Semua →</button>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Cawangan</th>
+                  <th>Hadir</th>
+                  <th>Tidak Hadir</th>
+                  <th>%</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><div class="table-name">Klebang</div></td>
+                  <td><span class="badge badge-hadir">15</span></td>
+                  <td><span class="badge badge-tidak-hadir">3</span></td>
+                  <td class="fw-600">83%</td>
+                </tr>
+                <tr>
+                  <td><div class="table-name">Buntong</div></td>
+                  <td><span class="badge badge-hadir">12</span></td>
+                  <td><span class="badge badge-tidak-hadir">1</span></td>
+                  <td class="fw-600">92%</td>
+                </tr>
+                <tr>
+                  <td><div class="table-name">Sri Iskandar</div></td>
+                  <td><span class="badge badge-hadir">8</span></td>
+                  <td><span class="badge badge-cuti">2</span></td>
+                  <td class="fw-600">80%</td>
+                </tr>
+                <tr>
+                  <td><div class="table-name">SMK Star</div></td>
+                  <td><span class="badge badge-hadir">3</span></td>
+                  <td>—</td>
+                  <td class="fw-600">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Pelajar Belum Bayar — Jun 2026</div>
+              <span class="badge badge-belum">5 pelajar</span>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nama Pelajar</th>
+                  <th>Cawangan</th>
+                  <th>Kelas</th>
+                  <th>Tindakan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><div class="table-name">Ahmad Faris</div><div class="table-sub">012-345 6789</div></td>
+                  <td>Klebang</td>
+                  <td>6 kelas</td>
+                  <td><button class="btn btn-ghost btn-sm" style="color:#22C55E">WA</button></td>
+                </tr>
+                <tr>
+                  <td><div class="table-name">Nur Aisyah</div><div class="table-sub">019-222 3333</div></td>
+                  <td>Buntong</td>
+                  <td>5 kelas</td>
+                  <td><button class="btn btn-ghost btn-sm" style="color:#22C55E">WA</button></td>
+                </tr>
+                <tr>
+                  <td><div class="table-name">Danish Irfan</div><div class="table-sub">011-444 5555</div></td>
+                  <td>Klebang</td>
+                  <td>4 kelas</td>
+                  <td><button class="btn btn-ghost btn-sm" style="color:#22C55E">WA</button></td>
+                </tr>
+                <tr>
+                  <td><div class="table-name">Balqis Sofea</div><div class="table-sub">017-666 7777</div></td>
+                  <td>Sri Iskandar</td>
+                  <td>4 kelas</td>
+                  <td><button class="btn btn-ghost btn-sm" style="color:#22C55E">WA</button></td>
+                </tr>
+                <tr>
+                  <td><div class="table-name">Harith Zikri</div><div class="table-sub">013-888 9999</div></td>
+                  <td>Buntong</td>
+                  <td>5 kelas</td>
+                  <td><button class="btn btn-ghost btn-sm" style="color:#22C55E">WA</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Resit Terkini -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Resit Terkini</div>
+            <button class="btn btn-outline btn-sm">+ Rekod Bayaran</button>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>No. Resit</th>
+                <th>Pelajar</th>
+                <th>Jenis</th>
+                <th>Jumlah</th>
+                <th>Tarikh</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw-600" style="font-size:12px">CFK-2026-00089</td>
+                <td><div class="table-name">Aiman Hakimi</div><div class="table-sub">Klebang</div></td>
+                <td>Kumpulan</td>
+                <td class="fw-600">RM 70.00</td>
+                <td class="text-muted">27/06/2026</td>
+                <td><span class="badge badge-aktif">Aktif</span></td>
+                <td><button class="btn btn-ghost btn-sm">↓ PDF</button></td>
+              </tr>
+              <tr>
+                <td class="fw-600" style="font-size:12px">CFK-2026-00088</td>
+                <td><div class="table-name">Mia Safiyyah</div><div class="table-sub">Buntong</div></td>
+                <td>Personal</td>
+                <td class="fw-600">RM 120.00</td>
+                <td class="text-muted">26/06/2026</td>
+                <td><span class="badge badge-aktif">Aktif</span></td>
+                <td><button class="btn btn-ghost btn-sm">↓ PDF</button></td>
+              </tr>
+              <tr>
+                <td class="fw-600" style="font-size:12px">CFK-2026-00087</td>
+                <td><div class="table-name">Rayyan &amp; Raiyan</div><div class="table-sub">Klebang · 2 adik-beradik</div></td>
+                <td>Kumpulan</td>
+                <td class="fw-600">RM 50.00</td>
+                <td class="text-muted">25/06/2026</td>
+                <td><span class="badge badge-dibatal">Dibatalkan</span></td>
+                <td><button class="btn btn-ghost btn-sm">↓ PDF</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: REKOD KEHADIRAN (Jurulatih Mobile)
+═══════════════════════════════════════ -->
+<div id="page-kehadiran" class="page no-sidebar">
+  <div class="mobile-shell">
+    <div class="mobile-topbar">
+      <div class="mobile-topbar-title">✅ Rekod Kehadiran</div>
+      <div class="mobile-topbar-sub">Sabtu, 27 Jun 2026</div>
+    </div>
+    <div class="mobile-filter">
+      <div class="chip active">Semua Cawangan</div>
+      <div class="chip">Klebang</div>
+      <div class="chip">Buntong</div>
+      <div class="chip">Sri Iskandar</div>
+      <div class="chip">SMK Star</div>
+    </div>
+    <div class="notice" style="margin:12px 16px 0; border-radius:8px">
+      ♟ 12 pelajar dalam senarai. Sesi: 9:00 PG – 12:00 TGH
+    </div>
+    <div class="card" style="margin:12px 16px 80px; border-radius:var(--radius-card)">
+      <div class="attendance-item">
+        <div class="attendance-info">
+          <div class="attendance-name">Ahmad Faris bin Azizi</div>
+          <div class="attendance-branch">Klebang · Beginner</div>
+        </div>
+        <div class="attendance-toggle">
+          <button class="toggle-btn hadir-active">✓ Hadir</button>
+          <button class="toggle-btn">✗ Tak Hadir</button>
+          <button class="toggle-btn">Cuti</button>
+        </div>
+      </div>
+      <div class="attendance-item">
+        <div class="attendance-info">
+          <div class="attendance-name">Nur Aisyah bt Khalid</div>
+          <div class="attendance-branch">Buntong · Intermediate</div>
+        </div>
+        <div class="attendance-toggle">
+          <button class="toggle-btn">✓ Hadir</button>
+          <button class="toggle-btn tidak-active">✗ Tak Hadir</button>
+          <button class="toggle-btn">Cuti</button>
+        </div>
+      </div>
+      <div class="attendance-item">
+        <div class="attendance-info">
+          <div class="attendance-name">Danish Irfan Hakim</div>
+          <div class="attendance-branch">Klebang · Beginner</div>
+        </div>
+        <div class="attendance-toggle">
+          <button class="toggle-btn hadir-active">✓ Hadir</button>
+          <button class="toggle-btn">✗ Tak Hadir</button>
+          <button class="toggle-btn">Cuti</button>
+        </div>
+      </div>
+      <div class="attendance-item">
+        <div class="attendance-info">
+          <div class="attendance-name">Balqis Sofea Nadia</div>
+          <div class="attendance-branch">Sri Iskandar · Advanced</div>
+        </div>
+        <div class="attendance-toggle">
+          <button class="toggle-btn">✓ Hadir</button>
+          <button class="toggle-btn">✗ Tak Hadir</button>
+          <button class="toggle-btn cuti-active">Cuti</button>
+        </div>
+      </div>
+      <div class="attendance-item">
+        <div class="attendance-info">
+          <div class="attendance-name">Harith Zikri</div>
+          <div class="attendance-branch">Buntong · Beginner</div>
+        </div>
+        <div class="attendance-toggle">
+          <button class="toggle-btn hadir-active">✓ Hadir</button>
+          <button class="toggle-btn">✗ Tak Hadir</button>
+          <button class="toggle-btn">Cuti</button>
+        </div>
+      </div>
+      <div class="attendance-item">
+        <div class="attendance-info">
+          <div class="attendance-name">Aiman Hakimi</div>
+          <div class="attendance-branch">Klebang · Intermediate</div>
+        </div>
+        <div class="attendance-toggle">
+          <button class="toggle-btn hadir-active">✓ Hadir</button>
+          <button class="toggle-btn">✗ Tak Hadir</button>
+          <button class="toggle-btn">Cuti</button>
+        </div>
+      </div>
+      <div class="attendance-item">
+        <div class="attendance-info">
+          <div class="attendance-name">Mia Safiyyah</div>
+          <div class="attendance-branch">Klebang · Beginner</div>
+        </div>
+        <div class="attendance-toggle">
+          <button class="toggle-btn">✓ Hadir</button>
+          <button class="toggle-btn tidak-active">✗ Tak Hadir</button>
+          <button class="toggle-btn">Cuti</button>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-save-bar" style="position:sticky; bottom:64px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+        <span class="text-muted">Selesai: <strong>5/7</strong> pelajar ditandakan</span>
+        <span style="font-size:12px; color:var(--text-muted)">5 Hadir · 2 Tidak Hadir</span>
+      </div>
+      <button class="btn btn-accent" style="width:100%; justify-content:center; padding:12px">Simpan Rekod Kehadiran</button>
+    </div>
+    <div class="mobile-tab-bar">
+      <div class="mobile-tab active">
+        <span class="tab-icon">✅</span>
+        <span>Kehadiran</span>
+      </div>
+      <div class="mobile-tab">
+        <span class="tab-icon">👨‍🎓</span>
+        <span>Pelajar</span>
+      </div>
+      <div class="mobile-tab">
+        <span class="tab-icon">📢</span>
+        <span>Makluman</span>
+      </div>
+      <div class="mobile-tab">
+        <span class="tab-icon">📊</span>
+        <span>Dashboard</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: SENARAI PELAJAR
+═══════════════════════════════════════ -->
+<div id="page-pelajar" class="page">
+  <div class="app-shell">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">♟</div>
+        <div class="sidebar-logo-text sidebar-label">CFK HUB <small>Chess For Kids</small></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-title sidebar-label">UTAMA</div>
+        <div class="sidebar-nav-item"><span class="icon">📊</span><span>Dashboard</span></div>
+        <div class="sidebar-nav-item active"><span class="icon">👨‍🎓</span><span>Pelajar</span></div>
+        <div class="sidebar-nav-item"><span class="icon">✅</span><span>Kehadiran</span></div>
+        <div class="sidebar-nav-item"><span class="icon">💰</span><span>Bayaran &amp; Resit</span></div>
+        <div class="sidebar-nav-item"><span class="icon">📈</span><span>Laporan</span></div>
+        <div class="sidebar-section-title sidebar-label" style="margin-top:8px">KEWANGAN</div>
+        <div class="sidebar-nav-item"><span class="icon">💸</span><span>Kewangan</span></div>
+        <div class="sidebar-nav-item"><span class="icon">🗂️</span><span>Aset</span></div>
+        <div class="sidebar-nav-item"><span class="icon">📢</span><span>Makluman</span></div>
+        <div class="sidebar-section-title sidebar-label" style="margin-top:8px">SISTEM</div>
+        <div class="sidebar-nav-item"><span class="icon">⚙️</span><span>Tetapan</span></div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar">KH</div>
+          <div class="sidebar-user-info sidebar-label">
+            <div class="sidebar-user-name">Khatib</div>
+            <div class="sidebar-user-role">Admin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Pelajar</div>
+          <div class="topbar-breadcrumb">142 pelajar aktif</div>
+        </div>
+        <div class="topbar-right">
+          <button class="btn btn-outline btn-sm">↓ Import Google Forms</button>
+          <button class="btn btn-accent btn-sm">+ Tambah Pelajar</button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <div class="card">
+          <div class="card-body" style="padding-bottom:0">
+            <div class="search-bar">
+              <div class="search-input-wrap">
+                <span class="icon">🔍</span>
+                <input type="text" class="search-input" placeholder="Cari nama pelajar atau nombor telefon ibu bapa...">
+              </div>
+              <select class="form-select" style="width:180px">
+                <option>Semua Cawangan</option>
+                <option>Klebang</option>
+                <option>Buntong</option>
+                <option>Sri Iskandar</option>
+                <option>SMK Star</option>
+              </select>
+              <select class="form-select" style="width:140px">
+                <option>Semua Status</option>
+                <option>Aktif</option>
+                <option>Tidak Aktif</option>
+              </select>
+            </div>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Nama Pelajar</th>
+                <th>Cawangan</th>
+                <th>Jenis</th>
+                <th>Yuran Bulanan</th>
+                <th>Ibu Bapa</th>
+                <th>Status</th>
+                <th>Tindakan</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="table-name">Ahmad Faris bin Azizi</div>
+                  <div class="table-sub">Lahir: 15/03/2015</div>
+                </td>
+                <td>Klebang</td>
+                <td>Kumpulan</td>
+                <td>RM 70</td>
+                <td>
+                  <div class="table-name" style="font-weight:500">Azizi Othman</div>
+                  <div class="table-sub">012-345 6789</div>
+                </td>
+                <td><span class="badge badge-aktif">Aktif</span></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm">Profil</button>
+                  <button class="btn btn-ghost btn-sm" style="color:#22C55E">WA</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="table-name">Nur Aisyah bt Khalid</div>
+                  <div class="table-sub">Lahir: 22/07/2014</div>
+                </td>
+                <td>Buntong</td>
+                <td>Kumpulan</td>
+                <td>RM 50 <small class="text-muted">(2 beradik)</small></td>
+                <td>
+                  <div class="table-name" style="font-weight:500">Khalid Hamid</div>
+                  <div class="table-sub">019-222 3333</div>
+                </td>
+                <td><span class="badge badge-aktif">Aktif</span></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm">Profil</button>
+                  <button class="btn btn-ghost btn-sm" style="color:#22C55E">WA</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="table-name">Danish Irfan Hakim</div>
+                  <div class="table-sub">Lahir: 08/11/2016</div>
+                </td>
+                <td>Klebang</td>
+                <td>Kumpulan + Personal</td>
+                <td>RM 70</td>
+                <td>
+                  <div class="table-name" style="font-weight:500">Irfan Mustafa</div>
+                  <div class="table-sub">011-444 5555</div>
+                </td>
+                <td><span class="badge badge-aktif">Aktif</span></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm">Profil</button>
+                  <button class="btn btn-ghost btn-sm" style="color:#22C55E">WA</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="table-name">Balqis Sofea Nadia</div>
+                  <div class="table-sub">Lahir: 30/01/2013</div>
+                </td>
+                <td>Sri Iskandar</td>
+                <td>Kumpulan</td>
+                <td>RM 50 <small class="text-muted">(3 beradik)</small></td>
+                <td>
+                  <div class="table-name" style="font-weight:500">Sofea Rahmat</div>
+                  <div class="table-sub">017-666 7777</div>
+                </td>
+                <td><span class="badge badge-aktif">Aktif</span></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm">Profil</button>
+                  <button class="btn btn-ghost btn-sm" style="color:#22C55E">WA</button>
+                </td>
+              </tr>
+              <tr style="opacity:0.6">
+                <td>
+                  <div class="table-name">Zara Natasha</div>
+                  <div class="table-sub">Lahir: 12/05/2012</div>
+                </td>
+                <td>Klebang</td>
+                <td>Kumpulan</td>
+                <td>—</td>
+                <td>
+                  <div class="table-name" style="font-weight:500">Natasha Rahim</div>
+                  <div class="table-sub">016-000 1111</div>
+                </td>
+                <td><span class="badge badge-dibatal">Tidak Aktif</span></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm">Profil</button>
+                  <button class="btn btn-ghost btn-sm" style="color:#22C55E">Aktif Semula</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="padding:14px 20px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center">
+            <span class="text-muted text-sm">Papar 1–5 daripada 147 pelajar</span>
+            <div style="display:flex; gap:6px">
+              <button class="btn btn-outline btn-sm">← Sebelum</button>
+              <button class="btn btn-primary btn-sm">1</button>
+              <button class="btn btn-outline btn-sm">2</button>
+              <button class="btn btn-outline btn-sm">3</button>
+              <button class="btn btn-outline btn-sm">Seterusnya →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: MODAL BATAL RESIT (Overlay Demo)
+═══════════════════════════════════════ -->
+<div id="page-modal" class="page">
+  <div class="app-shell">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">♟</div>
+        <div class="sidebar-logo-text sidebar-label">CFK HUB <small>Chess For Kids</small></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-title sidebar-label">UTAMA</div>
+        <div class="sidebar-nav-item"><span class="icon">📊</span><span>Dashboard</span></div>
+        <div class="sidebar-nav-item"><span class="icon">👨‍🎓</span><span>Pelajar</span></div>
+        <div class="sidebar-nav-item"><span class="icon">✅</span><span>Kehadiran</span></div>
+        <div class="sidebar-nav-item active"><span class="icon">💰</span><span>Bayaran &amp; Resit</span></div>
+        <div class="sidebar-nav-item"><span class="icon">📈</span><span>Laporan</span></div>
+        <div class="sidebar-section-title sidebar-label" style="margin-top:8px">KEWANGAN</div>
+        <div class="sidebar-nav-item"><span class="icon">💸</span><span>Kewangan</span></div>
+        <div class="sidebar-nav-item"><span class="icon">🗂️</span><span>Aset</span></div>
+        <div class="sidebar-nav-item"><span class="icon">📢</span><span>Makluman</span></div>
+        <div class="sidebar-section-title sidebar-label" style="margin-top:8px">SISTEM</div>
+        <div class="sidebar-nav-item"><span class="icon">⚙️</span><span>Tetapan</span></div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar">KH</div>
+          <div class="sidebar-user-info sidebar-label">
+            <div class="sidebar-user-name">Khatib</div>
+            <div class="sidebar-user-role">Admin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content" style="filter:blur(2px); pointer-events:none">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Bayaran &amp; Resit</div>
+          <div class="topbar-breadcrumb">Senarai Resit</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="card">
+          <table class="table">
+            <thead>
+              <tr><th>No. Resit</th><th>Pelajar</th><th>Jumlah</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>CFK-2026-00089</td><td>Aiman Hakimi</td><td>RM 70</td><td><span class="badge badge-aktif">Aktif</span></td></tr>
+              <tr><td>CFK-2026-00088</td><td>Mia Safiyyah</td><td>RM 120</td><td><span class="badge badge-aktif">Aktif</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL OVERLAY -->
+  <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; display:flex; align-items:center; justify-content:center; padding:20px; padding-top:72px">
+    <div class="modal" style="position:relative; z-index:501">
+      <div class="modal-header">
+        <div class="modal-title">Batalkan Resit?</div>
+        <div class="modal-subtitle">Resit CFK-2026-00087 · Rayyan bin Khalil · RM 50.00</div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-info-box">
+          ⚠️ Resit ini akan ditandakan sebagai <strong>Dibatalkan</strong>. Rekod kekal dalam sistem sebagai sejarah. Nombor resit tidak boleh digunakan semula.
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">SEBAB PEMBATALAN <span style="color:#EF4444">*</span></label>
+          <textarea class="form-control" rows="3" placeholder="Contoh: Bayaran lebih diterima, resit salah amaun...">Salah masuk jumlah bayaran. Resit baharu akan dijana.</textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline">Kembali</button>
+        <button class="btn btn-danger">Batalkan Resit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════ -->
+<script>
+function setDesign(n, el) {
+  document.body.classList.remove('design-1','design-2','design-3');
+  document.body.classList.add('design-'+n);
+  document.querySelectorAll('.control-group:nth-child(3) .picker-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setPalette(n, el) {
+  document.body.classList.remove('palette-1','palette-2','palette-3');
+  document.body.classList.add('palette-'+n);
+  document.querySelectorAll('.control-group:nth-child(5) .picker-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.page-btn').forEach(b => b.classList.remove('active'));
+  if(el) el.classList.add('active');
+}
+
+// Toggle attendance buttons
+document.addEventListener('click', function(e) {
+  if(e.target.classList.contains('toggle-btn')) {
+    const group = e.target.closest('.attendance-toggle');
+    group.querySelectorAll('.toggle-btn').forEach(b => {
+      b.classList.remove('hadir-active','tidak-active','cuti-active');
+    });
+    if(e.target.textContent.includes('Hadir')) e.target.classList.add('hadir-active');
+    else if(e.target.textContent.includes('Tak Hadir')) e.target.classList.add('tidak-active');
+    else e.target.classList.add('cuti-active');
+  }
+});
+</script>
+</body>
+</html>
