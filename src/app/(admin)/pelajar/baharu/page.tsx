@@ -89,10 +89,10 @@ export default function TambahPelajarPage() {
     const yuran = kirYuranBulanan(data1.jenis_kelas)
 
     const { error } = await supabase.from('pelajar').insert({
-      nama_penuh: data1.nama_penuh,
+      nama_penuh: data1.nama_penuh.toUpperCase(),
       tarikh_lahir: data1.tarikh_lahir || null,
       jenis_kelas: data1.jenis_kelas,
-      nama_ibu_bapa: data2.nama_ibu_bapa,
+      nama_ibu_bapa: data2.nama_ibu_bapa.toUpperCase(),
       no_telefon: data2.no_telefon,
       emel_ibu_bapa: data2.emel_ibu_bapa || null,
       cawangan_daftar_id: data2.cawangan_daftar_id,

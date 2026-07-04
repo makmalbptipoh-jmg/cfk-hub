@@ -83,7 +83,7 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
     setMenyimpan(true)
     setRalat(null)
     const { error } = await createClient().from('jurulatih').update({
-      nama_penuh: form.nama_penuh,
+      nama_penuh: form.nama_penuh.toUpperCase(),
       no_ic: form.no_ic || null,
       no_telefon: form.no_telefon || null,
       emel: form.emel || null,

@@ -89,6 +89,8 @@ export default function EditPelajarPage() {
       .from('pelajar')
       .update({
         ...data,
+        nama_penuh: data.nama_penuh.toUpperCase(),
+        nama_ibu_bapa: data.nama_ibu_bapa.toUpperCase(),
         tarikh_lahir: data.tarikh_lahir || null,
         emel_ibu_bapa: data.emel_ibu_bapa || null,
         yuran_bulanan: kirYuranBulanan(data.jenis_kelas),

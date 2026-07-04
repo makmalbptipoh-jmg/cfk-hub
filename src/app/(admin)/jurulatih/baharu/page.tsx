@@ -65,7 +65,7 @@ export default function TambahJurulatihPage() {
     setRalat(null)
     const supabase = createClient()
     const { error } = await supabase.from('jurulatih').insert({
-      nama_penuh: form.nama_penuh,
+      nama_penuh: form.nama_penuh.toUpperCase(),
       no_ic: form.no_ic || null,
       no_telefon: form.no_telefon || null,
       emel: form.emel || null,
