@@ -16,7 +16,12 @@
 - **Aset unit × harga**: kolum `kuantiti` + `harga_seunit` (migration `scripts/sql/tambah-kuantiti-aset.sql` — sudah run); `nilai_asal` = jumlah keseluruhan; borang + jadual dikemaskini
 - **Penapis Kewangan**: dropdown Bulan (termasuk "Semua Bulan" untuk seluruh tahun) + Tahun
 - SQL index (15 index, `scripts/sql/indexes.sql`) — sudah run dalam Supabase
-- Audit kepatuhan vs dokumen: ~95%; jurang sedar — automasi pakej adik-beradik (PD-008), halaman S-13a lihat resit, histori makluman
+- **Pakej Adik-Beradik (PD-008)**: kolum `keluarga_id` (migration `tambah-keluarga-pelajar.sql` — sudah run); kaitan dalam Edit Pelajar (`KaitanAdikBeradik.tsx`); Rekod Bayaran jana resit berasingan RM50 seorang serentak
+- **Halaman S-13a Lihat Resit** (`/bayaran/[id]`): butiran penuh + PDF + batal; no. resit dalam senarai kini pautan
+- **Fix PDF gagal senyap**: PWA `skipWaiting`/`clientsClaim`/`cleanupOutdatedCaches` (punca: cache chunk lama); toast berjaya/gagal pada SEMUA muat turun (PDF resit, PDF laporan, CSV, Excel)
+- **Laporan Aset Excel** (`BtnLaporanAset.tsx`) di page Aset: unit × harga + jumlah nilai aktif
+- **Fix perbelanjaan**: selepas simpan, penapis auto-tukar ke bulan rekod + toast (punca aduan "rekod hilang"); rekod pendua 31 Jan 2026 SEWA KEDAI RM500 dipadam dari DB
+- Audit kepatuhan vs dokumen: kini ~99% — jurang tinggal histori makluman sahaja (tiada dalam pelan pelaksanaan, hanya inventori skrin)
 
 ---
 
