@@ -45,7 +45,12 @@ export default async function JurulatihLayout({
         position: 'relative',
       }}
     >
-      <main style={{ paddingBottom: '86px' }}>{children}</main>
+      <main style={{ paddingBottom: '86px' }}>
+        <div style={{ padding: '12px 16px 0' }}>
+          <NavigasiAtas homeHref="/kehadiran" />
+        </div>
+        {children}
+      </main>
       <BottomTabBar />
     </div>
   )
