@@ -31,11 +31,11 @@
 **Ujian penuh production (4 Julai):** ✅ SEMUA LULUS — login, dashboard, kehadiran (rekod + semak), pelajar, bayaran + PDF resit, kewangan, laporan kehadiran & kewangan, makluman, navigasi, toast. Nota: 1 rekod kehadiran ujian (ABINASH, Hadir, 4 Julai 2026) — padam/edit dalam tab Semak jika tidak diperlukan.
 
 **Apa yang perlu disambung (sesi akan datang):**
-1. Lengkapkan maklumat 22 pelajar placeholder (`nama_ibu_bapa`/`no_telefon` = `-`) melalui butang Edit — senarai: MAHAATH, DHENISH, UMAR, SYED AZEEM, TEYJAESH, DIVYEAN, KHASYIFA, MUHAMMAD KHALEEF, NUR ALIA HANNAH, PABILAASHINI, JANEESHA, PUGALESSH, RAYYAN DANISH KHAN, AYAN FINASH KHAN, VENKAAT SAASTHA, AMMAR FAIZ, ILYAS MUKHLIS, YAHYA AYYASH, HANA, MEGAT IKHWAN, DHAKSSAYINI, MUHAMMAD HARIS SHAH
-2. Tukar no. akaun bank placeholder dalam templat Makluman Yuran (`MAYBANK: 164 456 789 012`) kepada akaun sebenar
+1. Lengkapkan maklumat 22 pelajar placeholder (semua cawangan Klebang) — **alat sudah siap (Sesi 4):** isi `scripts/data/pelajar-placeholder.csv` kemudian jalankan `node scripts/update-pelajar-placeholder.mjs --commit` (tanpa `--commit` = pratonton). Baris yang masih `-` dilangkau.
+2. Tukar no. akaun bank placeholder dalam templat Makluman Yuran — lokasi: `src/app/(jurulatih)/makluman/_components/MaklumanKlient.tsx:28` (`Maybank: 164 456 789 012`). PDF resit tiada placeholder bank.
 3. Pasang PWA pada telefon jurulatih (Chrome → Add to Home Screen)
 4. Cipta akaun jurulatih melalui Tetapan → Pengguna → Tambah Pengguna
-5. (Pilihan) Paste SQL index dalam Supabase SQL Editor untuk kelajuan (lihat sejarah sesi / minta Claude jana semula)
+5. (Pilihan) Paste SQL index dalam Supabase SQL Editor — **fail sudah siap (Sesi 4):** `scripts/sql/indexes.sql`
 6. (Pilihan) Tambah secret `DATABASE_URL` dalam GitHub repo settings untuk backup automatik mingguan
 
 **Nota teknikal untuk sesi akan datang:**

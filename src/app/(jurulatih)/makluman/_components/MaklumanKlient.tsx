@@ -25,7 +25,7 @@ const templat: Record<JenisTab, string> = {
 Sebagai peringatan mesra, yuran kelas catur CFK bagi bulan {{BULAN}} bagi anak anda *{{NAMA}}* belum dijelaskan lagi.
 
 Yuran boleh diselesaikan semasa sesi kelas atau melalui pemindahan bank ke:
-🏦 Maybank: 164 456 789 012 (CFK — Catur Untuk Kanak-Kanak)
+🏦 Maybank: 158015108369 (CFK — CHESS FOR KIDS)
 
 Sila hantar bukti pembayaran kepada kami selepas membuat bayaran.
 
