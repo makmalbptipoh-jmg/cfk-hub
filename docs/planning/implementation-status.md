@@ -16,10 +16,15 @@
 - Cipta semula `.env.local` (folder ini clone baru) dan sahkan sambungan Supabase (4 cawangan seed wujud)
 - `npm run build` berjaya (31 route) + smoke test production mode: `/login` 200, laluan dilindungi redirect betul, manifest + ikon 200
 
+**Deployment:** ✅ **LIVE di https://cfk-hub.vercel.app** (akaun Vercel `chessforkids80`)
+- Smoke test production lulus: `/login` 200, laluan dilindungi redirect ke login, manifest + ikon PWA 200
+- Semua 4 env vars sudah diset dalam Vercel (Production)
+- Auto-deploy aktif: setiap `git push` ke `main` akan deploy semula
+
 **Apa yang perlu disambung:**
-- Deploy ke Vercel (login Vercel guna akaun `makmalbptipoh-jmg`) + set env vars dalam Vercel dashboard
-- Uji login penuh dalam production (perlukan kata laluan admin)
-- Tambah secret `DATABASE_URL` dalam GitHub repo settings (untuk backup workflow)
+- Uji login penuh di production (akaun admin `chessforkids80@gmail.com`) dan uji aliran: daftar pelajar → rekod kehadiran → jana resit
+- Pasang PWA pada telefon jurulatih (buka URL dalam Chrome → Add to Home Screen)
+- (Pilihan) Tambah secret `DATABASE_URL` dalam GitHub repo settings untuk backup automatik mingguan
 
 ---
 
