@@ -105,11 +105,11 @@ export function ResitPDF({
           <View style={s.logo}>
             <Text style={s.logoIcon}>♟</Text>
             <View>
-              <Text style={s.logoText}>CFK HUB</Text>
-              <Text style={s.logoSub}>Catur Untuk Kanak-Kanak</Text>
+              <Text style={s.logoText}>CHESS FOR KIDS (CFK)</Text>
+              <Text style={s.logoSub}>5B, Laluan Klebang 21, Klebang Perdana, 31200 Chemor, Perak</Text>
             </View>
           </View>
-          <Text style={s.resitBadge}>RESIT RASMI</Text>
+          <Text style={s.resitBadge}>RESIT PEMBAYARAN</Text>
         </View>
 
         {/* No Resit */}
@@ -179,10 +179,9 @@ export function ResitPDF({
 
         {/* Footer */}
         <View style={s.footer}>
-          <Text style={s.footerText}>Akaun Maybank: 164 456 789 012 (CFK — Catur Untuk Kanak-Kanak)</Text>
-          <Text style={s.footerText}>Resit ini adalah dokumen sah. Sila simpan sebagai rujukan.</Text>
+          <Text style={s.footerText}>Resit ini dijana secara digital dan tidak memerlukan tandatangan.</Text>
           <Text style={[s.footerText, { marginTop: 6, fontFamily: 'Helvetica-Bold' }]}>
-            Terima kasih atas kepercayaan anda kepada program CFK. 🙏
+            Terima kasih atas kepercayaan anda kepada program Chess For Kids.
           </Text>
           <Text style={[s.footerText, { marginTop: 8, color: '#94A3B8', fontSize: 8 }]}>
             Dijana oleh CFK HUB · {new Date().toLocaleDateString('ms-MY')}
