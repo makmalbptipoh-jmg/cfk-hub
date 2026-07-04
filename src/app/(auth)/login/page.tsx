@@ -77,9 +77,10 @@ export default function LoginPage() {
               fontSize: '48px',
               lineHeight: 1,
               marginBottom: '12px',
+              color: '#FFC94D',
             }}
           >
-            ♟
+            {'♟︎'}
           </div>
           <h1
             style={{

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BottomTabBar } from '@/components/layout/BottomTabBar'
+import { NavigasiAtas } from '@/components/layout/NavigasiAtas'
 
 export default async function JurulatihLayout({
   children,
@@ -27,6 +28,7 @@ export default async function JurulatihLayout({
     return (
       <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
         <main style={{ flex: 1, overflow: 'auto', padding: '28px 32px', minWidth: 0 }}>
+          <NavigasiAtas homeHref="/dashboard" />
           {children}
         </main>
       </div>

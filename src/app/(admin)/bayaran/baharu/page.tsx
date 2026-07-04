@@ -323,7 +323,7 @@ export default function RekodBayaranPage() {
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '20px' }}>♟</span>
+                <span style={{ fontSize: '20px', color: '#FFC94D' }}>{'♟︎'}</span>
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF' }}>CFK HUB</div>
                   <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}>Catur Untuk Kanak-Kanak</div>

@@ -17,7 +17,7 @@ const s = StyleSheet.create({
     borderBottom: '2px solid #1E293B',
   },
   logo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoIcon: { fontSize: 22, color: '#84CC16' },
+  logoIcon: { fontSize: 22, color: '#FFC94D' },
   logoText: { fontSize: 16, fontWeight: 'bold', color: '#1E293B', fontFamily: 'Helvetica-Bold' },
   logoSub: { fontSize: 8, color: '#64748B', marginTop: 2 },
   resitBadge: {

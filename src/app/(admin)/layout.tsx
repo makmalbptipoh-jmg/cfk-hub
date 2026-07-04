@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { NavigasiAtas } from '@/components/layout/NavigasiAtas'
 
 export default async function AdminLayout({
   children,
@@ -34,6 +35,7 @@ export default async function AdminLayout({
           minWidth: 0,
         }}
       >
+        <NavigasiAtas homeHref="/dashboard" />
         {children}
       </main>
     </div>

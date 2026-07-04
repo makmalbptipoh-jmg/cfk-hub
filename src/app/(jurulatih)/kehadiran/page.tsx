@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { JurulatihKehadiranKlient } from './_components/JurulatihKehadiranKlient'
 import { AdminKehadiranKlient } from './_components/AdminKehadiranKlient'
+import { KehadiranAdminTabs } from './_components/KehadiranAdminTabs'
 
 export default async function KehadiranPage() {
   const supabase = await createClient()
@@ -21,19 +22,7 @@ export default async function KehadiranPage() {
 
   const tarikhHariIni = new Date().toISOString().split('T')[0]
 
-  // Admin — S-07 Semak Kehadiran
-  if (profil?.is_admin) {
-    return (
-      <div style={{ padding: '24px 28px' }}>
-        <AdminKehadiranKlient
-          cawangan={cawangan ?? []}
-          tarikhAwal={tarikhHariIni}
-        />
-      </div>
-    )
-  }
-
-  // Jurulatih — S-08 Rekod Kehadiran
+  // Data untuk mod Rekod (S-08) — diperlukan oleh jurulatih DAN admin
   const [{ data: pelajarRaw }, { data: rekodHariIni }] = await Promise.all([
     supabase
       .from('pelajar')
@@ -58,7 +47,7 @@ export default async function KehadiranPage() {
     rekodSedia[r.pelajar_id] = r.status as any
   }
 
-  return (
+  const rekodView = (
     <JurulatihKehadiranKlient
       pelajar={pelajar}
       cawangan={cawangan ?? []}
@@ -67,4 +56,24 @@ export default async function KehadiranPage() {
       rekodSedia={rekodSedia}
     />
   )
+
+  // Admin — tab Rekod (S-08) + Semak & Edit (S-07); admin juga jurulatih
+  if (profil?.is_admin) {
+    return (
+      <KehadiranAdminTabs
+        rekodView={rekodView}
+        semakView={
+          <div style={{ padding: '24px 28px' }}>
+            <AdminKehadiranKlient
+              cawangan={cawangan ?? []}
+              tarikhAwal={tarikhHariIni}
+            />
+          </div>
+        }
+      />
+    )
+  }
+
+  // Jurulatih — S-08 Rekod Kehadiran
+  return rekodView
 }
