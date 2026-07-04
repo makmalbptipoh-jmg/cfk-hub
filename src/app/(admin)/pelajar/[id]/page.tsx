@@ -70,6 +70,7 @@ export default async function ProfilPelajarPage({
         nama_ibu_bapa: p.nama_ibu_bapa,
         no_telefon: p.no_telefon,
         emel_ibu_bapa: p.emel_ibu_bapa,
+        alamat: p.alamat,
         jenis_kelas: p.jenis_kelas,
         yuran_bulanan: p.yuran_bulanan,
         status: p.status,

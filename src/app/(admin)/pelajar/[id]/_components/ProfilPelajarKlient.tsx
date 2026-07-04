@@ -13,6 +13,7 @@ type Pelajar = {
   nama_ibu_bapa: string
   no_telefon: string
   emel_ibu_bapa: string | null
+  alamat: string | null
   jenis_kelas: string
   yuran_bulanan: number
   status: string
@@ -127,6 +128,7 @@ export function ProfilPelajarKlient({ pelajar, stat, sudahBayarBulanIni, kehadir
             { label: 'Ibu Bapa / Penjaga', nilai: pelajar.nama_ibu_bapa },
             { label: 'No. Telefon', nilai: pelajar.no_telefon },
             { label: 'E-mel', nilai: pelajar.emel_ibu_bapa || '—' },
+            { label: 'Alamat', nilai: pelajar.alamat || '—' },
             { label: 'Yuran Bulanan', nilai: formatRinggit(pelajar.yuran_bulanan) },
             { label: 'Tarikh Daftar', nilai: formatTarikh(pelajar.tarikh_daftar) },
           ].map((b, i, arr) => (

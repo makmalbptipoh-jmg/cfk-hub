@@ -68,6 +68,7 @@ export interface Database {
           nama_ibu_bapa: string
           no_telefon: string
           emel_ibu_bapa: string | null
+          alamat: string | null
           cawangan_daftar_id: string
           jenis_kelas: 'Kumpulan' | 'Personal' | 'Kumpulan+Personal'
           yuran_bulanan: number
@@ -83,6 +84,7 @@ export interface Database {
           nama_ibu_bapa: string
           no_telefon: string
           emel_ibu_bapa?: string | null
+          alamat?: string | null
           cawangan_daftar_id: string
           jenis_kelas?: 'Kumpulan' | 'Personal' | 'Kumpulan+Personal'
           yuran_bulanan: number
@@ -98,6 +100,7 @@ export interface Database {
           nama_ibu_bapa?: string
           no_telefon?: string
           emel_ibu_bapa?: string | null
+          alamat?: string | null
           cawangan_daftar_id?: string
           jenis_kelas?: 'Kumpulan' | 'Personal' | 'Kumpulan+Personal'
           yuran_bulanan?: number

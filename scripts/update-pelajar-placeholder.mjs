@@ -19,22 +19,24 @@ const baris = readFileSync('scripts/data/pelajar-placeholder.csv', 'utf8')
   .slice(1)
   .filter(Boolean)
   .map((l) => {
-    // nama boleh mengandungi koma? Tidak — format: nama,ibu_bapa,telefon (split dari kanan)
-    const p2 = l.lastIndexOf(',');
-    const p1 = l.lastIndexOf(',', p2 - 1);
+    // Format: nama,ibu_bapa,telefon,alamat — alamat sahaja boleh ada koma,
+    // jadi split 3 medan pertama dari kiri, baki = alamat.
+    const [nama_penuh, nama_ibu_bapa, no_telefon, ...alamat] = l.split(',');
     return {
-      nama_penuh: l.slice(0, p1).trim(),
-      nama_ibu_bapa: l.slice(p1 + 1, p2).trim(),
-      no_telefon: l.slice(p2 + 1).trim(),
+      nama_penuh: nama_penuh.trim(),
+      nama_ibu_bapa: (nama_ibu_bapa ?? '-').trim(),
+      no_telefon: (no_telefon ?? '-').trim(),
+      alamat: alamat.join(',').trim() || '-',
     };
   });
 
 let dikemaskini = 0, dilangkau = 0, gagal = 0;
 for (const b of baris) {
-  if (b.nama_ibu_bapa === '-' && b.no_telefon === '-') { dilangkau++; continue; }
+  if (b.nama_ibu_bapa === '-' && b.no_telefon === '-' && b.alamat === '-') { dilangkau++; continue; }
   const patch = {};
   if (b.nama_ibu_bapa !== '-') patch.nama_ibu_bapa = b.nama_ibu_bapa;
   if (b.no_telefon !== '-') patch.no_telefon = b.no_telefon;
+  if (b.alamat !== '-') patch.alamat = b.alamat;
 
   if (!COMMIT) {
     console.log(`[PRATONTON] ${b.nama_penuh} ->`, patch);

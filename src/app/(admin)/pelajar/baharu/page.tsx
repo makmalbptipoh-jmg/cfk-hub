@@ -21,6 +21,7 @@ const skema2 = z.object({
   nama_ibu_bapa: z.string().min(2, 'Nama ibu bapa wajib diisi'),
   no_telefon: z.string().min(9, 'Nombor telefon tidak sah').regex(/^[0-9+\-\s]+$/, 'Format tidak sah'),
   emel_ibu_bapa: z.string().email('Format e-mel tidak sah').optional().or(z.literal('')),
+  alamat: z.string().optional(),
   cawangan_daftar_id: z.string().min(1, 'Sila pilih cawangan'),
 })
 
@@ -95,6 +96,7 @@ export default function TambahPelajarPage() {
       nama_ibu_bapa: data2.nama_ibu_bapa.toUpperCase(),
       no_telefon: data2.no_telefon,
       emel_ibu_bapa: data2.emel_ibu_bapa || null,
+      alamat: data2.alamat?.trim() || null,
       cawangan_daftar_id: data2.cawangan_daftar_id,
       yuran_bulanan: yuran,
       sumber_daftar: 'Manual',
@@ -266,6 +268,16 @@ export default function TambahPelajarPage() {
               )}
             </div>
 
+            <div style={{ marginBottom: '16px' }}>
+              <label style={labelInput}>Alamat <span style={{ fontWeight: 400, textTransform: 'none' }}>(pilihan)</span></label>
+              <textarea
+                {...form2.register('alamat')}
+                placeholder="Contoh: No. 1, Jalan Klebang 2, 31200 Chemor, Perak"
+                rows={2}
+                style={{ ...gayaInput(), resize: 'vertical' as const }}
+              />
+            </div>
+
             <div style={{ marginBottom: '24px' }}>
               <label style={labelInput}>Cawangan Daftar *</label>
               <select {...form2.register('cawangan_daftar_id')} style={gayaInput(!!form2.formState.errors.cawangan_daftar_id)}>
@@ -308,6 +320,7 @@ export default function TambahPelajarPage() {
                 { label: 'Nama Ibu Bapa', nilai: data2.nama_ibu_bapa },
                 { label: 'No. Telefon', nilai: data2.no_telefon },
                 { label: 'E-mel', nilai: data2.emel_ibu_bapa || '—' },
+                { label: 'Alamat', nilai: data2.alamat?.trim() || '—' },
                 { label: 'Cawangan', nilai: cawanganPilihan?.nama || '—' },
               ]},
             ].map((seksyen) => (

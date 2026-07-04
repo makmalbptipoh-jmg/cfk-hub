@@ -31,7 +31,8 @@
 **Ujian penuh production (4 Julai):** ✅ SEMUA LULUS — login, dashboard, kehadiran (rekod + semak), pelajar, bayaran + PDF resit, kewangan, laporan kehadiran & kewangan, makluman, navigasi, toast. Nota: 1 rekod kehadiran ujian (ABINASH, Hadir, 4 Julai 2026) — padam/edit dalam tab Semak jika tidak diperlukan.
 
 **Apa yang perlu disambung (sesi akan datang):**
-1. Lengkapkan maklumat 22 pelajar placeholder (semua cawangan Klebang) — **alat sudah siap (Sesi 4):** isi `scripts/data/pelajar-placeholder.csv` kemudian jalankan `node scripts/update-pelajar-placeholder.mjs --commit` (tanpa `--commit` = pratonton). Baris yang masih `-` dilangkau.
+1. Lengkapkan maklumat 22 pelajar placeholder (semua cawangan Klebang) — **alat sudah siap (Sesi 4):** isi `scripts/data/pelajar-placeholder.csv` (kolum: nama ibu bapa, telefon, alamat) kemudian jalankan `node scripts/update-pelajar-placeholder.mjs --commit` (tanpa `--commit` = pratonton). Baris yang masih `-` dilangkau.
+1b. **Medan alamat pelajar (Sesi 4):** kod siap (borang tambah/edit + profil + DB types) tetapi WAJIB paste `scripts/sql/tambah-alamat-pelajar.sql` dalam Supabase SQL Editor SEBELUM push ke main — jika tidak, tambah/edit pelajar akan gagal (kolum tiada).
 2. Tukar no. akaun bank placeholder dalam templat Makluman Yuran — lokasi: `src/app/(jurulatih)/makluman/_components/MaklumanKlient.tsx:28` (`Maybank: 164 456 789 012`). PDF resit tiada placeholder bank.
 3. Pasang PWA pada telefon jurulatih (Chrome → Add to Home Screen)
 4. Cipta akaun jurulatih melalui Tetapan → Pengguna → Tambah Pengguna

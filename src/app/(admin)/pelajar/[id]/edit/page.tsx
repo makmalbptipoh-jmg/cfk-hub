@@ -18,6 +18,7 @@ const skema = z.object({
   nama_ibu_bapa: z.string().min(2, 'Nama ibu bapa wajib diisi'),
   no_telefon: z.string().min(9, 'Nombor telefon tidak sah'),
   emel_ibu_bapa: z.string().email('Format e-mel tidak sah').optional().or(z.literal('')),
+  alamat: z.string().optional(),
   cawangan_daftar_id: z.string().min(1, 'Sila pilih cawangan'),
   status: z.enum(['Aktif', 'Tidak Aktif']),
 })
@@ -72,6 +73,7 @@ export default function EditPelajarPage() {
           nama_ibu_bapa: p.nama_ibu_bapa,
           no_telefon: p.no_telefon,
           emel_ibu_bapa: p.emel_ibu_bapa ?? '',
+          alamat: p.alamat ?? '',
           cawangan_daftar_id: p.cawangan_daftar_id,
           status: p.status,
         })
@@ -93,6 +95,7 @@ export default function EditPelajarPage() {
         nama_ibu_bapa: data.nama_ibu_bapa.toUpperCase(),
         tarikh_lahir: data.tarikh_lahir || null,
         emel_ibu_bapa: data.emel_ibu_bapa || null,
+        alamat: data.alamat?.trim() || null,
         yuran_bulanan: kirYuranBulanan(data.jenis_kelas),
       })
       .eq('id', id)
@@ -193,6 +196,11 @@ export default function EditPelajarPage() {
             <label style={labelInput}>E-mel Ibu Bapa</label>
             <input type="email" {...register('emel_ibu_bapa')} style={gayaInput(!!errors.emel_ibu_bapa)} />
             {errors.emel_ibu_bapa && <p style={{ fontSize: '12px', color: '#EF4444', marginTop: '4px' }}>{errors.emel_ibu_bapa.message}</p>}
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={labelInput}>Alamat</label>
+            <textarea {...register('alamat')} rows={2} style={{ ...gayaInput(), resize: 'vertical' as const }} />
           </div>
 
           <div>
