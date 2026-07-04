@@ -28,10 +28,21 @@
 
 **Ciri tambahan sesi ini:** tab Rekod+Semak kehadiran untuk admin, butang navigasi Kembali/Seterusnya/Utama semua page, logo pawn kuning gaya chess.com, auto-CAPSLOCK, template resit ikut RESIT-CFK-2026, region Vercel Singapore (sin1), toast global.
 
-**Apa yang perlu disambung:**
-- Uji login penuh di production (akaun admin `chessforkids80@gmail.com`) dan uji aliran: daftar pelajar → rekod kehadiran → jana resit
-- Pasang PWA pada telefon jurulatih (buka URL dalam Chrome → Add to Home Screen)
-- (Pilihan) Tambah secret `DATABASE_URL` dalam GitHub repo settings untuk backup automatik mingguan
+**Ujian penuh production (4 Julai):** ✅ SEMUA LULUS — login, dashboard, kehadiran (rekod + semak), pelajar, bayaran + PDF resit, kewangan, laporan kehadiran & kewangan, makluman, navigasi, toast. Nota: 1 rekod kehadiran ujian (ABINASH, Hadir, 4 Julai 2026) — padam/edit dalam tab Semak jika tidak diperlukan.
+
+**Apa yang perlu disambung (sesi akan datang):**
+1. Lengkapkan maklumat 22 pelajar placeholder (`nama_ibu_bapa`/`no_telefon` = `-`) melalui butang Edit — senarai: MAHAATH, DHENISH, UMAR, SYED AZEEM, TEYJAESH, DIVYEAN, KHASYIFA, MUHAMMAD KHALEEF, NUR ALIA HANNAH, PABILAASHINI, JANEESHA, PUGALESSH, RAYYAN DANISH KHAN, AYAN FINASH KHAN, VENKAAT SAASTHA, AMMAR FAIZ, ILYAS MUKHLIS, YAHYA AYYASH, HANA, MEGAT IKHWAN, DHAKSSAYINI, MUHAMMAD HARIS SHAH
+2. Tukar no. akaun bank placeholder dalam templat Makluman Yuran (`MAYBANK: 164 456 789 012`) kepada akaun sebenar
+3. Pasang PWA pada telefon jurulatih (Chrome → Add to Home Screen)
+4. Cipta akaun jurulatih melalui Tetapan → Pengguna → Tambah Pengguna
+5. (Pilihan) Paste SQL index dalam Supabase SQL Editor untuk kelajuan (lihat sejarah sesi / minta Claude jana semula)
+6. (Pilihan) Tambah secret `DATABASE_URL` dalam GitHub repo settings untuk backup automatik mingguan
+
+**Nota teknikal untuk sesi akan datang:**
+- Kredential Supabase dalam `.env.local` (jangan padam!) — projek `jfkmfmjsqbwcgzxiyees` (Singapore)
+- Login admin: `chessforkids80@gmail.com` / kata laluan direset 4 Jul 2026 (user ada rekod)
+- Deploy: push ke `main` → auto-deploy Vercel (repo public). Jika Vercel "Blocked", guna deploy salinan tanpa `.git` melalui CLI
+- Import data lampau dibuat melalui skrip REST API + service role key (bukan melalui UI import)
 
 ---
 
