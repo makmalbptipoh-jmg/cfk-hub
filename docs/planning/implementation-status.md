@@ -17,9 +17,16 @@
 - `npm run build` berjaya (31 route) + smoke test production mode: `/login` 200, laluan dilindungi redirect betul, manifest + ikon 200
 
 **Deployment:** ✅ **LIVE di https://cfk-hub.vercel.app** (akaun Vercel `chessforkids80`)
-- Smoke test production lulus: `/login` 200, laluan dilindungi redirect ke login, manifest + ikon PWA 200
-- Semua 4 env vars sudah diset dalam Vercel (Production)
-- Auto-deploy aktif: setiap `git push` ke `main` akan deploy semula
+- Repo GitHub kini **public** — auto-deploy setiap push berfungsi (Hobby plan sekat commit author lain pada repo private)
+- Security headers aktif: CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy
+
+**Data production (4 Julai 2026):**
+- 180 pelajar (152 aktif; cawangan Tambun + Sungai Siput ditanda Tidak Aktif kerana tutup)
+- 168 resit diimport dari sheet "MyCfk 2025 Resit" (Feb 2025 – Julai 2026, jumlah RM11,740)
+- Kutipan disahkan selari 3 peringkat: sheet = DB = Laporan Kewangan (cth. Dis 2025: 25 resit RM1,750)
+- 22 pelajar pembayar tiada dalam borang pendaftaran dicipta dengan placeholder `-` (ibu bapa/telefon) — perlu dilengkapkan manual
+
+**Ciri tambahan sesi ini:** tab Rekod+Semak kehadiran untuk admin, butang navigasi Kembali/Seterusnya/Utama semua page, logo pawn kuning gaya chess.com, auto-CAPSLOCK, template resit ikut RESIT-CFK-2026, region Vercel Singapore (sin1), toast global.
 
 **Apa yang perlu disambung:**
 - Uji login penuh di production (akaun admin `chessforkids80@gmail.com`) dan uji aliran: daftar pelajar → rekod kehadiran → jana resit
