@@ -34,7 +34,8 @@ export function BtnUnduhResit({ data, kecil }: Props) {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `Resit_${data.nombor_resit}.pdf`
+      const namaBersih = data.nama_pelajar.replace(/[\\/:*?"<>|]/g, '-')
+      a.download = `Resit_${namaBersih}_${data.bulan_bayaran} ${data.tahun_bayaran}.pdf`
       a.click()
       URL.revokeObjectURL(url)
     } catch (e) {

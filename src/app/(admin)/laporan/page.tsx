@@ -129,7 +129,7 @@ export default function LaporanPage() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `Laporan_${laporan.nama_pelajar}_${laporan.bulan}_${laporan.tahun}.pdf`
+      a.download = `Laporan_${laporan.nama_pelajar.replace(/[\\/:*?"<>|]/g, '-')}_${laporan.bulan}_${laporan.tahun}.pdf`
       a.click()
       URL.revokeObjectURL(url)
     } finally {
