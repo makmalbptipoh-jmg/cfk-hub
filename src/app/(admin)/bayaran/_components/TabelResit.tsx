@@ -171,7 +171,11 @@ export function TabelResit({ resit, bulanTersedia }: Props) {
                   <tr key={r.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = '#FAFBFC' }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
-                    <td style={{ padding: '10px 14px', fontSize: '12.5px', fontWeight: 700, color: 'var(--text)', fontFamily: 'monospace' }}>{r.nombor_resit}</td>
+                    <td style={{ padding: '10px 14px', fontSize: '12.5px', fontWeight: 700, fontFamily: 'monospace' }}>
+                      <Link href={`/bayaran/${r.id}`} style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
+                        {r.nombor_resit}
+                      </Link>
+                    </td>
                     <td style={{ padding: '10px 14px', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{r.nama_pelajar}</td>
                     <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>{r.jenis}</td>
                     <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>{r.bulan_bayaran} {r.tahun_bayaran}</td>

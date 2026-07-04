@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Download } from 'lucide-react'
+import { toast } from '@/lib/stores/toast-store'
 
 type ResitData = {
   nombor_resit: string
@@ -38,8 +39,10 @@ export function BtnUnduhResit({ data, kecil }: Props) {
       a.download = `Resit_${namaBersih}_${data.bulan_bayaran} ${data.tahun_bayaran}.pdf`
       a.click()
       URL.revokeObjectURL(url)
+      toast.success(`PDF resit ${data.nombor_resit} dimuat turun — semak folder Downloads.`)
     } catch (e) {
       console.error(e)
+      toast.error('Gagal jana PDF. Sila refresh halaman (Ctrl+Shift+R) dan cuba lagi.')
     } finally {
       setLoading(false)
     }

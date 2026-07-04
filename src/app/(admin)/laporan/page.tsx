@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { FileText, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CariPelajar, type PelajarCarian } from '@/components/pelajar/CariPelajar'
+import { toast } from '@/lib/stores/toast-store'
 
 type Rekod = {
   tarikh: string
@@ -132,6 +133,10 @@ export default function LaporanPage() {
       a.download = `Laporan_${laporan.nama_pelajar.replace(/[\\/:*?"<>|]/g, '-')}_${laporan.bulan}_${laporan.tahun}.pdf`
       a.click()
       URL.revokeObjectURL(url)
+      toast.success('PDF laporan kehadiran dimuat turun — semak folder Downloads.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Gagal jana PDF. Sila refresh halaman (Ctrl+Shift+R) dan cuba lagi.')
     } finally {
       setUnduhLoading(false)
     }
