@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BottomTabBar } from '@/components/layout/BottomTabBar'
 import { NavigasiAtas } from '@/components/layout/NavigasiAtas'
+import { Sidebar } from '@/components/layout/Sidebar'
 
 export default async function JurulatihLayout({
   children,
@@ -18,7 +19,7 @@ export default async function JurulatihLayout({
 
   const { data: profil } = await supabase
     .from('pengguna_profil')
-    .select('is_admin')
+    .select('nama, is_admin')
     .eq('id', user.id)
     .single()
 
@@ -27,6 +28,7 @@ export default async function JurulatihLayout({
   if (isAdmin) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+        <Sidebar nama={profil?.nama ?? ''} email={user.email ?? ''} />
         <main style={{ flex: 1, overflow: 'auto', padding: '28px 32px', minWidth: 0 }}>
           <NavigasiAtas homeHref="/dashboard" />
           {children}
