@@ -20,7 +20,9 @@ const SUPABASE_WS = 'wss://jfkmfmjsqbwcgzxiyees.supabase.co'
 // unsafe-inline diperlukan: Next.js inline bootstrap script + inline style dalam komponen
 const csp = [
   `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline'`,
+  // wasm-unsafe-eval: @react-pdf/renderer guna enjin layout Yoga (WebAssembly) —
+  // tanpa ini semua butang jana PDF gagal senyap di production
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'`,
   `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
   `font-src 'self' https://fonts.gstatic.com`,
   `img-src 'self' data: blob:`,
