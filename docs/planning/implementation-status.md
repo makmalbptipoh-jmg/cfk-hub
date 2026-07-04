@@ -1,11 +1,26 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 4 Jul 2026 (Sesi 3)
+**Dikemaskini:** 4 Jul 2026 (Sesi 4)
 **Stack:** Next.js 16 + TypeScript + Supabase + Tailwind CSS + Vercel
 
 ---
 
-## Status Sesi Terkini
+## Status Sesi 4 (4 Jul 2026)
+
+**Semua sudah LIVE di production:**
+- No. akaun Maybank sebenar (158015108369) dalam templat Makluman Yuran
+- Nama fail PDF resit & laporan auto ikut nama pelajar + bulan (aksara `/` dalam A/L, A/P dibersihkan)
+- Medan `alamat` pelajar: kolum DB (migration `scripts/sql/tambah-alamat-pelajar.sql` — sudah run) + borang tambah/edit + profil
+- Sidebar admin kini dipapar pada page Kehadiran, Makluman & Dashboard Jurulatih (layout `(jurulatih)` cabang admin)
+- **Laporan LHDN Excel** dalam page Kewangan: pilih tahun → `.xlsx` 4 sheet (Penyata Pendapatan P&L asas tunai, Pendapatan Bulanan, Butiran Pendapatan, Butiran Perbelanjaan) — komponen `src/components/excel/BtnLaporanLHDN.tsx`, guna `exceljs` lazy-load
+- **Aset unit × harga**: kolum `kuantiti` + `harga_seunit` (migration `scripts/sql/tambah-kuantiti-aset.sql` — sudah run); `nilai_asal` = jumlah keseluruhan; borang + jadual dikemaskini
+- **Penapis Kewangan**: dropdown Bulan (termasuk "Semua Bulan" untuk seluruh tahun) + Tahun
+- SQL index (15 index, `scripts/sql/indexes.sql`) — sudah run dalam Supabase
+- Audit kepatuhan vs dokumen: ~95%; jurang sedar — automasi pakej adik-beradik (PD-008), halaman S-13a lihat resit, histori makluman
+
+---
+
+## Status Sesi Terkini (Sesi 3)
 
 **Apa yang dibuat hari ini (Episod 13 + persediaan pelancaran):**
 - Toast system global: `src/lib/stores/toast-store.ts` (Zustand) + `src/components/ui/Toaster.tsx` dipasang dalam root layout — 4 jenis (success/error/info/warning) ikut warna notice box design doc
