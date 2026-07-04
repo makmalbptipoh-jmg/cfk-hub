@@ -7,16 +7,21 @@ import { createClient } from '@/lib/supabase/client'
 import { formatRinggit } from '@/lib/utils'
 import { BtnLaporanLHDN } from '@/components/excel/BtnLaporanLHDN'
 
-function bulanInfo(bm: string) {
-  const [y, m] = bm.split('-')
-  const d = new Date(+y, +m - 1, 1)
-  return {
-    nama: d.toLocaleString('ms-MY', { month: 'long' }),
-    tahun: +y,
-    mula: `${y}-${m}-01`,
-    akhir: new Date(+y, +m, 0).toISOString().split('T')[0],
-    label: d.toLocaleString('ms-MY', { month: 'long', year: 'numeric' }),
-  }
+const BULAN_MS = [
+  'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
+  'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember',
+]
+
+const gayaPilih: React.CSSProperties = {
+  padding: '9px 12px',
+  border: '1.5px solid var(--border)',
+  borderRadius: '10px',
+  fontSize: '13.5px',
+  color: 'var(--text)',
+  background: 'var(--card)',
+  outline: 'none',
+  fontFamily: 'inherit',
+  cursor: 'pointer',
 }
 
 type DataKewangan = {
@@ -29,29 +34,38 @@ type DataKewangan = {
 }
 
 export default function KewanganRingkasanPage() {
-  const bulanDefault = new Date().toISOString().slice(0, 7)
-  const [bulan, setBulan] = useState(bulanDefault)
+  const hariIni = new Date()
+  const tahunSemasa = hariIni.getFullYear()
+  const [tahun, setTahun] = useState(tahunSemasa)
+  // '' = Semua Bulan (seluruh tahun); '1'-'12' = bulan tertentu
+  const [bulanIdx, setBulanIdx] = useState(String(hariIni.getMonth() + 1))
   const [data, setData] = useState<DataKewangan | null>(null)
   const [loading, setLoading] = useState(true)
 
   const muatData = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
-    const { nama, tahun, mula, akhir } = bulanInfo(bulan)
 
-    const [{ data: resit }, { data: belanja }] = await Promise.all([
-      supabase
-        .from('resit')
-        .select('jumlah, pelajar:pelajar_id(cawangan:cawangan_daftar_id(nama))')
-        .eq('bulan_bayaran', nama)
-        .eq('tahun_bayaran', tahun)
-        .eq('status', 'Aktif'),
-      supabase
-        .from('kewangan_perbelanjaan')
-        .select('jumlah, cawangan:cawangan_id(nama)')
-        .gte('tarikh', mula)
-        .lte('tarikh', akhir),
-    ])
+    let resitQuery = supabase
+      .from('resit')
+      .select('jumlah, pelajar:pelajar_id(cawangan:cawangan_daftar_id(nama))')
+      .eq('tahun_bayaran', tahun)
+      .eq('status', 'Aktif')
+    let belanjaQuery = supabase
+      .from('kewangan_perbelanjaan')
+      .select('jumlah, cawangan:cawangan_id(nama)')
+
+    if (bulanIdx) {
+      const m = +bulanIdx
+      const mula = `${tahun}-${String(m).padStart(2, '0')}-01`
+      const akhir = new Date(tahun, m, 0).toISOString().split('T')[0]
+      resitQuery = resitQuery.eq('bulan_bayaran', BULAN_MS[m - 1])
+      belanjaQuery = belanjaQuery.gte('tarikh', mula).lte('tarikh', akhir)
+    } else {
+      belanjaQuery = belanjaQuery.gte('tarikh', `${tahun}-01-01`).lte('tarikh', `${tahun}-12-31`)
+    }
+
+    const [{ data: resit }, { data: belanja }] = await Promise.all([resitQuery, belanjaQuery])
 
     const pendapatan = (resit ?? []).reduce((s, r) => s + r.jumlah, 0)
     const perbelanjaan = (belanja ?? []).reduce((s, p) => s + p.jumlah, 0)
@@ -77,7 +91,7 @@ export default function KewanganRingkasanPage() {
       bilBelanja: (belanja ?? []).length,
     })
     setLoading(false)
-  }, [bulan])
+  }, [tahun, bulanIdx])
 
   useEffect(() => {
     muatData()
@@ -101,24 +115,29 @@ export default function KewanganRingkasanPage() {
               letterSpacing: '0.06em',
             }}
           >
-            Pilih Bulan
+            Pilih Tempoh
           </label>
-          <input
-            type="month"
-            value={bulan}
-            onChange={(e) => setBulan(e.target.value)}
-            style={{
-              padding: '9px 12px',
-              border: '1.5px solid var(--border)',
-              borderRadius: '10px',
-              fontSize: '13.5px',
-              color: 'var(--text)',
-              background: 'var(--card)',
-              outline: 'none',
-              fontFamily: 'inherit',
-              cursor: 'pointer',
-            }}
-          />
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <select
+              value={bulanIdx}
+              onChange={(e) => setBulanIdx(e.target.value)}
+              style={gayaPilih}
+            >
+              <option value="">Semua Bulan</option>
+              {BULAN_MS.map((nama, i) => (
+                <option key={nama} value={String(i + 1)}>{nama}</option>
+              ))}
+            </select>
+            <select
+              value={tahun}
+              onChange={(e) => setTahun(+e.target.value)}
+              style={gayaPilih}
+            >
+              {Array.from({ length: tahunSemasa - 2024 }, (_, i) => 2025 + i).map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
         </div>
         <Link
           href="/kewangan/perbelanjaan"
