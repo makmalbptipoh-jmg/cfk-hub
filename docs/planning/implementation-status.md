@@ -36,7 +36,7 @@
 2. Tukar no. akaun bank placeholder dalam templat Makluman Yuran — lokasi: `src/app/(jurulatih)/makluman/_components/MaklumanKlient.tsx:28` (`Maybank: 164 456 789 012`). PDF resit tiada placeholder bank.
 3. Pasang PWA pada telefon jurulatih (Chrome → Add to Home Screen)
 4. Cipta akaun jurulatih melalui Tetapan → Pengguna → Tambah Pengguna
-5. (Pilihan) Paste SQL index dalam Supabase SQL Editor — **fail sudah siap (Sesi 4):** `scripts/sql/indexes.sql`
+5. ~~SQL index~~ ✅ SELESAI (Sesi 4) — user sudah run `scripts/sql/indexes.sql` dalam Supabase SQL Editor (15 index)
 6. (Pilihan) Tambah secret `DATABASE_URL` dalam GitHub repo settings untuk backup automatik mingguan
 
 **Nota teknikal untuk sesi akan datang:**
