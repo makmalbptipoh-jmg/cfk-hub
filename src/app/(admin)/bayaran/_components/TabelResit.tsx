@@ -6,6 +6,7 @@ import { Plus, Search, X } from 'lucide-react'
 import { ModalBatalResit } from './ModalBatalResit'
 import { BtnUnduhResit } from '@/components/pdf/BtnUnduhResit'
 import { useRouter } from 'next/navigation'
+import { toast } from '@/lib/stores/toast-store'
 
 type Resit = {
   id: string
@@ -38,12 +39,6 @@ export function TabelResit({ resit, bulanTersedia }: Props) {
   const [filterStatus, setFilterStatus] = useState('')
   const [halaman, setHalaman] = useState(1)
   const [modalBatal, setModalBatal] = useState<Resit | null>(null)
-  const [pesanBerjaya, setPesanBerjaya] = useState<string | null>(null)
-
-  const tunjukPesan = (msg: string) => {
-    setPesanBerjaya(msg)
-    setTimeout(() => setPesanBerjaya(null), 3000)
-  }
 
   const hasil = resit.filter((r) => {
     const cariCocokan = !carian || r.nombor_resit.toLowerCase().includes(carian.toLowerCase()) || r.nama_pelajar.toLowerCase().includes(carian.toLowerCase())
@@ -105,17 +100,6 @@ export function TabelResit({ resit, bulanTersedia }: Props) {
           </Link>
         </div>
       </div>
-
-      {pesanBerjaya && (
-        <div style={{
-          background: 'var(--hadir-bg)', border: '1px solid #BBF7D0',
-          borderRadius: '12px', padding: '12px 16px',
-          fontSize: '13.5px', color: 'var(--hadir-text)', fontWeight: 600,
-          marginBottom: '16px',
-        }}>
-          ✓ {pesanBerjaya}
-        </div>
-      )}
 
       {/* Penapis */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -265,7 +249,7 @@ export function TabelResit({ resit, bulanTersedia }: Props) {
           onTutup={() => setModalBatal(null)}
           onBerjaya={() => {
             setModalBatal(null)
-            tunjukPesan(`Resit ${modalBatal.nombor_resit} berjaya dibatalkan.`)
+            toast.success(`Resit ${modalBatal.nombor_resit} berjaya dibatalkan.`)
             router.refresh()
           }}
         />

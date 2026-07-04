@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 
 interface Props {
   resit: { id: string; nombor_resit: string; nama_pelajar: string; jumlah: number }
@@ -14,6 +15,7 @@ export function ModalBatalResit({ resit, onTutup, onBerjaya }: Props) {
   const [sebab, setSebab] = useState('')
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
+  useTutupEscape(onTutup)
 
   const hantar = async () => {
     if (!sebab.trim()) { setRalat('Sila nyatakan sebab pembatalan.'); return }
@@ -36,7 +38,8 @@ export function ModalBatalResit({ resit, onTutup, onBerjaya }: Props) {
       background: 'rgba(0,0,0,0.45)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '20px',
-    }} onClick={(e) => { if (e.target === e.currentTarget) onTutup() }}>
+    }} onClick={(e) => { if (e.target === e.currentTarget) onTutup() }}
+      role="dialog" aria-modal="true" aria-label="Batalkan Resit">
       <div style={{
         background: 'var(--card)', borderRadius: '20px',
         padding: '28px', width: '100%', maxWidth: '440px',
@@ -44,7 +47,7 @@ export function ModalBatalResit({ resit, onTutup, onBerjaya }: Props) {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text)' }}>Batalkan Resit</h2>
-          <button onClick={onTutup} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
+          <button onClick={onTutup} aria-label="Tutup" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
             <X size={18} />
           </button>
         </div>

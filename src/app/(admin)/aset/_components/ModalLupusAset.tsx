@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatRinggit } from '@/lib/utils'
+import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 
 interface Props {
   aset: {
@@ -19,6 +20,7 @@ export function ModalLupusAset({ aset, onTutup, onBerjaya }: Props) {
   const [sebab, setSebab] = useState('')
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
+  useTutupEscape(onTutup)
 
   const lupus = async () => {
     if (!sebab.trim()) { setRalat('Sila isi sebab pelupusan.'); return }
@@ -49,6 +51,9 @@ export function ModalLupusAset({ aset, onTutup, onBerjaya }: Props) {
         padding: '20px',
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onTutup() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Lupus Aset"
     >
       <div
         style={{
@@ -69,6 +74,7 @@ export function ModalLupusAset({ aset, onTutup, onBerjaya }: Props) {
           </div>
           <button
             onClick={onTutup}
+            aria-label="Tutup"
             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
           >
             <X size={18} />

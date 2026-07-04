@@ -6,6 +6,7 @@ import { Plus, Wallet } from 'lucide-react'
 import { ModalRekodBayaran } from './ModalRekodBayaran'
 import { formatRinggit, formatTarikh } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
+import { toast } from '@/lib/stores/toast-store'
 
 type Jurulatih = {
   id: string
@@ -37,12 +38,6 @@ interface Props {
 export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunSemasa, bilSesiHadirBulanIni, sudahRekodBulanIni }: Props) {
   const router = useRouter()
   const [modal, setModal] = useState(false)
-  const [pesanBerjaya, setPesanBerjaya] = useState<string | null>(null)
-
-  const tunjukPesan = (msg: string) => {
-    setPesanBerjaya(msg)
-    setTimeout(() => setPesanBerjaya(null), 3000)
-  }
 
   const jumlahKeseluruhan = bayaran.filter((b) => b.status === 'Sudah Bayar').reduce((sum, b) => sum + b.jumlah, 0)
 
@@ -114,16 +109,6 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunS
         </div>
         <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text)' }}>{formatRinggit(jumlahKeseluruhan)}</div>
       </div>
-
-      {pesanBerjaya && (
-        <div style={{
-          background: 'var(--hadir-bg)', border: '1px solid #BBF7D0',
-          borderRadius: '10px', padding: '10px 14px', marginBottom: '14px',
-          fontSize: '13.5px', color: 'var(--hadir-text)', fontWeight: 600,
-        }}>
-          ✓ {pesanBerjaya}
-        </div>
-      )}
 
       {/* Senarai Bayaran */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
@@ -198,7 +183,7 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunS
           onTutup={() => setModal(false)}
           onBerjaya={() => {
             setModal(false)
-            tunjukPesan(`Bayaran ${bulanSemasa} ${tahunSemasa} berjaya direkod.`)
+            toast.success(`Bayaran ${bulanSemasa} ${tahunSemasa} berjaya direkod.`)
             router.refresh()
           }}
         />

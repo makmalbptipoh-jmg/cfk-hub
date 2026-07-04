@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { Plus, Trash2, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from '@/lib/stores/toast-store'
 
 type Sesi = {
   id: string
@@ -37,7 +38,6 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
   const [tambahMode, setTambahMode] = useState(false)
   const [formBaru, setFormBaru] = useState({ tarikh: '', status: 'Hadir' as Sesi['status'], nota: '' })
   const [menyimpan, setMenyimpan] = useState(false)
-  const [pesanBerjaya, setPesanBerjaya] = useState<string | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
   const [editStatus, setEditStatus] = useState<Sesi['status']>('Hadir')
 
@@ -56,22 +56,22 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
 
   useEffect(() => { muatData() }, [id, bulan])
 
-  const tunjukPesan = (msg: string) => { setPesanBerjaya(msg); setTimeout(() => setPesanBerjaya(null), 2500) }
-
   const simpanBaru = async () => {
     if (!formBaru.tarikh) return
     setMenyimpan(true)
     const { error } = await createClient().from('kehadiran_jurulatih').upsert({
       jurulatih_id: id, tarikh: formBaru.tarikh, status: formBaru.status, nota: formBaru.nota || null,
     }, { onConflict: 'jurulatih_id,tarikh' })
-    if (!error) { tunjukPesan('Sesi berjaya ditambah.'); setTambahMode(false); setFormBaru({ tarikh: '', status: 'Hadir', nota: '' }); muatData() }
+    if (!error) { toast.success('Sesi berjaya ditambah.'); setTambahMode(false); setFormBaru({ tarikh: '', status: 'Hadir', nota: '' }); muatData() }
+    else { toast.error('Gagal tambah sesi. Cuba lagi.') }
     setMenyimpan(false)
   }
 
   const simpanEdit = async (sesiId: string) => {
     setMenyimpan(true)
-    await createClient().from('kehadiran_jurulatih').update({ status: editStatus }).eq('id', sesiId)
-    tunjukPesan('Status dikemaskini.')
+    const { error } = await createClient().from('kehadiran_jurulatih').update({ status: editStatus }).eq('id', sesiId)
+    if (error) toast.error('Gagal kemaskini status.')
+    else toast.success('Status dikemaskini.')
     setEditId(null)
     muatData()
     setMenyimpan(false)
@@ -79,8 +79,9 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
 
   const padam = async (sesiId: string) => {
     if (!confirm('Padam rekod sesi ini?')) return
-    await createClient().from('kehadiran_jurulatih').delete().eq('id', sesiId)
-    tunjukPesan('Rekod dipadam.')
+    const { error } = await createClient().from('kehadiran_jurulatih').delete().eq('id', sesiId)
+    if (error) toast.error('Gagal padam rekod.')
+    else toast.success('Rekod dipadam.')
     muatData()
   }
 
@@ -147,16 +148,6 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
       }}>
         {sesi.length} sesi direkod · <strong>{jumlahHadir} sesi hadir</strong> = asas pengiraan bayaran bulan ini
       </div>
-
-      {pesanBerjaya && (
-        <div style={{
-          background: 'var(--hadir-bg)', border: '1px solid #BBF7D0',
-          borderRadius: '10px', padding: '10px 14px', marginBottom: '12px',
-          fontSize: '13px', color: 'var(--hadir-text)', fontWeight: 600,
-        }}>
-          ✓ {pesanBerjaya}
-        </div>
-      )}
 
       {/* Form Tambah Sesi */}
       {tambahMode && (
@@ -262,7 +253,7 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
                             </button>
                           </>
                         )}
-                        <button onClick={() => padam(s.id)} title="Padam"
+                        <button onClick={() => padam(s.id)} title="Padam" aria-label="Padam sesi"
                           style={{ padding: '5px 8px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '8px', cursor: 'pointer', color: '#9F1239', fontFamily: 'inherit' }}>
                           <Trash2 size={12} />
                         </button>

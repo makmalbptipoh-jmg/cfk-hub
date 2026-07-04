@@ -6,6 +6,7 @@ import { ModalResetKataLaluan } from '@/components/tetapan/ModalResetKataLaluan'
 import { ModalTambahPengguna } from './ModalTambahPengguna'
 import { kemaskiniStatusPengguna } from '@/app/actions/pengguna'
 import { useRouter } from 'next/navigation'
+import { toast } from '@/lib/stores/toast-store'
 
 type Pengguna = {
   id: string
@@ -28,20 +29,14 @@ export function PenggunaKlient({ pengguna, cawangan }: Props) {
   const [modalReset, setModalReset] = useState<{ id: string; nama: string } | null>(null)
   const [modalTambah, setModalTambah] = useState(false)
   const [loading, setLoading] = useState<string | null>(null)
-  const [pesanBerjaya, setPesanBerjaya] = useState<string | null>(null)
-
-  const tunjukPesan = (msg: string) => {
-    setPesanBerjaya(msg)
-    setTimeout(() => setPesanBerjaya(null), 3000)
-  }
 
   const toggleStatus = async (p: Pengguna) => {
     setLoading(p.id)
     const aktifBaharu = p.status !== 'Aktif'
     const { ralat } = await kemaskiniStatusPengguna(p.id, aktifBaharu)
     setLoading(null)
-    if (ralat) { alert(ralat); return }
-    tunjukPesan(`${p.nama} telah di${aktifBaharu ? 'aktifkan' : 'blok'}.`)
+    if (ralat) { toast.error(ralat); return }
+    toast.success(`${p.nama} telah di${aktifBaharu ? 'aktifkan' : 'blok'}.`)
     router.refresh()
   }
 
@@ -67,18 +62,6 @@ export function PenggunaKlient({ pengguna, cawangan }: Props) {
           Tambah Pengguna
         </button>
       </div>
-
-      {/* Toast */}
-      {pesanBerjaya && (
-        <div style={{
-          background: 'var(--hadir-bg)', border: '1px solid #BBF7D0',
-          borderRadius: '12px', padding: '12px 16px',
-          fontSize: '13.5px', color: 'var(--hadir-text)', fontWeight: 600,
-          marginBottom: '16px',
-        }}>
-          ✓ {pesanBerjaya}
-        </div>
-      )}
 
       {/* Senarai */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
@@ -183,7 +166,7 @@ export function PenggunaKlient({ pengguna, cawangan }: Props) {
           onTutup={() => setModalReset(null)}
           onBerjaya={() => {
             setModalReset(null)
-            tunjukPesan('Kata laluan berjaya direset.')
+            toast.success('Kata laluan berjaya direset.')
           }}
         />
       )}
@@ -194,7 +177,7 @@ export function PenggunaKlient({ pengguna, cawangan }: Props) {
           onTutup={() => setModalTambah(false)}
           onBerjaya={() => {
             setModalTambah(false)
-            tunjukPesan('Pengguna baharu berjaya ditambah.')
+            toast.success('Pengguna baharu berjaya ditambah.')
             router.refresh()
           }}
         />

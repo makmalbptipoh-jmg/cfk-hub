@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Plus, Trash2, Wallet, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatRinggit, formatTarikh } from '@/lib/utils'
+import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 
 const KATEGORI = [
   'Sewa',
@@ -269,6 +270,7 @@ export default function PerbelanjaanPage() {
                     <button
                       onClick={() => padam(p.id)}
                       title="Padam"
+                      aria-label={`Padam perbelanjaan ${p.penerangan}`}
                       style={{
                         background: 'none',
                         border: 'none',
@@ -319,6 +321,7 @@ function ModalTambahPerbelanjaan({
   const [cawanganId, setCawanganId] = useState('')
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
+  useTutupEscape(onTutup)
 
   const simpan = async () => {
     if (!penerangan.trim()) { setRalat('Sila isi penerangan perbelanjaan.'); return }
@@ -354,6 +357,9 @@ function ModalTambahPerbelanjaan({
         padding: '20px',
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onTutup() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Tambah Perbelanjaan"
     >
       <div
         style={{
@@ -367,7 +373,7 @@ function ModalTambahPerbelanjaan({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
           <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text)' }}>Tambah Perbelanjaan</h2>
-          <button onClick={onTutup} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
+          <button onClick={onTutup} aria-label="Tutup" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
             <X size={18} />
           </button>
         </div>

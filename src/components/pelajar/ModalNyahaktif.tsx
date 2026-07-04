@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 
 interface ModalNyahaktifProps {
   pelajarId: string
@@ -16,6 +17,7 @@ export function ModalNyahaktif({ pelajarId, namaPelajar, statusSemasa, onTutup }
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
+  useTutupEscape(onTutup)
 
   const isAktif = statusSemasa === 'Aktif'
   const statusBaharu = isAktif ? 'Tidak Aktif' : 'Aktif'
@@ -47,6 +49,9 @@ export function ModalNyahaktif({ pelajarId, namaPelajar, statusSemasa, onTutup }
       padding: '16px',
     }}
       onClick={(e) => { if (e.target === e.currentTarget) onTutup() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={isAktif ? 'Nyahaktifkan Pelajar' : 'Aktifkan Semula Pelajar'}
     >
       <div style={{
         background: 'var(--card)',

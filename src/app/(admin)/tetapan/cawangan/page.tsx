@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Edit2, Check, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from '@/lib/stores/toast-store'
 
 type Cawangan = {
   id: string
@@ -28,7 +29,6 @@ export default function CawanganTetapanPage() {
   const [formBaharu, setFormBaharu] = useState({ nama: '', alamat: '', no_telefon: '' })
   const [menyimpan, setMenyimpan] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
-  const [pesanBerjaya, setPesanBerjaya] = useState<string | null>(null)
 
   const muatData = async () => {
     const { data } = await createClient().from('cawangan').select('id, nama, alamat, no_telefon, status').order('nama')
@@ -37,11 +37,6 @@ export default function CawanganTetapanPage() {
   }
 
   useEffect(() => { muatData() }, [])
-
-  const tunjukPesan = (msg: string) => {
-    setPesanBerjaya(msg)
-    setTimeout(() => setPesanBerjaya(null), 3000)
-  }
 
   const mulaEdit = (c: Cawangan) => {
     setEdit(c.id)
@@ -61,10 +56,10 @@ export default function CawanganTetapanPage() {
       status: editVal.status as 'Aktif' | 'Tidak Aktif' | undefined,
     }).eq('id', id)
     setMenyimpan(false)
-    if (error) { setRalat('Gagal simpan. Cuba lagi.'); return }
+    if (error) { toast.error('Gagal simpan. Cuba lagi.'); return }
     setEdit(null)
     setEditVal({})
-    tunjukPesan('Cawangan berjaya dikemaskini.')
+    toast.success('Cawangan berjaya dikemaskini.')
     muatData()
   }
 
@@ -78,10 +73,10 @@ export default function CawanganTetapanPage() {
       status: 'Aktif',
     })
     setMenyimpan(false)
-    if (error) { setRalat('Gagal simpan. Cuba lagi.'); return }
+    if (error) { toast.error('Gagal simpan. Cuba lagi.'); return }
     setTambah(false)
     setFormBaharu({ nama: '', alamat: '', no_telefon: '' })
-    tunjukPesan('Cawangan baharu berjaya ditambah.')
+    toast.success('Cawangan baharu berjaya ditambah.')
     muatData()
   }
 
@@ -111,17 +106,6 @@ export default function CawanganTetapanPage() {
         </button>
       </div>
 
-      {/* Toast */}
-      {pesanBerjaya && (
-        <div style={{
-          background: 'var(--hadir-bg)', border: '1px solid #BBF7D0',
-          borderRadius: '12px', padding: '12px 16px',
-          fontSize: '13.5px', color: 'var(--hadir-text)', fontWeight: 600,
-          marginBottom: '16px',
-        }}>
-          ✓ {pesanBerjaya}
-        </div>
-      )}
       {ralat && (
         <div style={{
           background: '#FFF1F2', border: '1px solid #FECDD3',

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatRinggit } from '@/lib/utils'
+import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 
 interface Props {
   jurulatihId: string
@@ -23,6 +24,7 @@ export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bi
   const [nota, setNota] = useState('')
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
+  useTutupEscape(onTutup)
 
   const jumlah = bilSesi * kadar
 
@@ -59,7 +61,8 @@ export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bi
       background: 'rgba(0,0,0,0.45)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '20px',
-    }} onClick={(e) => { if (e.target === e.currentTarget) onTutup() }}>
+    }} onClick={(e) => { if (e.target === e.currentTarget) onTutup() }}
+      role="dialog" aria-modal="true" aria-label="Rekod Bayaran Jurulatih">
       <div style={{
         background: 'var(--card)', borderRadius: '20px',
         padding: '28px', width: '100%', maxWidth: '460px',
@@ -70,7 +73,7 @@ export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bi
             <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text)', marginBottom: '3px' }}>Rekod Bayaran Jurulatih</h2>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{namaJurulatih} · {bulan} {tahun}</p>
           </div>
-          <button onClick={onTutup} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
+          <button onClick={onTutup} aria-label="Tutup" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
             <X size={18} />
           </button>
         </div>

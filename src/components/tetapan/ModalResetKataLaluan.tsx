@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, Eye, EyeOff } from 'lucide-react'
 import { resetKataLaluan } from '@/app/actions/pengguna'
+import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 
 interface Props {
   penggunaId: string
@@ -18,6 +19,7 @@ export function ModalResetKataLaluan({ penggunaId, namaPengguna, onTutup, onBerj
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  useTutupEscape(onTutup)
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -39,7 +41,8 @@ export function ModalResetKataLaluan({ penggunaId, namaPengguna, onTutup, onBerj
       background: 'rgba(0,0,0,0.45)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '20px',
-    }} onClick={(e) => { if (e.target === e.currentTarget) onTutup() }}>
+    }} onClick={(e) => { if (e.target === e.currentTarget) onTutup() }}
+      role="dialog" aria-modal="true" aria-label="Reset Kata Laluan">
       <div style={{
         background: 'var(--card)', borderRadius: '20px',
         padding: '28px', width: '100%', maxWidth: '420px',
@@ -52,7 +55,7 @@ export function ModalResetKataLaluan({ penggunaId, namaPengguna, onTutup, onBerj
             </h2>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{namaPengguna}</p>
           </div>
-          <button onClick={onTutup} style={{
+          <button onClick={onTutup} aria-label="Tutup" style={{
             background: 'none', border: 'none',
             color: 'var(--text-muted)', cursor: 'pointer', padding: '4px',
           }}>
@@ -86,6 +89,7 @@ export function ModalResetKataLaluan({ penggunaId, namaPengguna, onTutup, onBerj
             <button
               type="button"
               onClick={() => setTunjuk((t) => !t)}
+              aria-label={tunjuk ? 'Sembunyi kata laluan' : 'Tunjuk kata laluan'}
               style={{
                 position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
                 background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0,

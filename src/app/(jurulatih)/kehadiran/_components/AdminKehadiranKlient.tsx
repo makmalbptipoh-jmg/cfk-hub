@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { formatTarikhPendek } from '@/lib/utils'
+import { toast } from '@/lib/stores/toast-store'
 
 type Cawangan = { id: string; nama: string }
 
@@ -35,7 +36,6 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
   const [editId, setEditId] = useState<string | null>(null)
   const [editStatus, setEditStatus] = useState<string>('')
   const [simpanLoading, setSimpanLoading] = useState(false)
-  const [pesanBerjaya, setPesanBerjaya] = useState<string | null>(null)
 
   const muatRekod = useCallback(async () => {
     if (!tarikh) return
@@ -73,7 +73,6 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
   const mulaEdit = (r: RekodKehadiran) => {
     setEditId(r.id)
     setEditStatus(r.status)
-    setPesanBerjaya(null)
   }
 
   const simpanEdit = async () => {
@@ -87,7 +86,9 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
 
     if (!error) {
       setRekod((prev) => prev.map((r) => r.id === editId ? { ...r, status: editStatus as any } : r))
-      setPesanBerjaya('Rekod berjaya dikemaskini.')
+      toast.success('Rekod berjaya dikemaskini.')
+    } else {
+      toast.error('Gagal kemaskini rekod. Cuba lagi.')
     }
     setEditId(null)
     setSimpanLoading(false)
@@ -160,17 +161,6 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
               <div style={{ fontSize: '12px', color: s.text, marginTop: '2px' }}>{s.label}</div>
             </div>
           ))}
-        </div>
-      )}
-
-      {pesanBerjaya && (
-        <div style={{
-          background: 'var(--hadir-bg)', border: '1px solid #BBF7D0',
-          borderRadius: '10px', padding: '10px 16px',
-          fontSize: '13px', color: 'var(--hadir-text)', fontWeight: 600,
-          marginBottom: '12px',
-        }}>
-          ✓ {pesanBerjaya}
         </div>
       )}
 

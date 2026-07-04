@@ -1,29 +1,25 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 28 Jun 2026 (Sesi 2)
+**Dikemaskini:** 4 Jul 2026 (Sesi 3)
 **Stack:** Next.js 16 + TypeScript + Supabase + Tailwind CSS + Vercel
 
 ---
 
 ## Status Sesi Terkini
 
-**Apa yang dibuat hari ini:**
-- Fix TypeScript errors untuk Vercel build (tambah `Relationships: []` dalam semua table types)
-- Tambah `no_telefon` dalam schema cawangan
-- Fix viewport untuk desktop (buang `maximumScale` dan `userScalable`)
-- Fix jurulatih layout — admin kini dapat full-width view
-- Tambah `suppressHydrationWarning` untuk fix Grammarly extension error
-- Tambah `prefetch={true}` pada sidebar links
-- Setup Supabase projek baru (Singapore region: `jfkmfmjsqbwcgzxiyees.supabase.co`)
-- Run schema + seed data dalam projek Supabase baru
-- Buat akaun Admin (`chessforkids80@gmail.com`)
-- App berjaya login dan build production (`npm run build` berjaya)
-- Push semua perubahan ke GitHub (`makmalbptipoh-jmg/cfk-hub`)
+**Apa yang dibuat hari ini (Episod 13 + persediaan pelancaran):**
+- Toast system global: `src/lib/stores/toast-store.ts` (Zustand) + `src/components/ui/Toaster.tsx` dipasang dalam root layout — 4 jenis (success/error/info/warning) ikut warna notice box design doc
+- Migrasi semua 6 fail dari pattern lama (`pesanBerjaya`/`tunjukPesan`/`alert()`) ke toast baharu; ralat kini juga papar toast merah
+- Audit empty states: semua senarai/jadual sudah patuh design doc seksyen 6 — tiada gap
+- Accessibility: hook `useTutupEscape` (Escape tutup modal) dipasang pada semua 7 modal + `role="dialog"`, `aria-modal`, `aria-label` pada overlay, butang X, butang tunjuk kata laluan, dan butang padam ikon-sahaja
+- Jana ikon PWA (`icon-192.png`, `icon-512.png`) terus dari `icon.svg` guna sharp — langkah manual Chrome tidak diperlukan lagi
+- Cipta semula `.env.local` (folder ini clone baru) dan sahkan sambungan Supabase (4 cawangan seed wujud)
+- `npm run build` berjaya (31 route) + smoke test production mode: `/login` 200, laluan dilindungi redirect betul, manifest + ikon 200
 
 **Apa yang perlu disambung:**
-- Test semua page dalam production mode (`npm start`)
-- Episod 13: Toast system, empty states, accessibility
-- Deploy ke Vercel (login Vercel guna akaun `makmalbptipoh-jmg`)
+- Deploy ke Vercel (login Vercel guna akaun `makmalbptipoh-jmg`) + set env vars dalam Vercel dashboard
+- Uji login penuh dalam production (perlukan kata laluan admin)
+- Tambah secret `DATABASE_URL` dalam GitHub repo settings (untuk backup workflow)
 
 ---
 
