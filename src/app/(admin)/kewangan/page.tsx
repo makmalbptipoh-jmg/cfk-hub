@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { TrendingUp, TrendingDown, Minus, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatRinggit } from '@/lib/utils'
+import { BtnLaporanLHDN } from '@/components/excel/BtnLaporanLHDN'
 
 function bulanInfo(bm: string) {
   const [y, m] = bm.split('-')
@@ -137,6 +138,9 @@ export default function KewanganRingkasanPage() {
         >
           <Plus size={13} /> Rekod Perbelanjaan
         </Link>
+        <div style={{ marginLeft: 'auto' }}>
+          <BtnLaporanLHDN />
+        </div>
       </div>
 
       {loading ? (
