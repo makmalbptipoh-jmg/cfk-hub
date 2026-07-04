@@ -5,6 +5,7 @@ import { Plus, Trash2, Wallet, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatRinggit, formatTarikh } from '@/lib/utils'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
+import { toast } from '@/lib/stores/toast-store'
 
 const KATEGORI = [
   'Sewa',
@@ -298,7 +299,15 @@ export default function PerbelanjaanPage() {
         <ModalTambahPerbelanjaan
           cawangan={cawangan}
           onTutup={() => setModal(false)}
-          onBerjaya={() => { setModal(false); muatData() }}
+          onBerjaya={(tarikhBaru) => {
+            setModal(false)
+            const bulanBaru = tarikhBaru.slice(0, 7)
+            const labelBulan = new Date(tarikhBaru + 'T00:00:00').toLocaleString('ms-MY', { month: 'long', year: 'numeric' })
+            toast.success(`Perbelanjaan disimpan (${labelBulan}).`)
+            // Tukar penapis ke bulan rekod supaya rekod baharu terus kelihatan
+            if (bulanBaru !== bulan) setBulan(bulanBaru)
+            else muatData()
+          }}
         />
       )}
     </div>
@@ -312,7 +321,7 @@ function ModalTambahPerbelanjaan({
 }: {
   cawangan: { id: string; nama: string }[]
   onTutup: () => void
-  onBerjaya: () => void
+  onBerjaya: (tarikh: string) => void
 }) {
   const [tarikh, setTarikh] = useState(new Date().toISOString().split('T')[0])
   const [kategori, setKategori] = useState(KATEGORI[0])
@@ -336,7 +345,7 @@ function ModalTambahPerbelanjaan({
       cawangan_id: cawanganId || null,
     })
     if (error) { setRalat('Gagal simpan. Cuba lagi.'); setLoading(false); return }
-    onBerjaya()
+    onBerjaya(tarikh)
   }
 
   const modalInput = {

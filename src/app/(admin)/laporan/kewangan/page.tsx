@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { TrendingUp, TrendingDown, Minus, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatRinggit, formatTarikh } from '@/lib/utils'
+import { toast } from '@/lib/stores/toast-store'
 
 function bulanInfo(bm: string) {
   const [y, m] = bm.split('-')
@@ -122,6 +123,7 @@ export default function LaporanKewanganPage() {
     a.download = `LaporanKewangan_${nama}_${tahun}.csv`
     a.click()
     URL.revokeObjectURL(url)
+    toast.success('CSV laporan kewangan dimuat turun — semak folder Downloads.')
   }
 
   return (

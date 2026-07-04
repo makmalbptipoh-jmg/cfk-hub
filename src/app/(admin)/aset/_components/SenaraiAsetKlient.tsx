@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Plus, Pencil, Package } from 'lucide-react'
 import { ModalLupusAset } from './ModalLupusAset'
+import { BtnLaporanAset } from '@/components/excel/BtnLaporanAset'
 import { formatRinggit, formatTarikh } from '@/lib/utils'
 
 type Aset = {
@@ -71,24 +72,27 @@ export function SenaraiAsetKlient({ aset, cawangan }: Props) {
             {bilAktif} aset aktif · Nilai: {formatRinggit(nilaiTotal)}
           </p>
         </div>
-        <Link
-          href="/aset/baharu"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '10px 16px',
-            background: 'var(--accent)',
-            border: 'none',
-            borderRadius: '12px',
-            fontSize: '13.5px',
-            fontWeight: 700,
-            color: 'var(--accent-text)',
-            textDecoration: 'none',
-          }}
-        >
-          <Plus size={14} /> Tambah Aset
-        </Link>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <BtnLaporanAset />
+          <Link
+            href="/aset/baharu"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '10px 16px',
+              background: 'var(--accent)',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '13.5px',
+              fontWeight: 700,
+              color: 'var(--accent-text)',
+              textDecoration: 'none',
+            }}
+          >
+            <Plus size={14} /> Tambah Aset
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
