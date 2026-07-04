@@ -5,6 +5,23 @@
 
 ---
 
+## ⚡ MULA SINI SESI 5
+
+**Perkara PERTAMA sesi akan datang — sahkan fix PDF:**
+- Punca PDF gagal ("Gagal jana PDF"): CSP `script-src` tiada `'wasm-unsafe-eval'` — @react-pdf/renderer v4 guna enjin Yoga (WebAssembly). Fix di-push commit `450c56e` (4 Jul malam) tetapi **BELUM disahkan oleh user di production**.
+- Langkah sahkan: buka cfk-hub.vercel.app → Ctrl+Shift+R sekali → Bayaran → klik butang PDF mana-mana resit → toast hijau + fail turun = OK. Jika masih gagal, semak console browser (F12) dan laporkan ralat sebenar.
+
+**Tertunggak user (bawa dari Sesi 4):**
+1. Isi `scripts/data/pelajar-placeholder.csv` (22 pelajar Klebang: ibu bapa/telefon/alamat) → `node scripts/update-pelajar-placeholder.mjs --commit`
+2. Cipta akaun jurulatih (perlu nama/emel/cawangan daripada user)
+3. Pasang PWA pada telefon jurulatih
+4. (Pilihan) Secret `DATABASE_URL` di GitHub untuk backup mingguan
+5. Rekod duplicate perbelanjaan sudah dipadam; pakej adik-beradik + laporan aset Excel + S-13a semua live tapi belum diuji user di production
+
+**Soalan terbuka kepada user:** adakah jurulatih patut boleh rekod kehadiran SENDIRI dari telefon (self-service)? Page admin untuk daftar jurulatih (`/jurulatih/baharu`) dan kehadiran jurulatih (`/jurulatih/[id]/kehadiran`) sudah wujud.
+
+---
+
 ## Status Sesi 4 (4 Jul 2026)
 
 **Semua sudah LIVE di production:**
