@@ -17,7 +17,21 @@ type PelajarDipilih = {
   no_telefon: string
 }
 
+type AhliKeluarga = {
+  id: string
+  nama_penuh: string
+  cawangan: string
+}
+
+type ResitDijana = {
+  nombor_resit: string
+  nama_pelajar: string
+  cawangan: string
+}
+
 const YURAN_PENDAFTARAN = 50
+// PD-008: pakej adik-beradik = RM50 seorang, resit berasingan setiap pelajar
+const KADAR_PAKEJ_ADIK_BERADIK = 50
 
 const gayaInput = {
   width: '100%', padding: '10px 14px',
@@ -55,7 +69,7 @@ export default function RekodBayaranPage() {
   const [langkah, setLangkah] = useState(1)
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
-  const [nomorResitBaru, setNomorResitBaru] = useState<string | null>(null)
+  const [resitDijana, setResitDijana] = useState<ResitDijana[]>([])
 
   // Data form
   const [pelajar, setPelajar] = useState<PelajarDipilih | null>(null)
@@ -65,24 +79,41 @@ export default function RekodBayaranPage() {
   const [kaedah, setKaedah] = useState<'Tunai' | 'Transfer'>('Tunai')
   const [tarikhBayar, setTarikhBayar] = useState(new Date().toISOString().split('T')[0])
 
+  // Pakej adik-beradik (PD-008)
+  const [adikBeradik, setAdikBeradik] = useState<AhliKeluarga[]>([])
+  const [pakej, setPakej] = useState(false)
+  const [ahliDipilih, setAhliDipilih] = useState<string[]>([])
+
   // Kira jumlah automatik
   const bulanObj = bulanMYToLabel(bulanInput)
 
   const jumlahAuto = () => {
     if (jenis === 'Pendaftaran') return YURAN_PENDAFTARAN
     if (jenis === 'Personal') return 150
+    if (pakej) return KADAR_PAKEJ_ADIK_BERADIK
     if (!pelajar) return 70
     return kirYuranBulanan(pelajar.jenis_kelas === 'Kumpulan+Personal' ? 'Kumpulan' : pelajar.jenis_kelas)
   }
 
+  // Jumlah SEORANG (bila pakej aktif, setiap pelajar dapat resit berasingan dengan jumlah ini)
   const jumlahAkhir = jumlahCustom ? parseFloat(jumlahCustom) : jumlahAuto()
 
+  // Senarai peserta yang akan dijana resit
+  const peserta: AhliKeluarga[] = pelajar
+    ? pakej && jenis === 'Kumpulan'
+      ? [
+          { id: pelajar.id, nama_penuh: pelajar.nama_penuh, cawangan: pelajar.cawangan },
+          ...adikBeradik.filter((a) => ahliDipilih.includes(a.id)),
+        ]
+      : [{ id: pelajar.id, nama_penuh: pelajar.nama_penuh, cawangan: pelajar.cawangan }]
+    : []
+
   const pilihPelajar = async (p: any) => {
-    // Fetch full record to get jenis_kelas dan cawangan nama
+    // Fetch full record to get jenis_kelas, cawangan nama & adik-beradik
     const supabase = createClient()
     const { data } = await supabase
       .from('pelajar')
-      .select('id, nama_penuh, jenis_kelas, no_telefon, cawangan:cawangan_daftar_id(nama)')
+      .select('id, nama_penuh, jenis_kelas, no_telefon, keluarga_id, cawangan:cawangan_daftar_id(nama)')
       .eq('id', p.id)
       .single()
 
@@ -98,6 +129,29 @@ export default function RekodBayaranPage() {
     })
     if (jenisPelajar === 'Personal') setJenis('Personal')
     else setJenis('Kumpulan')
+
+    // Reset & muat adik-beradik jika ada kaitan keluarga
+    setPakej(false)
+    setAhliDipilih([])
+    setJumlahCustom('')
+    if (data?.keluarga_id) {
+      const { data: ahli } = await supabase
+        .from('pelajar')
+        .select('id, nama_penuh, cawangan:cawangan_daftar_id(nama)')
+        .eq('keluarga_id', data.keluarga_id)
+        .eq('status', 'Aktif')
+        .neq('id', p.id)
+        .order('nama_penuh')
+      setAdikBeradik(
+        (ahli ?? []).map((a: any) => ({
+          id: a.id,
+          nama_penuh: a.nama_penuh,
+          cawangan: a.cawangan?.nama ?? '—',
+        }))
+      )
+    } else {
+      setAdikBeradik([])
+    }
   }
 
   const validLangkah1 = pelajar !== null && !isNaN(jumlahAkhir) && jumlahAkhir > 0
@@ -109,29 +163,44 @@ export default function RekodBayaranPage() {
   }
 
   const jana = async () => {
-    if (!pelajar) return
+    if (!pelajar || peserta.length === 0) return
     setLoading(true)
     setRalat(null)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    const { data, error } = await supabase.from('resit').insert({
-      pelajar_id: pelajar.id,
-      jenis,
-      bulan_bayaran: bulanObj.nama,
-      tahun_bayaran: bulanObj.tahun,
-      jumlah: jumlahAkhir,
-      kaedah_bayaran: kaedah,
-      tarikh_bayar: tarikhBayar,
-      direkod_oleh: user?.id ?? null,
-    }).select('nombor_resit').single()
+    // Resit BERASINGAN untuk setiap peserta (PD-008)
+    const { data, error } = await supabase
+      .from('resit')
+      .insert(
+        peserta.map((p) => ({
+          pelajar_id: p.id,
+          jenis,
+          bulan_bayaran: bulanObj.nama,
+          tahun_bayaran: bulanObj.tahun,
+          jumlah: jumlahAkhir,
+          kaedah_bayaran: kaedah,
+          tarikh_bayar: tarikhBayar,
+          direkod_oleh: user?.id ?? null,
+        }))
+      )
+      .select('nombor_resit, pelajar_id')
 
-    if (error) {
+    if (error || !data) {
       setRalat('Gagal simpan resit. Sila cuba lagi.')
       setLoading(false)
       return
     }
-    setNomorResitBaru(data?.nombor_resit ?? null)
+    setResitDijana(
+      data.map((r) => {
+        const p = peserta.find((x) => x.id === r.pelajar_id)
+        return {
+          nombor_resit: r.nombor_resit,
+          nama_pelajar: p?.nama_penuh ?? '—',
+          cawangan: p?.cawangan ?? '—',
+        }
+      })
+    )
     setLangkah(3)
     setLoading(false)
   }
@@ -201,6 +270,69 @@ export default function RekodBayaranPage() {
             )}
           </div>
 
+          {/* Pakej Adik-Beradik (PD-008) */}
+          {pelajar && jenis === 'Kumpulan' && adikBeradik.length > 0 && (
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '24px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: pakej ? '14px' : 0 }}>
+                <input
+                  type="checkbox"
+                  checked={pakej}
+                  onChange={(e) => {
+                    setPakej(e.target.checked)
+                    setJumlahCustom('')
+                    setAhliDipilih(e.target.checked ? adikBeradik.map((a) => a.id) : [])
+                  }}
+                  style={{ width: '16px', height: '16px', accentColor: '#84CC16', cursor: 'pointer' }}
+                />
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>
+                    Pakej Adik-Beradik — RM{KADAR_PAKEJ_ADIK_BERADIK} seorang
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Resit berasingan dijana untuk setiap pelajar
+                  </div>
+                </div>
+              </label>
+              {pakej && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {adikBeradik.map((a) => {
+                    const dipilih = ahliDipilih.includes(a.id)
+                    return (
+                      <label
+                        key={a.id}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '10px',
+                          padding: '9px 12px', borderRadius: '10px', cursor: 'pointer',
+                          border: `1.5px solid ${dipilih ? 'var(--accent)' : 'var(--border)'}`,
+                          background: dipilih ? '#F7FEE7' : 'transparent',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={dipilih}
+                          onChange={(e) =>
+                            setAhliDipilih((prev) =>
+                              e.target.checked ? [...prev, a.id] : prev.filter((x) => x !== a.id)
+                            )
+                          }
+                          style={{ width: '15px', height: '15px', accentColor: '#84CC16', cursor: 'pointer' }}
+                        />
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{a.nama_penuh}</div>
+                          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{a.cawangan}</div>
+                        </div>
+                      </label>
+                    )
+                  })}
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    {peserta.length} pelajar × RM{jumlahAkhir.toFixed(2)} ={' '}
+                    <strong>RM{(peserta.length * jumlahAkhir).toFixed(2)}</strong>
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Jenis & Bulan */}
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '24px' }}>
             <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginBottom: '16px' }}>Jenis & Bulan Bayaran</h2>
@@ -211,7 +343,7 @@ export default function RekodBayaranPage() {
                 {(['Kumpulan', 'Personal', 'Pendaftaran'] as const).map((j) => {
                   const aktif = jenis === j
                   return (
-                    <button key={j} type="button" onClick={() => { setJenis(j); setJumlahCustom('') }}
+                    <button key={j} type="button" onClick={() => { setJenis(j); setJumlahCustom(''); if (j !== 'Kumpulan') { setPakej(false); setAhliDipilih([]) } }}
                       style={{
                         flex: 1, padding: '9px 8px', borderRadius: '10px',
                         border: `2px solid ${aktif ? 'var(--accent)' : 'var(--border)'}`,
@@ -234,7 +366,7 @@ export default function RekodBayaranPage() {
                 <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>{bulanObj.label}</p>
               </div>
               <div>
-                <label style={labelInput}>Jumlah (RM)</label>
+                <label style={labelInput}>{pakej ? 'Jumlah Seorang (RM)' : 'Jumlah (RM)'}</label>
                 <input
                   type="number" min="0" step="10"
                   value={jumlahCustom || jumlahAuto()}
@@ -352,15 +484,18 @@ export default function RekodBayaranPage() {
 
               <div style={{ borderTop: '1.5px solid var(--border)', paddingTop: '16px', marginBottom: '16px' }}>
                 {[
-                  { label: 'Nama Pelajar', nilai: pelajar.nama_penuh },
+                  {
+                    label: peserta.length > 1 ? `Pelajar (${peserta.length} resit berasingan)` : 'Nama Pelajar',
+                    nilai: peserta.map((p) => p.nama_penuh).join(', '),
+                  },
                   { label: 'Cawangan', nilai: pelajar.cawangan },
-                  { label: 'Jenis Bayaran', nilai: jenis },
+                  { label: 'Jenis Bayaran', nilai: peserta.length > 1 ? `${jenis} (Pakej Adik-Beradik)` : jenis },
                   { label: 'Bulan', nilai: bulanObj.label },
                   { label: 'Kaedah', nilai: kaedah },
                 ].map((r) => (
-                  <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>{r.label}</span>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{r.nilai}</span>
+                  <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '12.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{r.label}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', textAlign: 'right' }}>{r.nilai}</span>
                   </div>
                 ))}
               </div>
@@ -370,8 +505,12 @@ export default function RekodBayaranPage() {
                 borderRadius: '12px', padding: '16px 20px',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Jumlah Dibayar</span>
-                <span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>RM {jumlahAkhir.toFixed(2)}</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  {peserta.length > 1 ? `Jumlah Dibayar (${peserta.length} × RM${jumlahAkhir.toFixed(2)})` : 'Jumlah Dibayar'}
+                </span>
+                <span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>
+                  RM {(peserta.length * jumlahAkhir).toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
@@ -416,32 +555,46 @@ export default function RekodBayaranPage() {
             <Check size={28} style={{ color: 'var(--hadir-text)' }} />
           </div>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', marginBottom: '8px' }}>
-            Resit Berjaya Dijana!
+            {resitDijana.length > 1 ? `${resitDijana.length} Resit Berjaya Dijana!` : 'Resit Berjaya Dijana!'}
           </h2>
-          {nomorResitBaru && (
-            <p style={{ fontSize: '15px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)', marginBottom: '4px' }}>
-              {nomorResitBaru}
-            </p>
-          )}
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '28px' }}>
-            {pelajar.nama_penuh} · {bulanObj.label} · RM {jumlahAkhir.toFixed(2)}
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+            {bulanObj.label} · RM {jumlahAkhir.toFixed(2)} seorang
+            {resitDijana.length > 1 && ` · Jumlah RM ${(resitDijana.length * jumlahAkhir).toFixed(2)}`}
           </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+            {resitDijana.map((r) => (
+              <div
+                key={r.nombor_resit}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
+                  background: 'var(--bg)', border: '1px solid var(--border)',
+                  borderRadius: '12px', padding: '10px 14px', textAlign: 'left',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{r.nama_pelajar}</div>
+                  <div style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>{r.nombor_resit}</div>
+                </div>
+                <BtnUnduhResit
+                  kecil
+                  data={{
+                    nombor_resit: r.nombor_resit,
+                    nama_pelajar: r.nama_pelajar,
+                    cawangan: r.cawangan,
+                    jenis,
+                    bulan_bayaran: bulanObj.nama,
+                    tahun_bayaran: bulanObj.tahun,
+                    jumlah: jumlahAkhir,
+                    kaedah_bayaran: kaedah,
+                    tarikh_bayar: tarikhBayar,
+                    status: 'Aktif',
+                  }}
+                />
+              </div>
+            ))}
+          </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {nomorResitBaru && (
-              <BtnUnduhResit data={{
-                nombor_resit: nomorResitBaru,
-                nama_pelajar: pelajar.nama_penuh,
-                cawangan: pelajar.cawangan,
-                jenis,
-                bulan_bayaran: bulanObj.nama,
-                tahun_bayaran: bulanObj.tahun,
-                jumlah: jumlahAkhir,
-                kaedah_bayaran: kaedah,
-                tarikh_bayar: tarikhBayar,
-                status: 'Aktif',
-              }} />
-            )}
-            <button onClick={() => { setLangkah(1); setPelajar(null); setJumlahCustom(''); setNomorResitBaru(null) }}
+            <button onClick={() => { setLangkah(1); setPelajar(null); setJumlahCustom(''); setResitDijana([]); setPakej(false); setAhliDipilih([]); setAdikBeradik([]) }}
               style={{
                 padding: '9px 18px',
                 background: 'var(--bg)', border: '1.5px solid var(--border)',

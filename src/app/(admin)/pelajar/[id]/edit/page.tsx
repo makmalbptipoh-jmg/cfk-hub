@@ -8,6 +8,7 @@ import { z } from 'zod'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { kirYuranBulanan, formatRinggit } from '@/lib/utils'
+import { KaitanAdikBeradik } from '@/components/pelajar/KaitanAdikBeradik'
 
 type Cawangan = { id: string; nama: string }
 
@@ -212,6 +213,8 @@ export default function EditPelajarPage() {
             {errors.cawangan_daftar_id && <p style={{ fontSize: '12px', color: '#EF4444', marginTop: '4px' }}>{errors.cawangan_daftar_id.message}</p>}
           </div>
         </div>
+
+        <KaitanAdikBeradik pelajarId={id} />
 
         {ralat && (
           <div style={{
