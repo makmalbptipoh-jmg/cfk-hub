@@ -11,6 +11,8 @@ type Aset = {
   id: string
   nama: string
   kategori: string | null
+  kuantiti: number
+  harga_seunit: number | null
   nilai_asal: number | null
   tarikh_beli: string | null
   cawangan_id: string | null
@@ -144,7 +146,7 @@ export function SenaraiAsetKlient({ aset, cawangan }: Props) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                {['Nama', 'Kategori', 'Nilai', 'Cawangan', 'Tarikh Beli', 'Status', 'Tindakan'].map((h) => (
+                {['Nama', 'Kategori', 'Unit', 'Harga/Unit', 'Jumlah Nilai', 'Cawangan', 'Tarikh Beli', 'Status', 'Tindakan'].map((h) => (
                   <th
                     key={h}
                     style={{
@@ -181,7 +183,13 @@ export function SenaraiAsetKlient({ aset, cawangan }: Props) {
                   <td style={{ padding: '11px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>
                     {a.kategori ?? '—'}
                   </td>
-                  <td style={{ padding: '11px 14px', fontSize: '13.5px', fontWeight: 700, color: 'var(--text)' }}>
+                  <td style={{ padding: '11px 14px', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>
+                    {a.kuantiti ?? 1}
+                  </td>
+                  <td style={{ padding: '11px 14px', fontSize: '12.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    {a.harga_seunit != null ? formatRinggit(a.harga_seunit) : '—'}
+                  </td>
+                  <td style={{ padding: '11px 14px', fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>
                     {a.nilai_asal != null ? formatRinggit(a.nilai_asal) : '—'}
                   </td>
                   <td style={{ padding: '11px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>

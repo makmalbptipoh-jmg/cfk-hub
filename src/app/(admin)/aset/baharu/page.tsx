@@ -33,7 +33,8 @@ export default function TambahAsetPage() {
 
   const [nama, setNama] = useState('')
   const [kategori, setKategori] = useState(KATEGORI_ASET[0])
-  const [nilaiAsal, setNilaiAsal] = useState('')
+  const [kuantiti, setKuantiti] = useState('1')
+  const [hargaSeunit, setHargaSeunit] = useState('')
   const [tarikhBeli, setTarikhBeli] = useState('')
   const [cawanganId, setCawanganId] = useState('')
   const [nota, setNota] = useState('')
@@ -49,6 +50,9 @@ export default function TambahAsetPage() {
       .then(({ data }) => setCawangan(data ?? []))
   }, [])
 
+  const unit = Math.max(1, Math.floor(+kuantiti || 1))
+  const jumlahNilai = hargaSeunit ? unit * +hargaSeunit : null
+
   const simpan = async () => {
     if (!nama.trim()) { setRalat('Sila isi nama aset.'); return }
     setLoading(true)
@@ -56,7 +60,9 @@ export default function TambahAsetPage() {
     const { error } = await createClient().from('aset').insert({
       nama: nama.trim(),
       kategori: kategori || null,
-      nilai_asal: nilaiAsal ? +nilaiAsal : null,
+      kuantiti: unit,
+      harga_seunit: hargaSeunit ? +hargaSeunit : null,
+      nilai_asal: jumlahNilai,
       tarikh_beli: tarikhBeli || null,
       cawangan_id: cawanganId || null,
       nota: nota.trim() || null,
@@ -107,24 +113,50 @@ export default function TambahAsetPage() {
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+        <div>
+          <label style={gayaLabel}>Kategori</label>
+          <select value={kategori} onChange={(e) => setKategori(e.target.value)} style={gayaInput}>
+            {KATEGORI_ASET.map((k) => <option key={k} value={k}>{k}</option>)}
+          </select>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
           <div>
-            <label style={gayaLabel}>Kategori</label>
-            <select value={kategori} onChange={(e) => setKategori(e.target.value)} style={gayaInput}>
-              {KATEGORI_ASET.map((k) => <option key={k} value={k}>{k}</option>)}
-            </select>
+            <label style={gayaLabel}>Kuantiti (Unit)</label>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={kuantiti}
+              onChange={(e) => setKuantiti(e.target.value)}
+              style={gayaInput}
+            />
           </div>
           <div>
-            <label style={gayaLabel}>Nilai Asal (RM)</label>
+            <label style={gayaLabel}>Harga Seunit (RM)</label>
             <input
               type="number"
               min="0"
               step="0.01"
-              value={nilaiAsal}
-              onChange={(e) => setNilaiAsal(e.target.value)}
+              value={hargaSeunit}
+              onChange={(e) => setHargaSeunit(e.target.value)}
               placeholder="0.00"
               style={gayaInput}
             />
+          </div>
+          <div>
+            <label style={gayaLabel}>Jumlah Nilai (RM)</label>
+            <div
+              style={{
+                ...gayaInput,
+                background: 'var(--bg)',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              {jumlahNilai != null ? jumlahNilai.toFixed(2) : '—'}
+            </div>
           </div>
         </div>
 

@@ -362,6 +362,8 @@ export interface Database {
           id: string
           nama: string
           kategori: string | null
+          kuantiti: number
+          harga_seunit: number | null
           nilai_asal: number | null
           tarikh_beli: string | null
           cawangan_id: string | null
@@ -375,6 +377,8 @@ export interface Database {
           id?: string
           nama: string
           kategori?: string | null
+          kuantiti?: number
+          harga_seunit?: number | null
           nilai_asal?: number | null
           tarikh_beli?: string | null
           cawangan_id?: string | null
@@ -388,6 +392,8 @@ export interface Database {
           id?: string
           nama?: string
           kategori?: string | null
+          kuantiti?: number
+          harga_seunit?: number | null
           nilai_asal?: number | null
           tarikh_beli?: string | null
           cawangan_id?: string | null

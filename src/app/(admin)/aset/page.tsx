@@ -9,7 +9,7 @@ export default async function AsetPage() {
   const [{ data: aset }, { data: cawangan }] = await Promise.all([
     supabase
       .from('aset')
-      .select('id, nama, kategori, nilai_asal, tarikh_beli, cawangan_id, status, sebab_lupus, tarikh_lupus, cawangan:cawangan_id(nama)')
+      .select('id, nama, kategori, kuantiti, harga_seunit, nilai_asal, tarikh_beli, cawangan_id, status, sebab_lupus, tarikh_lupus, cawangan:cawangan_id(nama)')
       .order('created_at', { ascending: false }),
     supabase.from('cawangan').select('id, nama').eq('status', 'Aktif').order('nama'),
   ])
