@@ -103,18 +103,32 @@ export function ProfilJurulatihKlient({ jurulatih: j, statBulan, kehadiran, baya
             </div>
           </div>
         </div>
-        <Link href={`/jurulatih/${j.id}/edit`}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '9px 14px',
-            background: 'var(--accent)', border: 'none',
-            borderRadius: '10px', fontSize: '13px', fontWeight: 700,
-            color: 'var(--accent-text)', textDecoration: 'none',
-          }}
-        >
-          <Edit2 size={14} />
-          Edit
-        </Link>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Link href={`/jurulatih/${j.id}/kehadiran`}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '9px 14px',
+              background: 'var(--card)', border: '1.5px solid var(--border)',
+              borderRadius: '10px', fontSize: '13px', fontWeight: 700,
+              color: 'var(--text)', textDecoration: 'none',
+            }}
+          >
+            <CalendarCheck size={14} />
+            Rekod Kehadiran
+          </Link>
+          <Link href={`/jurulatih/${j.id}/edit`}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '9px 14px',
+              background: 'var(--accent)', border: 'none',
+              borderRadius: '10px', fontSize: '13px', fontWeight: 700,
+              color: 'var(--accent-text)', textDecoration: 'none',
+            }}
+          >
+            <Edit2 size={14} />
+            Edit
+          </Link>
+        </div>
       </div>
 
       {/* Statistik 3 Bulan */}
@@ -229,7 +243,16 @@ export function ProfilJurulatihKlient({ jurulatih: j, statBulan, kehadiran, baya
           kehadiran.length === 0 ? (
             <div style={{ padding: '48px', textAlign: 'center' }}>
               <CalendarCheck size={32} style={{ color: 'var(--border)', margin: '0 auto 12px' }} />
-              <p style={{ fontSize: '13.5px', color: 'var(--text-muted)' }}>Tiada rekod kehadiran</p>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginBottom: '14px' }}>Tiada rekod kehadiran</p>
+              <Link href={`/jurulatih/${j.id}/kehadiran`}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 16px',
+                  background: 'var(--accent)', borderRadius: '10px', fontSize: '13px',
+                  fontWeight: 700, color: 'var(--accent-text)', textDecoration: 'none',
+                }}
+              >
+                + Rekod Kehadiran
+              </Link>
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
