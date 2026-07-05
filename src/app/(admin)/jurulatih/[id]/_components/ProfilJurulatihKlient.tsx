@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Edit2, CalendarCheck, Wallet } from 'lucide-react'
+import { BtnSlipGaji } from '@/components/pdf/BtnSlipGaji'
 import { formatRinggit, formatTarikh } from '@/lib/utils'
 
 type Jurulatih = {
@@ -316,7 +317,7 @@ export function ProfilJurulatihKlient({ jurulatih: j, statBulan, kehadiran, baya
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                  {['Bulan', 'Sesi', 'Kadar', 'Jumlah', 'Status'].map((h) => (
+                  {['Bulan', 'Sesi', 'Kadar', 'Jumlah', 'Status', ''].map((h) => (
                     <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                   ))}
                 </tr>
@@ -334,6 +335,22 @@ export function ProfilJurulatihKlient({ jurulatih: j, statBulan, kehadiran, baya
                         background: b.status === 'Sudah Bayar' ? 'var(--hadir-bg)' : '#FFF7ED',
                         color: b.status === 'Sudah Bayar' ? 'var(--hadir-text)' : '#C2410C',
                       }}>{b.status}</span>
+                    </td>
+                    <td style={{ padding: '11px 16px' }}>
+                      <BtnSlipGaji
+                        data={{
+                          nama_jurulatih: j.nama_penuh,
+                          no_ic: j.no_ic,
+                          bulan_bayaran: b.bulan_bayaran,
+                          tahun_bayaran: b.tahun_bayaran,
+                          bilangan_sesi: b.bilangan_sesi,
+                          kadar_per_sesi: b.kadar_per_sesi,
+                          jumlah: b.jumlah,
+                          tarikh_bayar: b.tarikh_bayar,
+                          status: b.status,
+                          nota: null,
+                        }}
+                      />
                     </td>
                   </tr>
                 ))}
