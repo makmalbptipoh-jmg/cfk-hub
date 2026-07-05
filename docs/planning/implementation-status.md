@@ -29,6 +29,11 @@
 - Borang Edit Jurulatih kini ada seksyen "Akaun Login" — dropdown pengguna_profil bukan-admin untuk set `jurulatih.pengguna_id` (kaitan akaun ↔ profil jurulatih)
 - Migration `scripts/sql/jurulatih-self-service.sql`: fungsi `jurulatih_id_semasa()` + 3 polisi RLS kehadiran_jurulatih (SELECT sendiri; INSERT/UPDATE sendiri dalam julat ±1 hari untuk zon masa) — **WAJIB run sebelum jurulatih guna page ini**
 - Aliran penuh: cipta akaun di Tetapan → Pengguna → kaitkan dalam Edit Jurulatih → jurulatih login di telefon → tab Sesi Saya
+- Diuji hujung-ke-hujung dengan akaun ujian `ujian.jurulatih@cfkhub.test` (jurulatih JURULATIH UJIAN `614d7711`): rekod hari ini ✅, ubah status ✅, tarikh lampau DISEKAT ✅, kewangan DISEKAT ✅, jurulatih lain DISEKAT ✅, padam DISEKAT ✅. **Akaun ujian masih wujud — padam bila user dah puas hati** (auth user + jurulatih + 1 rekod sesi 5 Jul Cuti).
+
+**Histori Makluman (S-06, FR-45) — jurang audit terakhir, kini 100%:**
+- Jadual `makluman_histori` + RLS (migration `scripts/sql/makluman-histori.sql` — **sudah di-run user**, RLS diuji: jurulatih hantar sendiri ✅, atas nama lain DISEKAT ✅)
+- Rekod auto bila Salin Teks / klik WA dalam page Makluman; page `/makluman/histori` dengan penapis bulan+jenis, kembang teks penuh, admin nampak penghantar
 
 ---
 
