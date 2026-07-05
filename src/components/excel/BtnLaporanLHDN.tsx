@@ -25,6 +25,7 @@ type ResitRow = {
   jumlah: number
   tarikh_bayar: string
   bulan_bayaran: string
+  kaedah_bayaran: string | null
   pelajar: { nama_penuh: string } | null
 }
 
@@ -52,7 +53,7 @@ export function BtnLaporanLHDN() {
       const [{ data: resitData, error: e1 }, { data: belanjaData, error: e2 }] = await Promise.all([
         supabase
           .from('resit')
-          .select('nombor_resit, jenis, jumlah, tarikh_bayar, bulan_bayaran, pelajar:pelajar_id(nama_penuh)')
+          .select('nombor_resit, jenis, jumlah, tarikh_bayar, bulan_bayaran, kaedah_bayaran, pelajar:pelajar_id(nama_penuh)')
           .eq('status', 'Aktif')
           .gte('tarikh_bayar', `${tahun}-01-01`)
           .lte('tarikh_bayar', `${tahun}-12-31`)
@@ -85,6 +86,7 @@ export function BtnLaporanLHDN() {
       binaSheetBulanan(wb, tahun, resit)
       binaSheetPendapatan(wb, tahun, resit)
       binaSheetPerbelanjaan(wb, tahun, belanja)
+      binaSheetRekonsiliasi(wb, tahun, resit, belanja)
 
       const buffer = await wb.xlsx.writeBuffer()
       const blob = new Blob([buffer], {
@@ -314,6 +316,107 @@ function binaSheetPendapatan(wb: any, tahun: number, resit: ResitRow[]) {
   ws.getCell(`F${r}`).numFmt = FMT_RM
   ws.getCell(`F${r}`).font = { bold: true }
   ws.getCell(`F${r}`).border = { top: { style: 'thin' }, bottom: { style: 'double' } }
+}
+
+function binaSheetRekonsiliasi(wb: any, tahun: number, resit: ResitRow[], belanja: BelanjaRow[]) {
+  const ws = wb.addWorksheet('Rekonsiliasi Bank')
+  ws.columns = [
+    { width: 14 }, // Bulan
+    { width: 18 }, // Masuk Bank (Transfer)
+    { width: 17 }, // Pendapatan Tunai
+    { width: 17 }, // Perbelanjaan
+    { width: 19 }, // Pergerakan Dijangka
+    { width: 24 }, // Baki Penyata Bank (isi manual)
+    { width: 15 }, // Beza
+  ]
+  tajukSheet(ws, 'Rekonsiliasi Bank Bulanan', tahun, 'G')
+
+  const KUNING = 'FFFEF3C7'
+
+  // Arahan
+  ws.mergeCells('A7:G7')
+  ws.getCell('A7').value =
+    'ARAHAN: Isi sel KUNING dari penyata bank Maybank (baki akhir setiap bulan). Kolum BEZA dikira automatik — ' +
+    'beza besar bermakna ada transaksi belum direkod, bayaran tunai, atau perbezaan masa (timing).'
+  ws.getCell('A7').font = { size: 9, italic: true, color: { argb: 'FF92400E' } }
+  ws.getCell('A7').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: KUNING } }
+  ws.getCell('A7').alignment = { wrapText: true }
+  ws.getRow(7).height = 30
+
+  // Baki awal tahun (isi manual)
+  ws.getCell('A8').value = `Baki Bank pada 1 Januari ${tahun} (isi dari penyata):`
+  ws.getCell('A8').font = { bold: true, size: 10 }
+  ws.mergeCells('A8:E8')
+  ws.getCell('F8').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: KUNING } }
+  ws.getCell('F8').numFmt = FMT_RM
+  ws.getCell('F8').border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
+
+  barisKepala(ws, 9, [
+    'Bulan',
+    'Masuk Bank (RM)',
+    'Tunai (RM)',
+    'Belanja (RM)',
+    'Pergerakan (RM)',
+    'Baki Penyata Bank (RM)',
+    'Beza (RM)',
+  ])
+
+  // Agregat bulanan: Transfer masuk bank; Tunai tidak; belanja dianggap keluar bank
+  const masukBank = Array(12).fill(0)
+  const tunai = Array(12).fill(0)
+  const keluar = Array(12).fill(0)
+  for (const rst of resit) {
+    const m = new Date(rst.tarikh_bayar + 'T00:00:00').getMonth()
+    if (rst.kaedah_bayaran === 'Tunai') tunai[m] += rst.jumlah
+    else masukBank[m] += rst.jumlah
+  }
+  for (const b of belanja) {
+    const m = new Date(b.tarikh + 'T00:00:00').getMonth()
+    keluar[m] += b.jumlah
+  }
+
+  let r = 10
+  BULAN_MS.forEach((nama, i) => {
+    ws.getCell(`A${r}`).value = nama
+    ws.getCell(`B${r}`).value = masukBank[i]
+    ws.getCell(`C${r}`).value = tunai[i]
+    ws.getCell(`D${r}`).value = keluar[i]
+    // Pergerakan dijangka dalam bank = masuk bank - belanja
+    ws.getCell(`E${r}`).value = { formula: `B${r}-D${r}` }
+    // Baki penyata bank — isi manual (kuning)
+    ws.getCell(`F${r}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: KUNING } }
+    ws.getCell(`F${r}`).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
+    // Beza = baki bulan ini - baki sebelum - pergerakan dijangka
+    const bakiSebelum = r === 10 ? 'F8' : `F${r - 1}`
+    ws.getCell(`G${r}`).value = { formula: `IF(F${r}="","",F${r}-${bakiSebelum}-E${r})` }
+    for (const col of ['B', 'C', 'D', 'E', 'F', 'G']) ws.getCell(`${col}${r}`).numFmt = FMT_RM
+    r++
+  })
+
+  // Jumlah tahunan
+  ws.getCell(`A${r}`).value = 'JUMLAH'
+  ws.getCell(`A${r}`).font = { bold: true }
+  const jumlah = [
+    masukBank.reduce((s: number, n: number) => s + n, 0),
+    tunai.reduce((s: number, n: number) => s + n, 0),
+    keluar.reduce((s: number, n: number) => s + n, 0),
+  ]
+  ;[...jumlah, jumlah[0] - jumlah[2]].forEach((v, c) => {
+    const cell = ws.getRow(r).getCell(c + 2)
+    cell.value = v
+    cell.numFmt = FMT_RM
+    cell.font = { bold: true }
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'double' } }
+  })
+  r += 2
+
+  ws.getCell(`A${r}`).value =
+    'Nota: "Masuk Bank" = resit kaedah Transfer (kaedah tidak dinyatakan dianggap Transfer). "Tunai" tidak melalui bank.'
+  ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
+  r++
+  ws.getCell(`A${r}`).value =
+    'Perbelanjaan dianggap dibayar dari bank — jika ada belanja tunai, laraskan pemahaman beza dengan sewajarnya.'
+  ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
 }
 
 function binaSheetPerbelanjaan(wb: any, tahun: number, belanja: BelanjaRow[]) {
