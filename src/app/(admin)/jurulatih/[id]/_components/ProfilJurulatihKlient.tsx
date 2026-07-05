@@ -26,7 +26,9 @@ type Kehadiran = {
   id: string
   tarikh: string
   status: string
+  jenis_kelas?: 'Kumpulan' | 'Personal'
   nota: string | null
+  cawangan?: { nama: string } | null
 }
 
 type Bayaran = {
@@ -233,7 +235,7 @@ export function ProfilJurulatihKlient({ jurulatih: j, statBulan, kehadiran, baya
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                  {['Tarikh', 'Status', 'Nota'].map((h) => (
+                  {['Tarikh', 'Cawangan', 'Kelas', 'Status', 'Nota'].map((h) => (
                     <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                   ))}
                 </tr>
@@ -244,6 +246,8 @@ export function ProfilJurulatihKlient({ jurulatih: j, statBulan, kehadiran, baya
                   return (
                     <tr key={k.id} style={{ borderBottom: i < kehadiran.length - 1 ? '1px solid var(--border)' : 'none' }}>
                       <td style={{ padding: '11px 16px', fontSize: '13.5px', color: 'var(--text)' }}>{formatTarikh(k.tarikh)}</td>
+                      <td style={{ padding: '11px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{k.cawangan?.nama ?? '—'}</td>
+                      <td style={{ padding: '11px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{k.jenis_kelas ?? '—'}</td>
                       <td style={{ padding: '11px 16px' }}>
                         <span style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '20px', fontWeight: 600, background: w.bg, color: w.text }}>{k.status}</span>
                       </td>

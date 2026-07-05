@@ -10,8 +10,13 @@ type Sesi = {
   id: string
   tarikh: string
   status: 'Hadir' | 'Tidak Hadir' | 'Cuti'
+  cawangan_id: string | null
+  jenis_kelas: 'Kumpulan' | 'Personal'
   nota: string | null
+  cawangan: { nama: string } | null
 }
+
+type Cawangan = { id: string; nama: string }
 
 const STATUS: Sesi['status'][] = ['Hadir', 'Tidak Hadir', 'Cuti']
 
@@ -39,30 +44,37 @@ export function KehadiranSayaKlient({
   jurulatihId,
   nama,
   kadarBayaran,
+  cawangan,
 }: {
   jurulatihId: string
   nama: string
   kadarBayaran: number | null
+  cawangan: Cawangan[]
 }) {
   const [bulan, setBulan] = useState(bulanSemasa())
   const [sesi, setSesi] = useState<Sesi[]>([])
   const [loading, setLoading] = useState(true)
   const [menyimpan, setMenyimpan] = useState(false)
+  const [cawanganId, setCawanganId] = useState(cawangan[0]?.id ?? '')
+  const [jenisKelas, setJenisKelas] = useState<Sesi['jenis_kelas']>('Kumpulan')
 
   const hariIni = tarikhTempatan()
-  const rekodHariIni = sesi.find((s) => s.tarikh === hariIni)
+  // Rekod hari ini untuk kombinasi cawangan + jenis kelas yang dipilih
+  const rekodHariIni = sesi.find(
+    (s) => s.tarikh === hariIni && s.cawangan_id === cawanganId && s.jenis_kelas === jenisKelas
+  )
 
   const muatData = useCallback(async () => {
     setLoading(true)
     const { mula, akhir } = julatBulan(bulan)
     const { data } = await createClient()
       .from('kehadiran_jurulatih')
-      .select('id, tarikh, status, nota')
+      .select('id, tarikh, status, cawangan_id, jenis_kelas, nota, cawangan:cawangan_id(nama)')
       .eq('jurulatih_id', jurulatihId)
       .gte('tarikh', mula)
       .lte('tarikh', akhir)
       .order('tarikh', { ascending: false })
-    setSesi(data ?? [])
+    setSesi((data ?? []) as unknown as Sesi[])
     setLoading(false)
   }, [bulan, jurulatihId])
 
@@ -71,12 +83,13 @@ export function KehadiranSayaKlient({
   }, [muatData])
 
   const rekodHariIniStatus = async (status: Sesi['status']) => {
+    if (!cawanganId) { toast.error('Sila pilih cawangan dahulu.'); return }
     setMenyimpan(true)
     const { error } = await createClient()
       .from('kehadiran_jurulatih')
       .upsert(
-        { jurulatih_id: jurulatihId, tarikh: hariIni, status },
-        { onConflict: 'jurulatih_id,tarikh' }
+        { jurulatih_id: jurulatihId, tarikh: hariIni, status, cawangan_id: cawanganId, jenis_kelas: jenisKelas },
+        { onConflict: 'jurulatih_id,tarikh,cawangan_id,jenis_kelas' }
       )
     setMenyimpan(false)
     if (error) {
@@ -119,6 +132,43 @@ export function KehadiranSayaKlient({
           {formatTarikh(hariIni)}
         </p>
 
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Cawangan
+            </label>
+            <select
+              value={cawanganId}
+              onChange={(e) => setCawanganId(e.target.value)}
+              style={{
+                width: '100%', padding: '8px 10px', border: '1.5px solid var(--border)',
+                borderRadius: '10px', fontSize: '12.5px', color: 'var(--text)',
+                background: 'var(--bg)', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+              }}
+            >
+              {cawangan.length === 0 && <option value="">Tiada cawangan</option>}
+              {cawangan.map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Jenis Kelas
+            </label>
+            <select
+              value={jenisKelas}
+              onChange={(e) => setJenisKelas(e.target.value as Sesi['jenis_kelas'])}
+              style={{
+                width: '100%', padding: '8px 10px', border: '1.5px solid var(--border)',
+                borderRadius: '10px', fontSize: '12.5px', color: 'var(--text)',
+                background: 'var(--bg)', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+              }}
+            >
+              <option>Kumpulan</option>
+              <option>Personal</option>
+            </select>
+          </div>
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
           {STATUS.map((st) => {
             const aktif = rekodHariIni?.status === st
@@ -154,7 +204,7 @@ export function KehadiranSayaKlient({
         <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '12px' }}>
           {rekodHariIni
             ? 'Tekan status lain untuk ubah — hanya hari ini boleh diubah.'
-            : 'Tekan satu status untuk rekod sesi hari ini.'}
+            : 'Pilih cawangan & jenis kelas, kemudian tekan satu status. Ada sesi lain hari ini? Tukar pilihan dan rekod lagi.'}
         </p>
       </div>
 
@@ -277,9 +327,10 @@ export function KehadiranSayaKlient({
                       </span>
                     )}
                   </div>
-                  {s.nota && (
-                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>{s.nota}</div>
-                  )}
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {s.cawangan?.nama ?? 'Tanpa cawangan'} · {s.jenis_kelas}
+                    {s.nota ? ` · ${s.nota}` : ''}
+                  </div>
                 </div>
                 <span
                   style={{

@@ -264,6 +264,8 @@ export interface Database {
           jurulatih_id: string
           tarikh: string
           status: 'Hadir' | 'Tidak Hadir' | 'Cuti'
+          cawangan_id: string | null
+          jenis_kelas: 'Kumpulan' | 'Personal'
           nota: string | null
           created_at: string
         }
@@ -272,6 +274,8 @@ export interface Database {
           jurulatih_id: string
           tarikh: string
           status: 'Hadir' | 'Tidak Hadir' | 'Cuti'
+          cawangan_id?: string | null
+          jenis_kelas?: 'Kumpulan' | 'Personal'
           nota?: string | null
           created_at?: string
         }
@@ -280,6 +284,8 @@ export interface Database {
           jurulatih_id?: string
           tarikh?: string
           status?: 'Hadir' | 'Tidak Hadir' | 'Cuti'
+          cawangan_id?: string | null
+          jenis_kelas?: 'Kumpulan' | 'Personal'
           nota?: string | null
           created_at?: string
         }

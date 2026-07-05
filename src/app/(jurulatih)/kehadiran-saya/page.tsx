@@ -17,7 +17,7 @@ export default async function KehadiranSayaPage() {
 
   const { data: jurulatih } = await supabase
     .from('jurulatih')
-    .select('id, nama_penuh, kadar_bayaran')
+    .select('id, nama_penuh, kadar_bayaran, cawangan_ids')
     .eq('pengguna_id', user.id)
     .maybeSingle()
 
@@ -39,11 +39,17 @@ export default async function KehadiranSayaPage() {
     )
   }
 
+  // Senarai cawangan jurulatih (untuk pilihan semasa rekod); fallback semua cawangan aktif
+  let q = supabase.from('cawangan').select('id, nama').eq('status', 'Aktif').order('nama')
+  if ((jurulatih.cawangan_ids ?? []).length > 0) q = q.in('id', jurulatih.cawangan_ids)
+  const { data: cawangan } = await q
+
   return (
     <KehadiranSayaKlient
       jurulatihId={jurulatih.id}
       nama={jurulatih.nama_penuh}
       kadarBayaran={jurulatih.kadar_bayaran}
+      cawangan={cawangan ?? []}
     />
   )
 }

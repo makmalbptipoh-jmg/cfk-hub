@@ -11,8 +11,13 @@ type Sesi = {
   id: string
   tarikh: string
   status: 'Hadir' | 'Tidak Hadir' | 'Cuti'
+  cawangan_id: string | null
+  jenis_kelas: 'Kumpulan' | 'Personal'
   nota: string | null
+  cawangan: { nama: string } | null
 }
+
+type Cawangan = { id: string; nama: string }
 
 function bulanSemasa() {
   const d = new Date()
@@ -35,9 +40,11 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
   const [bulan, setBulan] = useState(bulanSemasa())
   const [sesi, setSesi] = useState<Sesi[]>([])
   const [namaJurulatih, setNamaJurulatih] = useState('')
+  const [cawangan, setCawangan] = useState<Cawangan[]>([])
   const [loading, setLoading] = useState(true)
   const [tambahMode, setTambahMode] = useState(false)
-  const [formBaru, setFormBaru] = useState({ tarikh: '', status: 'Hadir' as Sesi['status'], nota: '' })
+  const formKosong = { tarikh: '', status: 'Hadir' as Sesi['status'], cawangan_id: '', jenis_kelas: 'Kumpulan' as Sesi['jenis_kelas'], nota: '' }
+  const [formBaru, setFormBaru] = useState(formKosong)
   const [menyimpan, setMenyimpan] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [editStatus, setEditStatus] = useState<Sesi['status']>('Hadir')
@@ -46,12 +53,20 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
     setLoading(true)
     const supabase = createClient()
     const { mula, akhir } = mulaBulanDari(bulan)
-    const [{ data: j }, { data: k }] = await Promise.all([
-      supabase.from('jurulatih').select('nama_penuh').eq('id', id).single(),
-      supabase.from('kehadiran_jurulatih').select('id, tarikh, status, nota').eq('jurulatih_id', id).gte('tarikh', mula).lte('tarikh', akhir).order('tarikh'),
+    const [{ data: j }, { data: k }, { data: c }] = await Promise.all([
+      supabase.from('jurulatih').select('nama_penuh, cawangan_ids').eq('id', id).single(),
+      supabase.from('kehadiran_jurulatih').select('id, tarikh, status, cawangan_id, jenis_kelas, nota, cawangan:cawangan_id(nama)').eq('jurulatih_id', id).gte('tarikh', mula).lte('tarikh', akhir).order('tarikh'),
+      supabase.from('cawangan').select('id, nama').eq('status', 'Aktif').order('nama'),
     ])
     setNamaJurulatih((j as any)?.nama_penuh ?? '')
-    setSesi(k ?? [])
+    setSesi((k ?? []) as unknown as Sesi[])
+    const senaraiCaw = c ?? []
+    // Utamakan cawangan jurulatih sendiri di atas senarai
+    const milikJurulatih = new Set(((j as any)?.cawangan_ids ?? []) as string[])
+    senaraiCaw.sort((a, b) => Number(milikJurulatih.has(b.id)) - Number(milikJurulatih.has(a.id)))
+    setCawangan(senaraiCaw)
+    // Default cawangan: cawangan pertama jurulatih (jika belum dipilih)
+    setFormBaru((f) => f.cawangan_id ? f : { ...f, cawangan_id: senaraiCaw.find((x) => milikJurulatih.has(x.id))?.id ?? '' })
     setLoading(false)
   }
 
@@ -59,11 +74,17 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
 
   const simpanBaru = async () => {
     if (!formBaru.tarikh) return
+    if (!formBaru.cawangan_id) { toast.error('Sila pilih cawangan.'); return }
     setMenyimpan(true)
     const { error } = await createClient().from('kehadiran_jurulatih').upsert({
-      jurulatih_id: id, tarikh: formBaru.tarikh, status: formBaru.status, nota: formBaru.nota || null,
-    }, { onConflict: 'jurulatih_id,tarikh' })
-    if (!error) { toast.success('Sesi berjaya ditambah.'); setTambahMode(false); setFormBaru({ tarikh: '', status: 'Hadir', nota: '' }); muatData() }
+      jurulatih_id: id,
+      tarikh: formBaru.tarikh,
+      status: formBaru.status,
+      cawangan_id: formBaru.cawangan_id,
+      jenis_kelas: formBaru.jenis_kelas,
+      nota: formBaru.nota || null,
+    }, { onConflict: 'jurulatih_id,tarikh,cawangan_id,jenis_kelas' })
+    if (!error) { toast.success('Sesi berjaya ditambah.'); setTambahMode(false); setFormBaru({ ...formKosong, cawangan_id: formBaru.cawangan_id }); muatData() }
     else { toast.error('Gagal tambah sesi. Cuba lagi.') }
     setMenyimpan(false)
   }
@@ -111,7 +132,7 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
           <input type="month" value={bulan} onChange={(e) => setBulan(e.target.value)} style={gayaInput} />
           <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>{namaBulan}</p>
         </div>
-        <button onClick={() => { setTambahMode(true); setFormBaru({ tarikh: '', status: 'Hadir', nota: '' }) }}
+        <button onClick={() => { setTambahMode(true); setFormBaru((f) => ({ ...formKosong, cawangan_id: f.cawangan_id })) }}
           disabled={tambahMode}
           style={{
             display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px',
@@ -172,6 +193,24 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
               </select>
             </div>
           </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' as const }}>Cawangan *</label>
+              <select value={formBaru.cawangan_id} onChange={(e) => setFormBaru((f) => ({ ...f, cawangan_id: e.target.value }))}
+                style={{ ...gayaInput, width: '100%', boxSizing: 'border-box' as const, cursor: 'pointer' }}>
+                <option value="">— Pilih cawangan —</option>
+                {cawangan.map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' as const }}>Jenis Kelas</label>
+              <select value={formBaru.jenis_kelas} onChange={(e) => setFormBaru((f) => ({ ...f, jenis_kelas: e.target.value as Sesi['jenis_kelas'] }))}
+                style={{ ...gayaInput, width: '100%', boxSizing: 'border-box' as const, cursor: 'pointer' }}>
+                <option>Kumpulan</option>
+                <option>Personal</option>
+              </select>
+            </div>
+          </div>
           <div style={{ marginBottom: '12px' }}>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' as const }}>Nota (pilihan)</label>
             <input value={formBaru.nota} onChange={(e) => setFormBaru((f) => ({ ...f, nota: e.target.value }))} placeholder="Contoh: Cuti sakit" style={{ ...gayaInput, width: '100%', boxSizing: 'border-box' as const }} />
@@ -207,7 +246,7 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                {['Tarikh', 'Hari', 'Status', 'Nota', ''].map((h) => (
+                {['Tarikh', 'Hari', 'Cawangan', 'Kelas', 'Status', 'Nota', ''].map((h) => (
                   <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                 ))}
               </tr>
@@ -224,6 +263,16 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
                       {d.toLocaleDateString('ms-MY', { day: 'numeric', month: 'short' })}
                     </td>
                     <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>{hari}</td>
+                    <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text)' }}>{s.cawangan?.nama ?? '—'}</td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{
+                        fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600,
+                        background: s.jenis_kelas === 'Personal' ? '#F3E8FF' : '#DBEAFE',
+                        color: s.jenis_kelas === 'Personal' ? '#6B21A8' : '#1E40AF',
+                      }}>
+                        {s.jenis_kelas}
+                      </span>
+                    </td>
                     <td style={{ padding: '10px 14px' }}>
                       {sedangEdit ? (
                         <select value={editStatus} onChange={(e) => setEditStatus(e.target.value as Sesi['status'])}

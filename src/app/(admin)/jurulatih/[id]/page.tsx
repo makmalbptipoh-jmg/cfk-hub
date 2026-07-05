@@ -31,7 +31,7 @@ export default async function ProfilJurulatihPage({
     { data: cawangan },
   ] = await Promise.all([
     supabase.from('jurulatih').select('*').eq('id', id).single(),
-    supabase.from('kehadiran_jurulatih').select('id, tarikh, status, nota').eq('jurulatih_id', id).order('tarikh', { ascending: false }).limit(50),
+    supabase.from('kehadiran_jurulatih').select('id, tarikh, status, jenis_kelas, nota, cawangan:cawangan_id(nama)').eq('jurulatih_id', id).order('tarikh', { ascending: false }).limit(50),
     supabase.from('bayaran_jurulatih').select('id, bulan_bayaran, tahun_bayaran, bilangan_sesi, kadar_per_sesi, jumlah, tarikh_bayar, status').eq('jurulatih_id', id).order('tahun_bayaran', { ascending: false }).order('bulan_bayaran', { ascending: false }),
     supabase.from('cawangan').select('id, nama'),
   ])
@@ -83,7 +83,7 @@ export default async function ProfilJurulatihPage({
         gambar_url: gambarUrl,
       }}
       statBulan={statBulan}
-      kehadiran={kehadiran ?? []}
+      kehadiran={(kehadiran ?? []) as any}
       bayaran={bayaran ?? []}
       namaBulanSemasa={namaBulanSemasa}
       sudahBayarBulanIni={sudahBayarBulanIni}
