@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Plus, Wallet } from 'lucide-react'
 import { ModalRekodBayaran } from './ModalRekodBayaran'
+import { BtnSlipGaji } from '@/components/pdf/BtnSlipGaji'
 import { formatRinggit, formatTarikh } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/lib/stores/toast-store'
@@ -11,6 +12,7 @@ import { toast } from '@/lib/stores/toast-store'
 type Jurulatih = {
   id: string
   nama_penuh: string
+  no_ic: string | null
   kadar_bayaran: number
 }
 
@@ -144,7 +146,7 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunS
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                {['Bulan', 'Sesi', 'Kadar', 'Jumlah', 'Tarikh Bayar', 'Status', 'Nota'].map((h) => (
+                {['Bulan', 'Sesi', 'Kadar', 'Jumlah', 'Tarikh Bayar', 'Status', 'Nota', ''].map((h) => (
                   <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                 ))}
               </tr>
@@ -171,6 +173,22 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunS
                     </span>
                   </td>
                   <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>{b.nota || '—'}</td>
+                  <td style={{ padding: '10px 14px' }}>
+                    <BtnSlipGaji
+                      data={{
+                        nama_jurulatih: jurulatih.nama_penuh,
+                        no_ic: jurulatih.no_ic,
+                        bulan_bayaran: b.bulan_bayaran,
+                        tahun_bayaran: b.tahun_bayaran,
+                        bilangan_sesi: b.bilangan_sesi,
+                        kadar_per_sesi: b.kadar_per_sesi,
+                        jumlah: b.jumlah,
+                        tarikh_bayar: b.tarikh_bayar,
+                        status: b.status,
+                        nota: b.nota,
+                      }}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
