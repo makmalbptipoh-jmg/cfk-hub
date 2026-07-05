@@ -58,6 +58,14 @@
 - Borang admin S-27 + Sesi Saya (self-service) + tab Kehadiran profil semua dikemaskini
 - **Diuji dalam browser user**: 2 sesi hari sama (Kumpulan + Buntong/Personal) → "2 sesi hadir = asas pengiraan bayaran" ✅
 
+**Dashboard jurulatih + point + gaji auto-masuk Kewangan (commit `5a6d2a1`):**
+- Senarai Jurulatih: 3 kad stat (Gaji Dibayar bulan ini / Jumlah Keseluruhan / Sesi Hadir bulan ini) + kolum Sesi Bln Ini, ⭐Point (1 point per sesi Hadir), Gaji Dibayar per jurulatih; badge point juga dalam Sesi Saya (telefon jurulatih)
+- Rekod gaji auto-insert `kewangan_perbelanjaan` kategori **"Gaji Jurulatih"** — laporan kewangan/LHDN terus kira kos gaji. DISAHKAN dengan bayaran sebenar AZZAHRA RM7 → rekod perbelanjaan auto tercipta ✅
+- Profil jurulatih: Jumlah Gaji Dibayar dalam kad status; butang "Rekod Kehadiran" di header profil (commit `41c1da2`)
+
+**Gaji wajib ikut kehadiran (commit `44db8b5`):**
+- Modal Rekod Bayaran: bilangan sesi ≤ sesi Hadir direkod (validasi + input max + nota had); butang rekod dikunci jika 0 sesi hadir
+
 **Onboarding jurulatih sebenar (dibuat user 5 Jul):** akaun `maisarahkhatibcfk@gmail.com` (aisyah maisarah binti khatib, Jurulatih, Klebang) dicipta di Tetapan → Pengguna; akaun ujian diblok oleh user. Langkah tinggal: Daftar profil jurulatih aisyah → Edit → kaitkan Akaun Login + gambar.
 
 ---
