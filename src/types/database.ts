@@ -307,7 +307,6 @@ export interface Database {
           tahun_bayaran: number
           bilangan_sesi: number
           kadar_per_sesi: number
-          jumlah: number
           tarikh_bayar?: string | null
           status?: 'Sudah Bayar' | 'Belum Bayar'
           nota?: string | null
@@ -321,7 +320,6 @@ export interface Database {
           tahun_bayaran?: number
           bilangan_sesi?: number
           kadar_per_sesi?: number
-          jumlah?: number
           tarikh_bayar?: string | null
           status?: 'Sudah Bayar' | 'Belum Bayar'
           nota?: string | null

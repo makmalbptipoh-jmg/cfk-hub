@@ -32,13 +32,13 @@ export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bi
     if (bilSesi <= 0) { setRalat('Bilangan sesi mesti lebih dari 0.'); return }
     setLoading(true)
     setRalat(null)
+    // jumlah TIDAK dihantar — kolum GENERATED dalam DB (auto: bilangan_sesi × kadar_per_sesi)
     const { error } = await createClient().from('bayaran_jurulatih').insert({
       jurulatih_id: jurulatihId,
       bulan_bayaran: bulan,
       tahun_bayaran: tahun,
       bilangan_sesi: bilSesi,
       kadar_per_sesi: kadar,
-      jumlah,
       tarikh_bayar: tarikhBayar,
       status: 'Sudah Bayar',
       nota: nota || null,
