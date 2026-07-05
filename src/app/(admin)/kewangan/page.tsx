@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { TrendingUp, TrendingDown, Minus, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { formatRinggit } from '@/lib/utils'
+import { akhirBulan, formatRinggit } from '@/lib/utils'
 import { BtnLaporanLHDN } from '@/components/excel/BtnLaporanLHDN'
 
 const BULAN_MS = [
@@ -58,7 +58,7 @@ export default function KewanganRingkasanPage() {
     if (bulanIdx) {
       const m = +bulanIdx
       const mula = `${tahun}-${String(m).padStart(2, '0')}-01`
-      const akhir = new Date(tahun, m, 0).toISOString().split('T')[0]
+      const akhir = akhirBulan(tahun, m)
       resitQuery = resitQuery.eq('bulan_bayaran', BULAN_MS[m - 1])
       belanjaQuery = belanjaQuery.gte('tarikh', mula).lte('tarikh', akhir)
     } else {

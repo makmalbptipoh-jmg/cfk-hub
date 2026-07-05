@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { FileText, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { akhirBulan } from '@/lib/utils'
 import { CariPelajar, type PelajarCarian } from '@/components/pelajar/CariPelajar'
 import { toast } from '@/lib/stores/toast-store'
 
@@ -34,7 +35,7 @@ function bulanMY(input: string) {
     nama: d.toLocaleString('ms-MY', { month: 'long' }),
     tahun: parseInt(yr),
     mula: `${yr}-${mo}-01`,
-    akhir: new Date(parseInt(yr), parseInt(mo), 0).toISOString().split('T')[0],
+    akhir: akhirBulan(parseInt(yr), parseInt(mo)),
   }
 }
 

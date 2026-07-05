@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { akhirBulan } from '@/lib/utils'
 import { ProfilJurulatihKlient } from './_components/ProfilJurulatihKlient'
 
 export default async function ProfilJurulatihPage({
@@ -16,7 +17,7 @@ export default async function ProfilJurulatihPage({
     return {
       label: d.toLocaleString('ms-MY', { month: 'long', year: 'numeric' }),
       mula: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`,
-      akhir: new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0],
+      akhir: akhirBulan(d.getFullYear(), d.getMonth() + 1),
     }
   })
 

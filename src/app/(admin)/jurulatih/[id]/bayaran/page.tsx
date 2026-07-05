@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { akhirBulan } from '@/lib/utils'
 import { BayaranJurulatihKlient } from './_components/BayaranJurulatihKlient'
 
 export default async function BayaranJurulatihPage({
@@ -14,7 +15,7 @@ export default async function BayaranJurulatihPage({
   const bulanSemasa = sekarang.toLocaleString('ms-MY', { month: 'long' })
   const tahunSemasa = sekarang.getFullYear()
   const mulaB = `${tahunSemasa}-${String(sekarang.getMonth() + 1).padStart(2, '0')}-01`
-  const akhirB = new Date(tahunSemasa, sekarang.getMonth() + 1, 0).toISOString().split('T')[0]
+  const akhirB = akhirBulan(tahunSemasa, sekarang.getMonth() + 1)
 
   const [
     { data: jurulatih, error },

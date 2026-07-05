@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Paperclip, Plus, Trash2, Upload, Wallet, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { formatRinggit, formatTarikh } from '@/lib/utils'
+import { akhirBulan, formatRinggit, formatTarikh } from '@/lib/utils'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 import { toast } from '@/lib/stores/toast-store'
 
@@ -73,7 +73,7 @@ export default function PerbelanjaanPage() {
     const supabase = createClient()
     const [y, m] = bulan.split('-')
     const mula = `${y}-${m}-01`
-    const akhir = new Date(+y, +m, 0).toISOString().split('T')[0]
+    const akhir = akhirBulan(+y, +m)
 
     let q = supabase
       .from('kewangan_perbelanjaan')

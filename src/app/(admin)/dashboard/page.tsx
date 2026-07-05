@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { formatRinggit, formatTarikh } from '@/lib/utils'
+import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh } from '@/lib/utils'
 import Link from 'next/link'
 import { Users, CalendarCheck, Wallet, AlertCircle, MessageCircle } from 'lucide-react'
 
@@ -25,7 +25,7 @@ function mulaBulan() {
 
 function akhirBulan() {
   const d = new Date()
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0]
+  return akhirBulanUtil(d.getFullYear(), d.getMonth() + 1)
 }
 
 export default async function DashboardPage() {

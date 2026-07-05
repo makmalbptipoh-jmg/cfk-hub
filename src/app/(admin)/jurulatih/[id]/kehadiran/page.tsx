@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { Plus, Trash2, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { akhirBulan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
 
 type Sesi = {
@@ -20,7 +21,7 @@ function bulanSemasa() {
 
 function mulaBulanDari(bm: string) {
   const [yr, mo] = bm.split('-')
-  return { mula: `${yr}-${mo}-01`, akhir: new Date(+yr, +mo, 0).toISOString().split('T')[0] }
+  return { mula: `${yr}-${mo}-01`, akhir: akhirBulan(+yr, +mo) }
 }
 
 const WARNA: Record<string, { bg: string; text: string; border: string }> = {

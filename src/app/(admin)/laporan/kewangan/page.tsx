@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { TrendingUp, TrendingDown, Minus, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { formatRinggit, formatTarikh } from '@/lib/utils'
+import { akhirBulan, formatRinggit, formatTarikh } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
 
 function bulanInfo(bm: string) {
@@ -13,7 +13,7 @@ function bulanInfo(bm: string) {
     nama: d.toLocaleString('ms-MY', { month: 'long' }),
     tahun: +y,
     mula: `${y}-${m}-01`,
-    akhir: new Date(+y, +m, 0).toISOString().split('T')[0],
+    akhir: akhirBulan(+y, +m),
   }
 }
 

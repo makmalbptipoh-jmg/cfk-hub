@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { akhirBulan } from '@/lib/utils'
 import { MaklumanKlient } from './_components/MaklumanKlient'
 
 export const dynamic = 'force-dynamic'
@@ -22,7 +23,7 @@ export default async function MaklumanPage() {
   const bulan = sekarang.toLocaleString('ms-MY', { month: 'long' })
   const tahun = sekarang.getFullYear()
   const mulaB = `${tahun}-${String(sekarang.getMonth() + 1).padStart(2, '0')}-01`
-  const akhirB = new Date(tahun, sekarang.getMonth() + 1, 0).toISOString().split('T')[0]
+  const akhirB = akhirBulan(tahun, sekarang.getMonth() + 1)
 
   const { data: kehadiran } = await supabase
     .from('kehadiran')

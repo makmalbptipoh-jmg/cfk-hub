@@ -29,6 +29,14 @@ export function formatTarikhPendek(dateStr: string): string {
   }).format(new Date(dateStr))
 }
 
+// Hari terakhir bulan sebagai 'YYYY-MM-DD' TANPA toISOString —
+// toISOString() menukar ke UTC (tolak 8 jam di Malaysia) menyebabkan
+// 31 Jan jadi 30 Jan; rekod hari akhir bulan tercicir dari penapis.
+export function akhirBulan(tahun: number, bulan1hingga12: number): string {
+  const hari = new Date(tahun, bulan1hingga12, 0).getDate()
+  return `${tahun}-${String(bulan1hingga12).padStart(2, '0')}-${String(hari).padStart(2, '0')}`
+}
+
 export function getBulanTahun(date: Date = new Date()): string {
   return new Intl.DateTimeFormat('ms-MY', {
     month: 'long',
