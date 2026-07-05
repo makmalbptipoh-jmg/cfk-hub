@@ -48,6 +48,11 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ### 4. Setup Skema Database
 
+> **Nota:** Skema penuh terkini ada dalam `supabase/schema.sql`. Selepas itu, jalankan juga
+> semua migration dalam `scripts/sql/` mengikut tarikh (alamat pelajar, kuantiti aset,
+> keluarga_id, indexes, bukti perbelanjaan, jurulatih self-service, makluman histori,
+> gambar jurulatih) — setiap fail selamat dijalankan berulang kali.
+
 Jalankan SQL berikut dalam **Supabase → SQL Editor** mengikut urutan:
 
 ```sql

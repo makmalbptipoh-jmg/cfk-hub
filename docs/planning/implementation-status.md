@@ -18,11 +18,13 @@
 - **BUG KRITIKAL DITEMUI & DIBAIKI (commit `1a27fd2`)** — punca sebenar aduan "data tak simpan": `new Date(y, m, 0).toISOString()` menukar hari akhir bulan waktu Malaysia ke UTC (tolak 8 jam) → penapis bulan jadi `lte.YYYY-MM-30` → rekod bertarikh 31/30/29/28 hb TIDAK dipaparkan walaupun tersimpan. Dibaiki dengan util `akhirBulan()` di 10 lokasi (perbelanjaan, kewangan, laporan×2, dashboard, makluman, jurulatih×3, kehadiran-saya). Disahkan live dalam browser user melalui Chrome extension. Pengajaran: JANGAN guna `toISOString()` untuk tarikh tempatan.
 - Nota lama "service worker cache" masih relevan sebagai isu berasingan, tetapi aduan utama sesi ini ialah bug zon masa di atas.
 
-**Tertunggak user (bawa dari Sesi 4):**
+**Tertunggak user:**
 1. Isi `scripts/data/pelajar-placeholder.csv` (22 pelajar Klebang: ibu bapa/telefon/alamat) → `node scripts/update-pelajar-placeholder.mjs --commit`
-2. Cipta akaun jurulatih (perlu nama/emel/cawangan daripada user)
+2. ~~Cipta akaun jurulatih~~ ✅ akaun aisyah dicipta — tinggal Daftar profil jurulatih + kaitkan Akaun Login
 3. Pasang PWA pada telefon jurulatih
 4. (Pilihan) Secret `DATABASE_URL` di GitHub untuk backup mingguan
+5. Rekod sewa Mac & Julai 2026 (jika sudah bayar) + upload bukti Apr/Mei/Jun
+6. **Padam data ujian bila selesai**: akaun `ujian.jurulatih@cfkhub.test` + jurulatih JURULATIH UJIAN `614d7711` + 1 rekod sesi + 1 rekod gaji RM50 Julai + gambar ujian dalam bucket `gambar-jurulatih` — minta Claude padam sekali gus
 
 **Jurulatih self-service (dibina Sesi 5 atas arahan user):**
 - Page `/kehadiran-saya` (mobile): butang sentuh Hadir/Tidak Hadir/Cuti untuk sesi HARI INI (upsert; hanya hari ini boleh diubah), ringkasan bulan (3 kotak), anggaran bayaran (sesi Hadir × kadar), sejarah sesi dengan penapis bulan
@@ -35,6 +37,22 @@
 **Histori Makluman (S-06, FR-45) — jurang audit terakhir, kini 100%:**
 - Jadual `makluman_histori` + RLS (migration `scripts/sql/makluman-histori.sql` — **sudah di-run user**, RLS diuji: jurulatih hantar sendiri ✅, atas nama lain DISEKAT ✅)
 - Rekod auto bila Salin Teks / klik WA dalam page Makluman; page `/makluman/histori` dengan penapis bulan+jenis, kembang teks penuh, admin nampak penghantar
+
+**Gambar profil jurulatih (commit `9fb6a14`):**
+- Kolum `gambar_path` + bucket peribadi `gambar-jurulatih` (migration `tambah-gambar-jurulatih.sql` — **sudah di-run user**; baca semua pengguna log masuk, urus admin sahaja)
+- Edit Jurulatih: seksyen "Gambar Profil" — pilih/tukar/buang, preview bulat, JPG/PNG/WebP max 2MB, upload semasa Simpan
+- Profil Jurulatih: avatar bulat 72px (signed URL 1 jam; fallback huruf pertama nama)
+- CSP `img-src` kini benarkan host Supabase
+- **Diuji hujung-ke-hujung dalam browser user** (Chrome extension): upload → preview → simpan → papar dalam profil ✅
+
+**Fix rekod gaji jurulatih + menu sidebar (commit `5b624c7`):**
+- **BUG: rekod gaji TIDAK PERNAH berfungsi** — ModalRekodBayaran hantar `jumlah` sedangkan kolum itu GENERATED (auto: bilangan_sesi × kadar_per_sesi) → 400 "cannot insert a non-DEFAULT value". Fix: jangan hantar `jumlah`; types Insert/Update dikemas.
+- Sidebar admin kini ada menu **Jurulatih** (sebelum ini tiada pautan langsung ke /jurulatih!)
+- **Aliran gaji diuji penuh dalam browser user**: kehadiran (1 sesi Hadir) → modal auto-isi 1×RM50 → Rekod Bayaran → toast berjaya → "Jumlah Keseluruhan Dibayar RM50" + sejarah + status "Sudah Direkod" ✅
+
+**Nota multi-cawangan (soalan user):** memang sudah disokong sejak awal — `cawangan_ids` array, butang toggle multi-select dalam Daftar/Edit, paparan bercantum. Tiada perubahan diperlukan.
+
+**Onboarding jurulatih sebenar (dibuat user 5 Jul):** akaun `maisarahkhatibcfk@gmail.com` (aisyah maisarah binti khatib, Jurulatih, Klebang) dicipta di Tetapan → Pengguna; akaun ujian diblok oleh user. Langkah tinggal: Daftar profil jurulatih aisyah → Edit → kaitkan Akaun Login + gambar.
 
 ---
 
