@@ -54,6 +54,10 @@ interface Props {
 export function ProfilJurulatihKlient({ jurulatih: j, statBulan, kehadiran, bayaran, namaBulanSemasa, sudahBayarBulanIni }: Props) {
   const [tab, setTab] = useState<'profil' | 'kehadiran' | 'bayaran'>('profil')
 
+  const totalGajiDibayar = bayaran
+    .filter((b) => b.status === 'Sudah Bayar')
+    .reduce((s, b) => s + b.jumlah, 0)
+
   const warnaStatus: Record<string, { bg: string; text: string }> = {
     Hadir: { bg: 'var(--hadir-bg)', text: 'var(--hadir-text)' },
     'Tidak Hadir': { bg: 'var(--tidak-hadir-bg)', text: 'var(--tidak-hadir-text)' },
@@ -164,13 +168,21 @@ export function ProfilJurulatihKlient({ jurulatih: j, statBulan, kehadiran, baya
             {sudahBayarBulanIni ? '✓ Sudah Dibayar' : '⚠ Belum Dibayar'}
           </div>
         </div>
+        <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+            Jumlah Gaji Dibayar
+          </div>
+          <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text)' }}>
+            {formatRinggit(totalGajiDibayar)}
+          </div>
+        </div>
         {!sudahBayarBulanIni && (
           <Link href={`/jurulatih/${j.id}/bayaran`}
             style={{
-              marginLeft: 'auto', padding: '7px 14px',
+              padding: '7px 14px',
               background: 'var(--accent)', border: 'none',
               borderRadius: '8px', fontSize: '12.5px', fontWeight: 700,
-              color: 'var(--accent-text)', textDecoration: 'none',
+              color: 'var(--accent-text)', textDecoration: 'none', whiteSpace: 'nowrap',
             }}
           >
             Rekod Bayaran

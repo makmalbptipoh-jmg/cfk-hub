@@ -5,6 +5,7 @@ import { X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatRinggit } from '@/lib/utils'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
+import { toast } from '@/lib/stores/toast-store'
 
 interface Props {
   jurulatihId: string
@@ -32,8 +33,9 @@ export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bi
     if (bilSesi <= 0) { setRalat('Bilangan sesi mesti lebih dari 0.'); return }
     setLoading(true)
     setRalat(null)
+    const supabase = createClient()
     // jumlah TIDAK dihantar — kolum GENERATED dalam DB (auto: bilangan_sesi × kadar_per_sesi)
-    const { error } = await createClient().from('bayaran_jurulatih').insert({
+    const { error } = await supabase.from('bayaran_jurulatih').insert({
       jurulatih_id: jurulatihId,
       bulan_bayaran: bulan,
       tahun_bayaran: tahun,
@@ -44,6 +46,17 @@ export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bi
       nota: nota || null,
     })
     if (error) { setRalat('Gagal simpan. Cuba lagi.'); setLoading(false); return }
+    // Auto-rekod dalam Kewangan sebagai perbelanjaan (kategori Gaji Jurulatih)
+    // supaya laporan kewangan/LHDN terus ambil kira kos gaji
+    const { error: errBelanja } = await supabase.from('kewangan_perbelanjaan').insert({
+      tarikh: tarikhBayar,
+      kategori: 'Gaji Jurulatih',
+      penerangan: `Gaji ${namaJurulatih} — ${bulan} ${tahun} (${bilSesi} sesi × RM${kadar.toFixed(2)})`,
+      jumlah,
+    })
+    if (errBelanja) {
+      toast.error('Gaji direkod, tetapi gagal masuk Kewangan — tambah manual dalam Perbelanjaan.')
+    }
     onBerjaya()
   }
 

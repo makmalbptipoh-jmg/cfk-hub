@@ -10,6 +10,7 @@ import { toast } from '@/lib/stores/toast-store'
 const KATEGORI = [
   'Sewa',
   'Utiliti',
+  'Gaji Jurulatih',
   'Peralatan Catur',
   'Pengangkutan',
   'Bahan Promosi',

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { CalendarCheck, Check } from 'lucide-react'
+import { CalendarCheck, Check, Star } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { akhirBulan, formatTarikh } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
@@ -64,17 +64,29 @@ export function KehadiranSayaKlient({
     (s) => s.tarikh === hariIni && s.cawangan_id === cawanganId && s.jenis_kelas === jenisKelas
   )
 
+  const [totalPoint, setTotalPoint] = useState(0)
+
   const muatData = useCallback(async () => {
     setLoading(true)
+    const supabase = createClient()
     const { mula, akhir } = julatBulan(bulan)
-    const { data } = await createClient()
-      .from('kehadiran_jurulatih')
-      .select('id, tarikh, status, cawangan_id, jenis_kelas, nota, cawangan:cawangan_id(nama)')
-      .eq('jurulatih_id', jurulatihId)
-      .gte('tarikh', mula)
-      .lte('tarikh', akhir)
-      .order('tarikh', { ascending: false })
+    const [{ data }, { count }] = await Promise.all([
+      supabase
+        .from('kehadiran_jurulatih')
+        .select('id, tarikh, status, cawangan_id, jenis_kelas, nota, cawangan:cawangan_id(nama)')
+        .eq('jurulatih_id', jurulatihId)
+        .gte('tarikh', mula)
+        .lte('tarikh', akhir)
+        .order('tarikh', { ascending: false }),
+      // Point terkumpul: 1 point setiap sesi Hadir (sepanjang masa)
+      supabase
+        .from('kehadiran_jurulatih')
+        .select('id', { count: 'exact', head: true })
+        .eq('jurulatih_id', jurulatihId)
+        .eq('status', 'Hadir'),
+    ])
     setSesi((data ?? []) as unknown as Sesi[])
+    setTotalPoint(count ?? 0)
     setLoading(false)
   }, [bulan, jurulatihId])
 
@@ -107,10 +119,25 @@ export function KehadiranSayaKlient({
 
   return (
     <div style={{ padding: '16px' }}>
-      <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px', marginBottom: '2px' }}>
-        Kehadiran Saya
-      </h1>
-      <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '18px' }}>{nama}</p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '18px' }}>
+        <div>
+          <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px', marginBottom: '2px' }}>
+            Kehadiran Saya
+          </h1>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>{nama}</p>
+        </div>
+        <span
+          title="1 point setiap sesi hadir"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+            padding: '6px 12px', borderRadius: '20px',
+            background: '#FEF3C7', border: '1px solid #FDE68A',
+            fontSize: '13px', fontWeight: 800, color: '#92400E', whiteSpace: 'nowrap',
+          }}
+        >
+          <Star size={13} fill="#F59E0B" stroke="#F59E0B" /> {totalPoint} Point
+        </span>
+      </div>
 
       {/* Kad hari ini */}
       <div
