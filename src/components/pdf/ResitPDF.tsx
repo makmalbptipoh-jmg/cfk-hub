@@ -17,7 +17,6 @@ const s = StyleSheet.create({
     borderBottom: '2px solid #1E293B',
   },
   logo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoIcon: { fontSize: 22, color: '#FFC94D' },
   logoText: { fontSize: 16, fontWeight: 'bold', color: '#1E293B', fontFamily: 'Helvetica-Bold' },
   logoSub: { fontSize: 8, color: '#64748B', marginTop: 2 },
   resitBadge: {
@@ -103,7 +102,6 @@ export function ResitPDF({
         {/* Header */}
         <View style={s.header}>
           <View style={s.logo}>
-            <Text style={s.logoIcon}>♟</Text>
             <View>
               <Text style={s.logoText}>CHESS FOR KIDS (CFK)</Text>
               <Text style={s.logoSub}>5B, Laluan Klebang 21, Klebang Perdana, 31200 Chemor, Perak</Text>

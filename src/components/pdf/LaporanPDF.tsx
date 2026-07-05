@@ -124,7 +124,6 @@ export function LaporanPDF({
         {/* Header */}
         <View style={s.header}>
           <View>
-            <Text style={{ fontSize: 20, color: '#FFC94D', marginBottom: 2 }}>♟</Text>
             <Text style={s.logoText}>CFK HUB</Text>
             <Text style={s.logoSub}>Catur Untuk Kanak-Kanak</Text>
           </View>
