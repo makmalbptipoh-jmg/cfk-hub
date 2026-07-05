@@ -6,6 +6,10 @@ export const dynamic = 'force-dynamic'
 export default async function MaklumanPage() {
   const supabase = await createClient()
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   // Ambil pelajar aktif dengan telefon & cawangan
   const { data: pelajar } = await supabase
     .from('pelajar')
@@ -51,6 +55,7 @@ export default async function MaklumanPage() {
     <MaklumanKlient
       pelajar={pelajarMapped}
       bulanSemasa={`${bulan} ${tahun}`}
+      penghantarId={user?.id ?? ''}
     />
   )
 }

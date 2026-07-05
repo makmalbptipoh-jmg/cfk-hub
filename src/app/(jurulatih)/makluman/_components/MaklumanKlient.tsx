@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, Check, MessageCircle } from 'lucide-react'
+import Link from 'next/link'
+import { Copy, Check, MessageCircle, History } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 type Pelajar = {
   id: string
@@ -15,9 +17,17 @@ type Pelajar = {
 interface Props {
   pelajar: Pelajar[]
   bulanSemasa: string
+  penghantarId: string
 }
 
 type JenisTab = 'yuran' | 'kelas' | 'pertandingan' | 'pembatalan'
+
+const JENIS_LABEL: Record<JenisTab, 'Yuran' | 'Kelas' | 'Pertandingan' | 'Pembatalan'> = {
+  yuran: 'Yuran',
+  kelas: 'Kelas',
+  pertandingan: 'Pertandingan',
+  pembatalan: 'Pembatalan',
+}
 
 const templat: Record<JenisTab, string> = {
   yuran: `Assalamualaikum w.b.t. Salam sejahtera kepada ibu bapa/penjaga yang dihormati,
@@ -73,16 +83,25 @@ function noWA(noTel: string) {
   return bersih.startsWith('60') ? bersih : `60${bersih.replace(/^0/, '')}`
 }
 
-export function MaklumanKlient({ pelajar, bulanSemasa }: Props) {
+export function MaklumanKlient({ pelajar, bulanSemasa, penghantarId }: Props) {
   const [tab, setTab] = useState<JenisTab>('yuran')
   const [teks, setTeks] = useState<Record<JenisTab, string>>(templat)
   const [disalin, setDisalin] = useState(false)
   const [carianYuran, setCarianYuran] = useState('')
 
+  // FR-45: simpan histori setiap makluman dihantar (salin/WA) — fire-and-forget
+  const rekodHistori = (penerima: string, teksHantar: string) => {
+    createClient()
+      .from('makluman_histori')
+      .insert({ jenis: JENIS_LABEL[tab], penerima, teks: teksHantar, penghantar_id: penghantarId })
+      .then(() => {})
+  }
+
   const salinTeks = async () => {
     await navigator.clipboard.writeText(teks[tab])
     setDisalin(true)
     setTimeout(() => setDisalin(false), 2000)
+    rekodHistori('Semua (salin teks)', teks[tab])
   }
 
   const pelajarBelumBayar = pelajar.filter((p) => p.perluBayar).filter((p) =>
@@ -98,13 +117,27 @@ export function MaklumanKlient({ pelajar, bulanSemasa }: Props) {
 
   return (
     <div>
-      <div style={{ marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}>
-          Makluman
-        </h1>
-        <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '3px' }}>
-          Teks templat untuk dihantar melalui WhatsApp
-        </p>
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}>
+            Makluman
+          </h1>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '3px' }}>
+            Teks templat untuk dihantar melalui WhatsApp
+          </p>
+        </div>
+        <Link
+          href="/makluman/histori"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+            padding: '7px 14px',
+            background: 'var(--bg)', border: '1.5px solid var(--border)',
+            borderRadius: '10px', fontSize: '12.5px', fontWeight: 600,
+            color: 'var(--text)', textDecoration: 'none', whiteSpace: 'nowrap',
+          }}
+        >
+          <History size={13} /> Histori
+        </Link>
       </div>
 
       {/* Tab */}
@@ -226,6 +259,7 @@ export function MaklumanKlient({ pelajar, bulanSemasa }: Props) {
                     href={waLink}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => rekodHistori(p.nama_penuh, teksPersonal)}
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: '5px',
                       padding: '7px 14px',
@@ -272,6 +306,7 @@ export function MaklumanKlient({ pelajar, bulanSemasa }: Props) {
                   href={waLink}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => rekodHistori(p.nama_penuh, teksPersonal)}
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: '5px',
                     padding: '6px 12px',

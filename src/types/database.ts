@@ -450,6 +450,33 @@ export interface Database {
         }
         Relationships: []
       }
+      makluman_histori: {
+        Row: {
+          id: string
+          jenis: 'Yuran' | 'Kelas' | 'Pertandingan' | 'Pembatalan'
+          penerima: string
+          teks: string
+          penghantar_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          jenis: 'Yuran' | 'Kelas' | 'Pertandingan' | 'Pembatalan'
+          penerima: string
+          teks: string
+          penghantar_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          jenis?: 'Yuran' | 'Kelas' | 'Pertandingan' | 'Pembatalan'
+          penerima?: string
+          teks?: string
+          penghantar_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
