@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 type Cawangan = { id: string; nama: string }
+type Pengguna = { id: string; nama: string }
 
 const labelInput = {
   display: 'block' as const,
@@ -25,6 +26,7 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
   const { id } = use(params)
   const router = useRouter()
   const [cawangan, setCawangan] = useState<Cawangan[]>([])
+  const [pengguna, setPengguna] = useState<Pengguna[]>([])
   const [loading, setLoading] = useState(true)
   const [menyimpan, setMenyimpan] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
@@ -40,6 +42,7 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
     pengalaman_ringkas: '',
     kelayakan: '',
     status: 'Aktif',
+    pengguna_id: '',
   })
 
   useEffect(() => {
@@ -47,7 +50,8 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
     Promise.all([
       supabase.from('jurulatih').select('*').eq('id', id).single(),
       supabase.from('cawangan').select('id, nama').eq('status', 'Aktif').order('nama'),
-    ]).then(([{ data: j }, { data: c }]) => {
+      supabase.from('pengguna_profil').select('id, nama').eq('is_admin', false).order('nama'),
+    ]).then(([{ data: j }, { data: c }, { data: p }]) => {
       if (j) {
         setForm({
           nama_penuh: j.nama_penuh ?? '',
@@ -60,9 +64,11 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
           pengalaman_ringkas: j.pengalaman_ringkas ?? '',
           kelayakan: j.kelayakan ?? '',
           status: j.status ?? 'Aktif',
+          pengguna_id: j.pengguna_id ?? '',
         })
       }
       setCawangan(c ?? [])
+      setPengguna(p ?? [])
       setLoading(false)
     })
   }, [id])
@@ -93,6 +99,7 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
       pengalaman_ringkas: form.pengalaman_ringkas || null,
       kelayakan: form.kelayakan || null,
       status: form.status as 'Aktif' | 'Tidak Aktif',
+      pengguna_id: form.pengguna_id || null,
     }).eq('id', id)
     if (error) { setRalat('Gagal simpan. Sila cuba lagi.'); setMenyimpan(false); return }
     router.push(`/jurulatih/${id}`)
@@ -185,6 +192,21 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
             <label style={labelInput}>Pengalaman Ringkas</label>
             <textarea value={form.pengalaman_ringkas} onChange={(e) => set('pengalaman_ringkas', e.target.value)} rows={3} placeholder="Contoh: 5 tahun mengajar catur..." style={{ ...gayaInput, resize: 'vertical' }} />
           </div>
+        </div>
+
+        {/* Akaun Login (untuk self-service kehadiran) */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '24px' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginBottom: '6px' }}>Akaun Login</h2>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+            Kaitkan akaun sistem supaya jurulatih boleh rekod kehadiran sendiri melalui tab "Sesi Saya" di telefon.
+            Cipta akaun dahulu di Tetapan → Pengguna jika belum ada.
+          </p>
+          <select value={form.pengguna_id} onChange={(e) => set('pengguna_id', e.target.value)} style={gayaInput}>
+            <option value="">Tiada (tidak dikaitkan)</option>
+            {pengguna.map((p) => (
+              <option key={p.id} value={p.id}>{p.nama}</option>
+            ))}
+          </select>
         </div>
 
         {/* Status */}

@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { CalendarCheck, Users, Megaphone, LayoutDashboard } from 'lucide-react'
+import { CalendarCheck, Users, Megaphone, LayoutDashboard, UserCheck } from 'lucide-react'
 
 const tabs = [
   { href: '/kehadiran', label: 'Kehadiran', icon: CalendarCheck },
+  { href: '/kehadiran-saya', label: 'Sesi Saya', icon: UserCheck },
   { href: '/pelajar', label: 'Pelajar', icon: Users },
   { href: '/makluman', label: 'Makluman', icon: Megaphone },
   { href: '/dashboard-jurulatih', label: 'Dashboard', icon: LayoutDashboard },
@@ -14,7 +15,7 @@ const tabs = [
 export function BottomTabBar() {
   const pathname = usePathname()
 
-  const isActive = (href: string) => pathname.startsWith(href)
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
   return (
     <nav
@@ -48,12 +49,12 @@ export function BottomTabBar() {
               flexDirection: 'column',
               alignItems: 'center',
               gap: '4px',
-              padding: '8px 16px',
+              padding: '8px 6px',
               borderRadius: '12px',
               textDecoration: 'none',
               color: active ? 'var(--accent)' : 'var(--sidebar-muted)',
               transition: 'color 0.15s',
-              minWidth: '64px',
+              minWidth: '58px',
             }}
           >
             <Icon size={22} strokeWidth={active ? 2.5 : 2} />

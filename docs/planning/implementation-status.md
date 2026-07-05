@@ -23,7 +23,12 @@
 3. Pasang PWA pada telefon jurulatih
 4. (Pilihan) Secret `DATABASE_URL` di GitHub untuk backup mingguan
 
-**Soalan terbuka kepada user (ditanya semula Sesi 5, belum dijawab):** adakah jurulatih patut boleh rekod kehadiran SENDIRI dari telefon (self-service)? Page admin untuk daftar jurulatih (`/jurulatih/baharu`) dan kehadiran jurulatih (`/jurulatih/[id]/kehadiran`) sudah wujud.
+**Jurulatih self-service (dibina Sesi 5 atas arahan user):**
+- Page `/kehadiran-saya` (mobile): butang sentuh Hadir/Tidak Hadir/Cuti untuk sesi HARI INI (upsert; hanya hari ini boleh diubah), ringkasan bulan (3 kotak), anggaran bayaran (sesi Hadir × kadar), sejarah sesi dengan penapis bulan
+- Tab baharu "Sesi Saya" dalam BottomTabBar jurulatih; fix isActive supaya /kehadiran & /kehadiran-saya tidak aktif serentak
+- Borang Edit Jurulatih kini ada seksyen "Akaun Login" — dropdown pengguna_profil bukan-admin untuk set `jurulatih.pengguna_id` (kaitan akaun ↔ profil jurulatih)
+- Migration `scripts/sql/jurulatih-self-service.sql`: fungsi `jurulatih_id_semasa()` + 3 polisi RLS kehadiran_jurulatih (SELECT sendiri; INSERT/UPDATE sendiri dalam julat ±1 hari untuk zon masa) — **WAJIB run sebelum jurulatih guna page ini**
+- Aliran penuh: cipta akaun di Tetapan → Pengguna → kaitkan dalam Edit Jurulatih → jurulatih login di telefon → tab Sesi Saya
 
 ---
 
