@@ -336,6 +336,7 @@ export interface Database {
           jumlah: number
           cawangan_id: string | null
           direkod_oleh: string | null
+          bukti_path: string | null
           created_at: string
         }
         Insert: {
@@ -346,6 +347,7 @@ export interface Database {
           jumlah: number
           cawangan_id?: string | null
           direkod_oleh?: string | null
+          bukti_path?: string | null
           created_at?: string
         }
         Update: {
@@ -356,6 +358,7 @@ export interface Database {
           jumlah?: number
           cawangan_id?: string | null
           direkod_oleh?: string | null
+          bukti_path?: string | null
           created_at?: string
         }
         Relationships: []

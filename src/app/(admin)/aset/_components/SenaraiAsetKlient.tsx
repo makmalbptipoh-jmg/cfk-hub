@@ -57,8 +57,10 @@ export function SenaraiAsetKlient({ aset, cawangan }: Props) {
     return true
   })
 
-  const bilAktif = aset.filter((a) => a.status === 'Aktif').length
-  const nilaiTotal = aset.filter((a) => a.status === 'Aktif').reduce((s, a) => s + (a.nilai_asal ?? 0), 0)
+  // Kiraan header ikut senarai SELEPAS penapis — nilai hanya kira aset Aktif
+  // (aset Lupus tiada nilai semasa)
+  const bilAktif = hasil.filter((a) => a.status === 'Aktif').length
+  const nilaiTotal = hasil.filter((a) => a.status === 'Aktif').reduce((s, a) => s + (a.nilai_asal ?? 0), 0)
 
   return (
     <div style={{ maxWidth: '960px' }}>
@@ -69,7 +71,9 @@ export function SenaraiAsetKlient({ aset, cawangan }: Props) {
             Senarai Aset
           </h1>
           <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-            {bilAktif} aset aktif · Nilai: {formatRinggit(nilaiTotal)}
+            {bilAktif === hasil.length
+              ? `${bilAktif} aset aktif · Nilai: ${formatRinggit(nilaiTotal)}`
+              : `${hasil.length} aset (${bilAktif} aktif) · Nilai: ${formatRinggit(nilaiTotal)}`}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>

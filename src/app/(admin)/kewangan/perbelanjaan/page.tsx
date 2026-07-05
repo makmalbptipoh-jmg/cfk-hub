@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Trash2, Wallet, X } from 'lucide-react'
+import { Paperclip, Plus, Trash2, Upload, Wallet, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatRinggit, formatTarikh } from '@/lib/utils'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
@@ -24,7 +24,25 @@ type Perbelanjaan = {
   penerangan: string
   jumlah: number
   cawangan_id: string | null
+  bukti_path: string | null
   cawangan: { id: string; nama: string } | null
+}
+
+// Bucket peribadi Supabase Storage untuk fail bukti (resit) perbelanjaan
+const BUKTI_BUCKET = 'bukti-perbelanjaan'
+const BUKTI_ACCEPT = '.jpg,.jpeg,.png,.webp,.pdf'
+const BUKTI_MAX_SAIZ = 5 * 1024 * 1024 // 5MB
+
+function pathBukti(rekodId: string, tarikh: string, namaFail: string) {
+  const ext = namaFail.split('.').pop()?.toLowerCase() ?? 'jpg'
+  return `${tarikh.slice(0, 4)}/${rekodId}.${ext}`
+}
+
+function sahkanFailBukti(file: File): string | null {
+  if (file.size > BUKTI_MAX_SAIZ) return 'Fail terlalu besar. Had maksimum 5MB.'
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+  if (!['jpg', 'jpeg', 'png', 'webp', 'pdf'].includes(ext)) return 'Hanya fail imej (JPG/PNG/WebP) atau PDF dibenarkan.'
+  return null
 }
 
 const gayaInput = {
@@ -59,7 +77,7 @@ export default function PerbelanjaanPage() {
 
     let q = supabase
       .from('kewangan_perbelanjaan')
-      .select('id, tarikh, kategori, penerangan, jumlah, cawangan_id, cawangan:cawangan_id(id, nama)')
+      .select('id, tarikh, kategori, penerangan, jumlah, cawangan_id, bukti_path, cawangan:cawangan_id(id, nama)')
       .gte('tarikh', mula)
       .lte('tarikh', akhir)
 
@@ -85,9 +103,50 @@ export default function PerbelanjaanPage() {
     muatData()
   }, [muatData])
 
-  const padam = async (id: string) => {
+  const padam = async (p: Perbelanjaan) => {
     if (!confirm('Padam rekod perbelanjaan ini?')) return
-    await createClient().from('kewangan_perbelanjaan').delete().eq('id', id)
+    const supabase = createClient()
+    if (p.bukti_path) await supabase.storage.from(BUKTI_BUCKET).remove([p.bukti_path])
+    await supabase.from('kewangan_perbelanjaan').delete().eq('id', p.id)
+    muatData()
+  }
+
+  const [uploadingId, setUploadingId] = useState<string | null>(null)
+
+  const lihatBukti = async (p: Perbelanjaan) => {
+    if (!p.bukti_path) return
+    const { data, error } = await createClient()
+      .storage.from(BUKTI_BUCKET)
+      .createSignedUrl(p.bukti_path, 3600)
+    if (error || !data?.signedUrl) { toast.error('Gagal buka bukti. Cuba lagi.'); return }
+    window.open(data.signedUrl, '_blank', 'noopener')
+  }
+
+  const uploadBukti = async (p: Perbelanjaan, file: File) => {
+    const ralatFail = sahkanFailBukti(file)
+    if (ralatFail) { toast.error(ralatFail); return }
+    setUploadingId(p.id)
+    const supabase = createClient()
+    const path = pathBukti(p.id, p.tarikh, file.name)
+    const { error: errUpload } = await supabase.storage
+      .from(BUKTI_BUCKET)
+      .upload(path, file, { upsert: true })
+    if (errUpload) {
+      toast.error('Gagal muat naik bukti. Cuba lagi.')
+      setUploadingId(null)
+      return
+    }
+    // Jika ganti fail dengan sambungan berbeza (cth. .jpg → .pdf), padam fail lama
+    if (p.bukti_path && p.bukti_path !== path) {
+      await supabase.storage.from(BUKTI_BUCKET).remove([p.bukti_path])
+    }
+    const { error: errUpdate } = await supabase
+      .from('kewangan_perbelanjaan')
+      .update({ bukti_path: path })
+      .eq('id', p.id)
+    setUploadingId(null)
+    if (errUpdate) { toast.error('Bukti dimuat naik tetapi gagal disimpan pada rekod. Cuba lagi.'); return }
+    toast.success('Bukti perbelanjaan dimuat naik.')
     muatData()
   }
 
@@ -217,7 +276,7 @@ export default function PerbelanjaanPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                {['Tarikh', 'Kategori', 'Penerangan', 'Cawangan', 'Jumlah', ''].map((h) => (
+                {['Tarikh', 'Kategori', 'Penerangan', 'Cawangan', 'Jumlah', 'Bukti', ''].map((h) => (
                   <th
                     key={h}
                     style={{
@@ -267,9 +326,86 @@ export default function PerbelanjaanPage() {
                   <td style={{ padding: '10px 14px', fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>
                     {formatRinggit(p.jumlah)}
                   </td>
+                  <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                    {p.bukti_path ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          onClick={() => lihatBukti(p)}
+                          title="Lihat bukti"
+                          aria-label={`Lihat bukti perbelanjaan ${p.penerangan}`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '4px 10px',
+                            background: '#F0FDF4',
+                            border: '1px solid #BBF7D0',
+                            borderRadius: '20px',
+                            fontSize: '11.5px',
+                            fontWeight: 600,
+                            color: '#15803D',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          <Paperclip size={12} /> Lihat
+                        </button>
+                        <label
+                          title="Ganti bukti"
+                          aria-label={`Ganti bukti perbelanjaan ${p.penerangan}`}
+                          style={{ display: 'inline-flex', alignItems: 'center', cursor: uploadingId === p.id ? 'wait' : 'pointer', color: 'var(--text-muted)', opacity: 0.7 }}
+                        >
+                          <Upload size={12} />
+                          <input
+                            type="file"
+                            accept={BUKTI_ACCEPT}
+                            disabled={uploadingId !== null}
+                            style={{ display: 'none' }}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              e.target.value = ''
+                              if (file) uploadBukti(p, file)
+                            }}
+                          />
+                        </label>
+                      </span>
+                    ) : (
+                      <label
+                        title="Muat naik bukti (imej/PDF)"
+                        aria-label={`Muat naik bukti perbelanjaan ${p.penerangan}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '4px 10px',
+                          background: 'var(--bg)',
+                          border: '1px dashed var(--border)',
+                          borderRadius: '20px',
+                          fontSize: '11.5px',
+                          fontWeight: 600,
+                          color: 'var(--text-muted)',
+                          cursor: uploadingId === p.id ? 'wait' : 'pointer',
+                        }}
+                      >
+                        <Upload size={12} />
+                        {uploadingId === p.id ? 'Memuat naik...' : 'Upload'}
+                        <input
+                          type="file"
+                          accept={BUKTI_ACCEPT}
+                          disabled={uploadingId !== null}
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            e.target.value = ''
+                            if (file) uploadBukti(p, file)
+                          }}
+                        />
+                      </label>
+                    )}
+                  </td>
                   <td style={{ padding: '10px 14px' }}>
                     <button
-                      onClick={() => padam(p.id)}
+                      onClick={() => padam(p)}
                       title="Padam"
                       aria-label={`Padam perbelanjaan ${p.penerangan}`}
                       style={{
@@ -328,6 +464,7 @@ function ModalTambahPerbelanjaan({
   const [penerangan, setPenerangan] = useState('')
   const [jumlah, setJumlah] = useState('')
   const [cawanganId, setCawanganId] = useState('')
+  const [failBukti, setFailBukti] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
   useTutupEscape(onTutup)
@@ -335,16 +472,39 @@ function ModalTambahPerbelanjaan({
   const simpan = async () => {
     if (!penerangan.trim()) { setRalat('Sila isi penerangan perbelanjaan.'); return }
     if (!jumlah || +jumlah <= 0) { setRalat('Jumlah mesti lebih dari 0.'); return }
+    if (failBukti) {
+      const ralatFail = sahkanFailBukti(failBukti)
+      if (ralatFail) { setRalat(ralatFail); return }
+    }
     setLoading(true)
     setRalat(null)
-    const { error } = await createClient().from('kewangan_perbelanjaan').insert({
-      tarikh,
-      kategori,
-      penerangan: penerangan.trim(),
-      jumlah: +jumlah,
-      cawangan_id: cawanganId || null,
-    })
-    if (error) { setRalat('Gagal simpan. Cuba lagi.'); setLoading(false); return }
+    const supabase = createClient()
+    const { data: rekod, error } = await supabase
+      .from('kewangan_perbelanjaan')
+      .insert({
+        tarikh,
+        kategori,
+        penerangan: penerangan.trim(),
+        jumlah: +jumlah,
+        cawangan_id: cawanganId || null,
+      })
+      .select('id')
+      .single()
+    if (error || !rekod) { setRalat('Gagal simpan. Cuba lagi.'); setLoading(false); return }
+
+    // Muat naik bukti selepas rekod berjaya — jika gagal, rekod kekal dan
+    // bukti boleh dimuat naik semula dari jadual
+    if (failBukti) {
+      const path = pathBukti(rekod.id, tarikh, failBukti.name)
+      const { error: errUpload } = await supabase.storage
+        .from(BUKTI_BUCKET)
+        .upload(path, failBukti, { upsert: true })
+      if (errUpload) {
+        toast.error('Rekod disimpan tetapi bukti gagal dimuat naik. Guna butang Upload dalam jadual.')
+      } else {
+        await supabase.from('kewangan_perbelanjaan').update({ bukti_path: path }).eq('id', rekod.id)
+      }
+    }
     onBerjaya(tarikh)
   }
 
@@ -441,6 +601,50 @@ function ModalTambahPerbelanjaan({
                 {cawangan.map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px', textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>
+              Bukti / Resit (pilihan)
+            </label>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 12px',
+                border: '1.5px dashed var(--border)',
+                borderRadius: '10px',
+                fontSize: '13px',
+                color: failBukti ? 'var(--text)' : 'var(--text-muted)',
+                cursor: 'pointer',
+                background: 'var(--bg)',
+              }}
+            >
+              <Upload size={14} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {failBukti ? failBukti.name : 'Pilih fail imej atau PDF (max 5MB)'}
+              </span>
+              {failBukti && (
+                <button
+                  onClick={(e) => { e.preventDefault(); setFailBukti(null) }}
+                  aria-label="Buang fail bukti"
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', marginLeft: 'auto', display: 'flex', flexShrink: 0 }}
+                >
+                  <X size={14} />
+                </button>
+              )}
+              <input
+                type="file"
+                accept={BUKTI_ACCEPT}
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  e.target.value = ''
+                  if (file) setFailBukti(file)
+                }}
+              />
+            </label>
           </div>
         </div>
 
