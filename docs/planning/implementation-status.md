@@ -15,7 +15,8 @@
 - **Buang ikon pawn ♟ dalam PDF** (commit `6efe738`): Helvetica tiada glyph catur — render jadi garis pendek oren pada alamat (aduan user). Dibuang dari ResitPDF & LaporanPDF.
 - **Fungsi bukti disahkan hujung-ke-hujung**: simpan rekod + upload PDF + signed URL muat turun + padam — semua diuji OK. Pendua 31 Jan (x2) + rekod ujian RM1 dipadam dari DB melalui REST.
 - **AWAS**: rekod SEWA KEDAI Julai 2026 (RM500) terpadam semasa ujian user — perlu ditambah semula jika sewa Julai sudah dibayar. Perbelanjaan sah kini: Jan(+PDF), Feb(+PDF), Apr, Mei, Jun — Mac & Jul tiada.
-- **Isu berulang browser user**: service worker PWA lama buat page nampak "tak fungsi" (filter/simpan). Penyelesaian: F12 → Application → Service Workers → Unregister → tutup semua tab → buka semula.
+- **BUG KRITIKAL DITEMUI & DIBAIKI (commit `1a27fd2`)** — punca sebenar aduan "data tak simpan": `new Date(y, m, 0).toISOString()` menukar hari akhir bulan waktu Malaysia ke UTC (tolak 8 jam) → penapis bulan jadi `lte.YYYY-MM-30` → rekod bertarikh 31/30/29/28 hb TIDAK dipaparkan walaupun tersimpan. Dibaiki dengan util `akhirBulan()` di 10 lokasi (perbelanjaan, kewangan, laporan×2, dashboard, makluman, jurulatih×3, kehadiran-saya). Disahkan live dalam browser user melalui Chrome extension. Pengajaran: JANGAN guna `toISOString()` untuk tarikh tempatan.
+- Nota lama "service worker cache" masih relevan sebagai isu berasingan, tetapi aduan utama sesi ini ialah bug zon masa di atas.
 
 **Tertunggak user (bawa dari Sesi 4):**
 1. Isi `scripts/data/pelajar-placeholder.csv` (22 pelajar Klebang: ibu bapa/telefon/alamat) → `node scripts/update-pelajar-placeholder.mjs --commit`
