@@ -1,6 +1,6 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 5 Jul 2026 (Sesi 5)
+**Dikemaskini:** 5 Jul 2026 (Sesi 5, hingga commit `0a0fa71`)
 **Stack:** Next.js 16 + TypeScript + Supabase + Tailwind CSS + Vercel
 
 ---
@@ -65,6 +65,17 @@
 
 **Gaji wajib ikut kehadiran (commit `44db8b5`):**
 - Modal Rekod Bayaran: bilangan sesi ≤ sesi Hadir direkod (validasi + input max + nota had); butang rekod dikunci jika 0 sesi hadir
+
+**Slip Gaji PDF (commit `2eac282`):**
+- `SlipGajiPDF.tsx` + `BtnSlipGaji.tsx` — butang "Slip" pada setiap baris Sejarah Bayaran jurulatih
+- Kandungan: header CFK, bulan gaji, maklumat jurulatih (nama/IC/status), butiran sesi × kadar, JUMLAH GAJI BERSIH, nota footer auto-jana
+- Nama fail `Slip_Gaji_NAMA_Bulan Tahun.pdf`; **diuji di production** — toast berjaya, PDF turun ✅
+
+**Sheet Rekonsiliasi Bank dalam Laporan LHDN Excel (commit `0a0fa71`):**
+- Sheet ke-5: pecahan bulanan Masuk Bank (resit Transfer) / Tunai / Belanja / Pergerakan dijangka (formula)
+- Sel kuning isi manual: baki awal tahun + baki penyata bank akhir setiap bulan; kolum BEZA berformula auto (baki − baki lalu − pergerakan)
+- **Diuji di production** — toast "Laporan LHDN 2026 berjaya dijana" ✅
+- Konteks: nasihat rekod LHDN diberi kepada user (S.82 simpan 7 tahun, bukti setiap perbelanjaan, e-Invois dikecualikan <RM500k) — jurang tinggal: secret `DATABASE_URL` untuk backup (keperluan simpanan 7 tahun)
 
 **Onboarding jurulatih sebenar (dibuat user 5 Jul):** akaun `maisarahkhatibcfk@gmail.com` (aisyah maisarah binti khatib, Jurulatih, Klebang) dicipta di Tetapan → Pengguna; akaun ujian diblok oleh user. Langkah tinggal: Daftar profil jurulatih aisyah → Edit → kaitkan Akaun Login + gambar.
 
