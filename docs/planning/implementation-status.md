@@ -1,6 +1,17 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 5 Jul 2026 (Sesi 5, hingga commit `0a0fa71`)
+**Dikemaskini:** 5 Jul 2026 (Sesi 5, hingga commit `3b18ba0`)
+
+## ⚡ MULA SINI SESI 6
+
+**Penghujung Sesi 5 (selepas `0a0fa71`):**
+- Butang Slip gaji juga dalam tab Bayaran profil jurulatih (`ffd62d6`) — user awalnya cari di situ
+- Workflow backup guna postgresql-client-17 PGDG (`118d929`) — user DIBERI PANDUAN setup secret `DATABASE_URL` (Supabase Connect → Session pooler URI → GitHub Settings → Secrets → Actions) tetapi **BELUM disahkan siap** — semak dulu di Sesi 6: repo Actions → "Backup Database Mingguan" ada run berjaya?
+- Notifikasi pendua Tambah Pelajar (`3b18ba0`) — amaran kuning nama serupa semasa menaip, pautan profil, tidak menghalang. Deploy success; belum diuji dalam browser (user sedang guna tab masa tu) — user diberi langkah uji sendiri (taip "CHUA").
+- **Pakej Adik-Beradik DIUJI PENUH di production** dengan 2 pelajar ujian (dipadam selepas ujian): auto-detect keluarga ✅, jumlah seorang manual RM60 ✅, 2 resit berasingan CFK-2026-00173/00174 ✅. Nota: sequence resit kini di ~00175.
+- Jawapan soalan user: jumlah bayaran boleh key-in manual di kedua-dua borang (S-17 wajib manual; S-12 auto tapi boleh ganti)
+
+---
 **Stack:** Next.js 16 + TypeScript + Supabase + Tailwind CSS + Vercel
 
 ---
