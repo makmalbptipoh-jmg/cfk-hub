@@ -25,7 +25,8 @@ const csp = [
   `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'`,
   `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
   `font-src 'self' https://fonts.gstatic.com`,
-  `img-src 'self' data: blob:`,
+  // Supabase host: gambar profil jurulatih & bukti dari Storage (signed URL)
+  `img-src 'self' data: blob: ${SUPABASE_HOST}`,
   `connect-src 'self' ${SUPABASE_HOST} ${SUPABASE_WS} https://fonts.googleapis.com https://fonts.gstatic.com`,
   `worker-src 'self' blob:`,
   `frame-src 'self' blob:`,

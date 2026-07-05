@@ -211,6 +211,7 @@ export interface Database {
         Row: {
           id: string
           pengguna_id: string | null
+          gambar_path: string | null
           nama_penuh: string
           no_ic: string | null
           no_telefon: string | null
@@ -226,6 +227,7 @@ export interface Database {
         Insert: {
           id?: string
           pengguna_id?: string | null
+          gambar_path?: string | null
           nama_penuh: string
           no_ic?: string | null
           no_telefon?: string | null
@@ -241,6 +243,7 @@ export interface Database {
         Update: {
           id?: string
           pengguna_id?: string | null
+          gambar_path?: string | null
           nama_penuh?: string
           no_ic?: string | null
           no_telefon?: string | null

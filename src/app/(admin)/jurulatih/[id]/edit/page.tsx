@@ -3,10 +3,14 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Camera, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type Cawangan = { id: string; nama: string }
 type Pengguna = { id: string; nama: string }
+
+const GAMBAR_BUCKET = 'gambar-jurulatih'
+const GAMBAR_MAX_SAIZ = 2 * 1024 * 1024 // 2MB
 
 const labelInput = {
   display: 'block' as const,
@@ -30,6 +34,11 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
   const [loading, setLoading] = useState(true)
   const [menyimpan, setMenyimpan] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
+  const [gambarPath, setGambarPath] = useState<string | null>(null)
+  const [gambarUrl, setGambarUrl] = useState<string | null>(null)
+  const [failGambar, setFailGambar] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [buangGambar, setBuangGambar] = useState(false)
 
   const [form, setForm] = useState({
     nama_penuh: '',
@@ -66,12 +75,28 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
           status: j.status ?? 'Aktif',
           pengguna_id: j.pengguna_id ?? '',
         })
+        if (j.gambar_path) {
+          setGambarPath(j.gambar_path)
+          supabase.storage.from(GAMBAR_BUCKET).createSignedUrl(j.gambar_path, 3600)
+            .then(({ data }) => { if (data?.signedUrl) setGambarUrl(data.signedUrl) })
+        }
       }
       setCawangan(c ?? [])
       setPengguna(p ?? [])
       setLoading(false)
     })
   }, [id])
+
+  const pilihGambar = (file: File) => {
+    if (file.size > GAMBAR_MAX_SAIZ) { setRalat('Gambar terlalu besar. Had maksimum 2MB.'); return }
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+    if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext)) { setRalat('Hanya gambar JPG/PNG/WebP dibenarkan.'); return }
+    setRalat(null)
+    setFailGambar(file)
+    setBuangGambar(false)
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl(URL.createObjectURL(file))
+  }
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -88,7 +113,25 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
     if (!form.nama_penuh.trim()) { setRalat('Nama penuh wajib diisi.'); return }
     setMenyimpan(true)
     setRalat(null)
-    const { error } = await createClient().from('jurulatih').update({
+    const supabase = createClient()
+
+    // Urus gambar profil dahulu
+    let gambarPathBaru: string | null = gambarPath
+    if (failGambar) {
+      const ext = failGambar.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+      const path = `${id}.${ext}`
+      const { error: errUpload } = await supabase.storage
+        .from(GAMBAR_BUCKET)
+        .upload(path, failGambar, { upsert: true })
+      if (errUpload) { setRalat('Gagal muat naik gambar. Cuba lagi.'); setMenyimpan(false); return }
+      if (gambarPath && gambarPath !== path) await supabase.storage.from(GAMBAR_BUCKET).remove([gambarPath])
+      gambarPathBaru = path
+    } else if (buangGambar && gambarPath) {
+      await supabase.storage.from(GAMBAR_BUCKET).remove([gambarPath])
+      gambarPathBaru = null
+    }
+
+    const { error } = await supabase.from('jurulatih').update({
       nama_penuh: form.nama_penuh.toUpperCase(),
       no_ic: form.no_ic || null,
       no_telefon: form.no_telefon || null,
@@ -100,6 +143,7 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
       kelayakan: form.kelayakan || null,
       status: form.status as 'Aktif' | 'Tidak Aktif',
       pengguna_id: form.pengguna_id || null,
+      gambar_path: gambarPathBaru,
     }).eq('id', id)
     if (error) { setRalat('Gagal simpan. Sila cuba lagi.'); setMenyimpan(false); return }
     router.push(`/jurulatih/${id}`)
@@ -124,6 +168,74 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Gambar Profil */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '24px' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginBottom: '18px' }}>Gambar Profil</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+            <div
+              style={{
+                width: '84px', height: '84px', borderRadius: '50%',
+                background: 'var(--bg)', border: '2px solid var(--border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', flexShrink: 0,
+              }}
+            >
+              {previewUrl || (gambarUrl && !buangGambar) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={previewUrl ?? gambarUrl ?? ''}
+                  alt={`Gambar ${form.nama_penuh || 'jurulatih'}`}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <Camera size={26} style={{ color: 'var(--border)' }} />
+              )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '8px 14px', background: 'var(--bg)',
+                  border: '1.5px solid var(--border)', borderRadius: '10px',
+                  fontSize: '12.5px', fontWeight: 600, color: 'var(--text)',
+                  cursor: 'pointer', width: 'fit-content',
+                }}
+              >
+                <Camera size={13} />
+                {previewUrl || gambarUrl ? 'Tukar Gambar' : 'Pilih Gambar'}
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    e.target.value = ''
+                    if (file) pilihGambar(file)
+                  }}
+                />
+              </label>
+              {(previewUrl || (gambarUrl && !buangGambar)) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (previewUrl) { URL.revokeObjectURL(previewUrl); setPreviewUrl(null); setFailGambar(null) }
+                    if (gambarPath) setBuangGambar(true)
+                  }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                    padding: '6px 12px', background: 'none', border: 'none',
+                    fontSize: '12px', fontWeight: 600, color: '#EF4444',
+                    cursor: 'pointer', fontFamily: 'inherit', width: 'fit-content',
+                  }}
+                >
+                  <X size={12} /> Buang gambar
+                </button>
+              )}
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>JPG/PNG/WebP, max 2MB</span>
+            </div>
+          </div>
+        </div>
+
         {/* Maklumat Peribadi */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '24px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginBottom: '18px' }}>Maklumat Peribadi</h2>

@@ -57,6 +57,15 @@ export default async function ProfilJurulatihPage({
     (b: any) => b.bulan_bayaran === sekarang.toLocaleString('ms-MY', { month: 'long' }) && b.tahun_bayaran === sekarang.getFullYear() && b.status === 'Sudah Bayar'
   )
 
+  // Gambar profil: signed URL (bucket peribadi) — sah 1 jam
+  let gambarUrl: string | null = null
+  if (raw.gambar_path) {
+    const { data: signed } = await supabase.storage
+      .from('gambar-jurulatih')
+      .createSignedUrl(raw.gambar_path, 3600)
+    gambarUrl = signed?.signedUrl ?? null
+  }
+
   return (
     <ProfilJurulatihKlient
       jurulatih={{
@@ -71,6 +80,7 @@ export default async function ProfilJurulatihPage({
         kelayakan: raw.kelayakan,
         status: raw.status,
         cawangan_nama: (raw.cawangan_ids ?? []).map((cid: string) => petaCawangan[cid] ?? '').filter(Boolean).join(', '),
+        gambar_url: gambarUrl,
       }}
       statBulan={statBulan}
       kehadiran={kehadiran ?? []}

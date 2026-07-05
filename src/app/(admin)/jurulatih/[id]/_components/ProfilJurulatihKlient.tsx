@@ -17,6 +17,7 @@ type Jurulatih = {
   kelayakan: string | null
   status: string
   cawangan_nama: string
+  gambar_url: string | null
 }
 
 type StatBulan = { bulan: string; sesi: number }
@@ -65,14 +66,39 @@ export function ProfilJurulatihKlient({ jurulatih: j, statBulan, kehadiran, baya
           <Link href="/jurulatih" style={{ fontSize: '13px', color: 'var(--text-muted)', textDecoration: 'none', display: 'block', marginBottom: '8px' }}>
             ← Senarai Jurulatih
           </Link>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}>{j.nama_penuh}</h1>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '6px', alignItems: 'center' }}>
-            <span style={{
-              fontSize: '12px', padding: '3px 10px', borderRadius: '20px', fontWeight: 600,
-              background: j.status === 'Aktif' ? 'var(--hadir-bg)' : '#F1F5F9',
-              color: j.status === 'Aktif' ? 'var(--hadir-text)' : 'var(--text-muted)',
-            }}>{j.status}</span>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{j.cawangan_nama || 'Tiada cawangan'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div
+              style={{
+                width: '72px', height: '72px', borderRadius: '50%',
+                background: 'var(--accent)', border: '2px solid var(--border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', flexShrink: 0,
+              }}
+            >
+              {j.gambar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={j.gambar_url}
+                  alt={`Gambar ${j.nama_penuh}`}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent-text)' }}>
+                  {j.nama_penuh.trim().charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div>
+              <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}>{j.nama_penuh}</h1>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px', alignItems: 'center' }}>
+                <span style={{
+                  fontSize: '12px', padding: '3px 10px', borderRadius: '20px', fontWeight: 600,
+                  background: j.status === 'Aktif' ? 'var(--hadir-bg)' : '#F1F5F9',
+                  color: j.status === 'Aktif' ? 'var(--hadir-text)' : 'var(--text-muted)',
+                }}>{j.status}</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{j.cawangan_nama || 'Tiada cawangan'}</span>
+              </div>
+            </div>
           </div>
         </div>
         <Link href={`/jurulatih/${j.id}/edit`}
