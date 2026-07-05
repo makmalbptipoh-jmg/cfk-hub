@@ -1,24 +1,29 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 4 Jul 2026 (Sesi 4)
+**Dikemaskini:** 5 Jul 2026 (Sesi 5)
 **Stack:** Next.js 16 + TypeScript + Supabase + Tailwind CSS + Vercel
 
 ---
 
-## ⚡ MULA SINI SESI 5
+## ⚡ STATUS SESI 5 (5 Jul 2026)
 
-**Perkara PERTAMA sesi akan datang — sahkan fix PDF:**
-- Punca PDF gagal ("Gagal jana PDF"): CSP `script-src` tiada `'wasm-unsafe-eval'` — @react-pdf/renderer v4 guna enjin Yoga (WebAssembly). Fix di-push commit `450c56e` (4 Jul malam) tetapi **BELUM disahkan oleh user di production**.
-- Langkah sahkan: buka cfk-hub.vercel.app → Ctrl+Shift+R sekali → Bayaran → klik butang PDF mana-mana resit → toast hijau + fail turun = OK. Jika masih gagal, semak console browser (F12) dan laporkan ralat sebenar.
+**Fix PDF (wasm CSP) DISAHKAN berfungsi** — user berjaya buka PDF resit di production (commit `450c56e`).
+
+**Dibuat & LIVE dalam Sesi 5:**
+- **Upload bukti/resit perbelanjaan** (commit `291be6a`): kolum `bukti_path` + bucket Supabase Storage peribadi `bukti-perbelanjaan` (migration `scripts/sql/tambah-bukti-perbelanjaan.sql` — **sudah di-run user**). Modal Tambah Perbelanjaan boleh lampirkan imej/PDF (max 5MB); jadual ada kolum Bukti — butang Upload untuk rekod lama, Lihat (signed URL 1 jam) + ganti untuk rekod berbukti; padam rekod turut padam fail storage.
+- **Total aset ikut penapis** (commit `291be6a`): header Senarai Aset kira bilangan/nilai dari senarai selepas penapis sahaja (aduan user).
+- **Buang ikon pawn ♟ dalam PDF** (commit `6efe738`): Helvetica tiada glyph catur — render jadi garis pendek oren pada alamat (aduan user). Dibuang dari ResitPDF & LaporanPDF.
+- **Fungsi bukti disahkan hujung-ke-hujung**: simpan rekod + upload PDF + signed URL muat turun + padam — semua diuji OK. Pendua 31 Jan (x2) + rekod ujian RM1 dipadam dari DB melalui REST.
+- **AWAS**: rekod SEWA KEDAI Julai 2026 (RM500) terpadam semasa ujian user — perlu ditambah semula jika sewa Julai sudah dibayar. Perbelanjaan sah kini: Jan(+PDF), Feb(+PDF), Apr, Mei, Jun — Mac & Jul tiada.
+- **Isu berulang browser user**: service worker PWA lama buat page nampak "tak fungsi" (filter/simpan). Penyelesaian: F12 → Application → Service Workers → Unregister → tutup semua tab → buka semula.
 
 **Tertunggak user (bawa dari Sesi 4):**
 1. Isi `scripts/data/pelajar-placeholder.csv` (22 pelajar Klebang: ibu bapa/telefon/alamat) → `node scripts/update-pelajar-placeholder.mjs --commit`
 2. Cipta akaun jurulatih (perlu nama/emel/cawangan daripada user)
 3. Pasang PWA pada telefon jurulatih
 4. (Pilihan) Secret `DATABASE_URL` di GitHub untuk backup mingguan
-5. Rekod duplicate perbelanjaan sudah dipadam; pakej adik-beradik + laporan aset Excel + S-13a semua live tapi belum diuji user di production
 
-**Soalan terbuka kepada user:** adakah jurulatih patut boleh rekod kehadiran SENDIRI dari telefon (self-service)? Page admin untuk daftar jurulatih (`/jurulatih/baharu`) dan kehadiran jurulatih (`/jurulatih/[id]/kehadiran`) sudah wujud.
+**Soalan terbuka kepada user (ditanya semula Sesi 5, belum dijawab):** adakah jurulatih patut boleh rekod kehadiran SENDIRI dari telefon (self-service)? Page admin untuk daftar jurulatih (`/jurulatih/baharu`) dan kehadiran jurulatih (`/jurulatih/[id]/kehadiran`) sudah wujud.
 
 ---
 
