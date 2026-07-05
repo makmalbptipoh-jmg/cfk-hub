@@ -31,6 +31,11 @@ export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bi
 
   const simpan = async () => {
     if (bilSesi <= 0) { setRalat('Bilangan sesi mesti lebih dari 0.'); return }
+    // Gaji WAJIB ikut kehadiran — tidak boleh bayar melebihi sesi Hadir yang direkod
+    if (bilSesi > bilSesiHadir) {
+      setRalat(`Bilangan sesi melebihi kehadiran direkod (${bilSesiHadir} sesi hadir). Rekod kehadiran dahulu di page Kehadiran.`)
+      return
+    }
     setLoading(true)
     setRalat(null)
     const supabase = createClient()
@@ -97,7 +102,10 @@ export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bi
             <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px', textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>
               Bil. Sesi Hadir
             </label>
-            <input type="number" min="0" value={bilSesi} onChange={(e) => setBilSesi(+e.target.value)} style={gayaInput} />
+            <input type="number" min="0" max={bilSesiHadir} value={bilSesi} onChange={(e) => setBilSesi(+e.target.value)} style={gayaInput} />
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Kehadiran direkod: {bilSesiHadir} sesi (had maksimum)
+            </p>
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px', textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>

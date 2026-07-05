@@ -71,13 +71,19 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunS
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {!sudahRekodBulanIni && (
-            <button onClick={() => setModal(true)}
+            <button
+              onClick={() => setModal(true)}
+              disabled={bilSesiHadirBulanIni === 0}
+              title={bilSesiHadirBulanIni === 0 ? 'Tiada sesi hadir bulan ini — rekod kehadiran dahulu' : undefined}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
                 padding: '11px 16px', height: '100%',
-                background: 'var(--accent)', border: 'none',
+                background: bilSesiHadirBulanIni === 0 ? '#94A3B8' : 'var(--accent)',
+                border: 'none',
                 borderRadius: '14px', fontSize: '13px', fontWeight: 700,
-                color: 'var(--accent-text)', cursor: 'pointer', fontFamily: 'inherit',
+                color: 'var(--accent-text)',
+                cursor: bilSesiHadirBulanIni === 0 ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
                 whiteSpace: 'nowrap',
               }}>
               <Plus size={14} />
