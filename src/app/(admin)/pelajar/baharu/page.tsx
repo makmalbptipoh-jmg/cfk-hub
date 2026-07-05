@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ChevronRight, ChevronLeft, Check } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Check, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { kirYuranBulanan, formatRinggit } from '@/lib/utils'
 
@@ -70,6 +71,31 @@ export default function TambahPelajarPage() {
 
   const form1 = useForm<Data1>({ resolver: zodResolver(skema1), defaultValues: { jenis_kelas: 'Kumpulan' } })
   const form2 = useForm<Data2>({ resolver: zodResolver(skema2) })
+
+  // Notifikasi pendua: semak nama serupa dalam DB semasa menaip (debounce 500ms)
+  const [pendua, setPendua] = useState<{ id: string; nama_penuh: string; status: string; cawangan: string }[]>([])
+  const namaDitaip = form1.watch('nama_penuh')
+
+  useEffect(() => {
+    const nama = (namaDitaip ?? '').trim()
+    if (nama.length < 4) { setPendua([]); return }
+    const timer = setTimeout(async () => {
+      const { data } = await createClient()
+        .from('pelajar')
+        .select('id, nama_penuh, status, cawangan:cawangan_daftar_id(nama)')
+        .ilike('nama_penuh', `%${nama}%`)
+        .limit(3)
+      setPendua(
+        ((data ?? []) as any[]).map((p) => ({
+          id: p.id,
+          nama_penuh: p.nama_penuh,
+          status: p.status,
+          cawangan: p.cawangan?.nama ?? '—',
+        }))
+      )
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [namaDitaip])
 
   const teruskanLangkah1 = form1.handleSubmit((data) => {
     setData1(data)
@@ -189,6 +215,37 @@ export default function TambahPelajarPage() {
               <input {...form1.register('nama_penuh')} placeholder="Contoh: Ahmad bin Ali" style={gayaInput(!!form1.formState.errors.nama_penuh)} />
               {form1.formState.errors.nama_penuh && (
                 <p style={{ fontSize: '12px', color: '#EF4444', marginTop: '4px' }}>{form1.formState.errors.nama_penuh.message}</p>
+              )}
+              {pendua.length > 0 && (
+                <div
+                  style={{
+                    background: '#FEF3C7', border: '1px solid #FDE68A',
+                    borderRadius: '10px', padding: '10px 14px', marginTop: '8px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                    <AlertTriangle size={13} style={{ color: '#92400E', flexShrink: 0 }} />
+                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#92400E' }}>
+                      Pelajar dengan nama serupa sudah wujud:
+                    </span>
+                  </div>
+                  {pendua.map((p) => (
+                    <div key={p.id} style={{ fontSize: '12.5px', color: '#92400E', marginBottom: '3px' }}>
+                      •{' '}
+                      <Link
+                        href={`/pelajar/${p.id}`}
+                        target="_blank"
+                        style={{ fontWeight: 700, color: '#92400E', textDecoration: 'underline' }}
+                      >
+                        {p.nama_penuh}
+                      </Link>
+                      {' '}— {p.cawangan} · {p.status}
+                    </div>
+                  ))}
+                  <p style={{ fontSize: '11.5px', color: '#92400E', opacity: 0.8, marginTop: '4px' }}>
+                    Semak dulu profil di atas untuk elak daftar dua kali. Teruskan hanya jika ini pelajar berbeza.
+                  </p>
+                </div>
               )}
             </div>
 
