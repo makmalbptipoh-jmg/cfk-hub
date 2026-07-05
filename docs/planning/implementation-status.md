@@ -52,6 +52,12 @@
 
 **Nota multi-cawangan (soalan user):** memang sudah disokong sejak awal — `cawangan_ids` array, butang toggle multi-select dalam Daftar/Edit, paparan bercantum. Tiada perubahan diperlukan.
 
+**Kehadiran jurulatih ikut cawangan & jenis kelas (commit `520b153`):**
+- Kolum `cawangan_id` + `jenis_kelas` (Kumpulan/Personal) pada `kehadiran_jurulatih` (migration `kehadiran-jurulatih-cawangan.sql` — **sudah di-run user**)
+- UNIQUE lama (jurulatih, tarikh) → UNIQUE NULLS NOT DISTINCT (jurulatih, tarikh, cawangan, jenis) — boleh beberapa sesi sehari, setiap satu dikira untuk gaji
+- Borang admin S-27 + Sesi Saya (self-service) + tab Kehadiran profil semua dikemaskini
+- **Diuji dalam browser user**: 2 sesi hari sama (Kumpulan + Buntong/Personal) → "2 sesi hadir = asas pengiraan bayaran" ✅
+
 **Onboarding jurulatih sebenar (dibuat user 5 Jul):** akaun `maisarahkhatibcfk@gmail.com` (aisyah maisarah binti khatib, Jurulatih, Klebang) dicipta di Tetapan → Pengguna; akaun ujian diblok oleh user. Langkah tinggal: Daftar profil jurulatih aisyah → Edit → kaitkan Akaun Login + gambar.
 
 ---
