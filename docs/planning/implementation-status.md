@@ -20,11 +20,11 @@
 
 **Tertunggak user:**
 1. Isi `scripts/data/pelajar-placeholder.csv` (22 pelajar Klebang: ibu bapa/telefon/alamat) → `node scripts/update-pelajar-placeholder.mjs --commit`
-2. ~~Cipta akaun jurulatih~~ ✅ akaun aisyah dicipta — tinggal Daftar profil jurulatih + kaitkan Akaun Login
+2. ~~Cipta akaun jurulatih~~ ✅ 4 jurulatih sebenar (RM7/sesi) di-onboard user 5 Jul: AZZAHRA, UMAIRAH, FARZANAH (akaun dikaitkan) + HARUSSANI (**akaun "harussani" wujud tapi BELUM dikaitkan dalam Edit Jurulatih**); 3 sesi Klebang/Kumpulan sudah direkod dengan ciri baharu
 3. Pasang PWA pada telefon jurulatih
 4. (Pilihan) Secret `DATABASE_URL` di GitHub untuk backup mingguan
 5. Rekod sewa Mac & Julai 2026 (jika sudah bayar) + upload bukti Apr/Mei/Jun
-6. **Padam data ujian bila selesai**: akaun `ujian.jurulatih@cfkhub.test` + jurulatih JURULATIH UJIAN `614d7711` + 1 rekod sesi + 1 rekod gaji RM50 Julai + gambar ujian dalam bucket `gambar-jurulatih` — minta Claude padam sekali gus
+6. ~~Padam data ujian~~ ✅ SELESAI (5 Jul) — akaun ujian, profil JURULATIH UJIAN, 2 sesi, gaji RM50, gambar storage semua dipadam; disahkan hanya data sebenar tinggal
 
 **Jurulatih self-service (dibina Sesi 5 atas arahan user):**
 - Page `/kehadiran-saya` (mobile): butang sentuh Hadir/Tidak Hadir/Cuti untuk sesi HARI INI (upsert; hanya hari ini boleh diubah), ringkasan bulan (3 kotak), anggaran bayaran (sesi Hadir × kadar), sejarah sesi dengan penapis bulan
