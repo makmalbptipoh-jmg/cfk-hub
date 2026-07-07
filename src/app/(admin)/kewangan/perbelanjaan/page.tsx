@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { akhirBulan, formatRinggit, formatTarikh, tarikhTempatan, bulanTempatan } from '@/lib/utils'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 import { toast } from '@/lib/stores/toast-store'
+import { perbelanjaanSchema, ralatPertama } from '@/lib/validation/kewangan'
 
 const KATEGORI = [
   'Sewa',
@@ -477,8 +478,8 @@ function ModalTambahPerbelanjaan({
   useTutupEscape(onTutup)
 
   const simpan = async () => {
-    if (!penerangan.trim()) { setRalat('Sila isi penerangan perbelanjaan.'); return }
-    if (!jumlah || +jumlah <= 0) { setRalat('Jumlah mesti lebih dari 0.'); return }
+    const ralatV = ralatPertama(perbelanjaanSchema.safeParse({ tarikh, kategori, penerangan, jumlah }))
+    if (ralatV) { setRalat(ralatV); return }
     if (failBukti) {
       const ralatFail = sahkanFailBukti(failBukti)
       if (ralatFail) { setRalat(ralatFail); return }
