@@ -22,9 +22,11 @@ Ciri baharu dibina & deploy sepanjang sesi (ikut turutan commit):
 - **Validasi zod** borang kewangan (`src/lib/validation/kewangan.ts`)
 - **Sentry** pemantauan ralat (`src/instrumentation*.ts`, `global-error.tsx`) — baca `NEXT_PUBLIC_SENTRY_DSN`; inert tanpa DSN
 
-### Tindakan USER masih tertunggak
-- **Vercel env `NEXT_PUBLIC_SENTRY_DSN`** (+ redeploy) untuk aktifkan Sentry — user dah daftar Sentry
-- **GitHub secret `DATABASE_URL`** untuk backup mingguan (masih gagal sejak Sesi 5)
+### Tindakan USER — SELESAI (7 Jul 2026)
+- ✅ **Sentry AKTIF** — user set `NEXT_PUBLIC_SENTRY_DSN` di Vercel + redeploy; disahkan ralat sampai ke Sentry Issues
+- ✅ **Backup mingguan BERJAYA** — user set GitHub secret `DATABASE_URL` (Session pooler URI); run manual berjaya, artifact ~38KB dihasilkan. Backup auto setiap Ahad 10 pagi MYT.
+
+### Tindakan USER masih tertunggak (data, tidak kritikal)
 - Rekod sewa Mac/Julai; kaitkan akaun jurulatih harussani/aisyah; isi 22 pelajar placeholder
 
 ### Tidak dibuat (keputusan user: "cukup setakat ini")
