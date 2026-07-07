@@ -233,7 +233,7 @@ export function LocengNotifikasi() {
               fontFamily: 'inherit',
             }}
           >
-            Lihat semua sejarah notifikasi
+            Lihat notifikasi & log aktiviti
           </button>
         </div>
       )}

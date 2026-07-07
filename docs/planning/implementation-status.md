@@ -20,6 +20,17 @@
 - Nota: hanya jenis amaran `belum_bayar` dihantar buat masa ini (paling jelas/bernilai). Jenis lain (kehadiran belum ditanda, aset) perlu kriteria jadual kelas dahulu — boleh tambah kemudian; seni bina sudah generik.
 - **BELUM diuji dalam browser** (perlu migration di-run + login admin). Tawaran: uji via Chrome extension selepas user run SQL.
 
+**Butang Edit untuk betulkan rekod (commit `63b3722`, LIVE):**
+- Kehadiran Jurulatih S-27: modal edit PENUH (tarikh/status/cawangan/jenis/nota) + tangani ralat unique 23505; ganti edit-status inline.
+- Perbelanjaan & Pendapatan Lain: modal edit (guna semula modal tambah, prop `rekodEdit`).
+- Kehadiran pelajar (admin semak): edit nota + kolum Nota.
+- Resit: `ModalEditResit` (tarikh/kaedah/bulan/tahun/jenis/jumlah); no. resit & pelajar kekal (audit); hanya resit Aktif. Ikon `Edit2` biru konsisten semua lokasi.
+
+**Log Aktiviti / Audit (belum commit → akan commit, build+typecheck LULUS):**
+- ⚠️ **WAJIB run `scripts/sql/log-aktiviti.sql`** — jadual `log_aktiviti` + trigger DB `rekod_log_aktiviti()` (SECURITY DEFINER, DEFENSIF: kegagalan audit tak sekat operasi) pada 10 jadual penting (resit, perbelanjaan, pendapatan_lain, kehadiran, kehadiran_jurulatih, pelajar, jurulatih, aset, cawangan, pengguna_profil) + RLS admin baca.
+- Rekod Cipta/Edit/Padam automatik (siapa, bila, jadual, data snapshot jsonb). Log Masuk direkod dari page login (polisi RLS insert sendiri).
+- UI: tab **"Log Aktiviti"** dalam `/notifikasi` (di sebelah "Amaran Operasi") — penapis Cipta/Edit/Padam/Log Masuk, papar "Nama {aksi} {jadual} · perincian" + masa. Loceng pautan ke sini.
+
 **Modul Pendapatan Lain / Sumbangan (belum commit → akan commit, build+typecheck LULUS):**
 - ⚠️ **WAJIB run `scripts/sql/pendapatan-lain.sql`** (jadual `pendapatan_lain` + RLS + bucket `bukti-pendapatan`) sebelum guna.
 - Sebab: pendapatan dalam sistem dulu HANYA resit yuran pelajar. Sumbangan/penajaan/yuran program luar tiada tempat direkod → tercicir dari laporan & rekonsiliasi bank.

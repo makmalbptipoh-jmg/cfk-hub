@@ -562,6 +562,39 @@ export interface Database {
         }
         Relationships: []
       }
+      log_aktiviti: {
+        Row: {
+          id: string
+          pengguna_id: string | null
+          pengguna_nama: string | null
+          aksi: string
+          jadual: string
+          rekod_id: string | null
+          data: Record<string, unknown> | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          pengguna_id?: string | null
+          pengguna_nama?: string | null
+          aksi: string
+          jadual: string
+          rekod_id?: string | null
+          data?: Record<string, unknown> | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          pengguna_id?: string | null
+          pengguna_nama?: string | null
+          aksi?: string
+          jadual?: string
+          rekod_id?: string | null
+          data?: Record<string, unknown> | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

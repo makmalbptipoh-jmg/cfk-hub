@@ -42,10 +42,21 @@ export default function LoginPage() {
       return
     }
 
+    const { data: { user } } = await supabase.auth.getUser()
     const { data: profil } = await supabase
       .from('pengguna_profil')
-      .select('is_admin')
+      .select('is_admin, nama')
       .single()
+
+    // Rekod log masuk untuk audit (jangan halang navigasi jika gagal)
+    if (user) {
+      await supabase.from('log_aktiviti').insert({
+        aksi: 'Log Masuk',
+        jadual: 'auth',
+        pengguna_id: user.id,
+        pengguna_nama: profil?.nama ?? user.email ?? null,
+      })
+    }
 
     if (profil?.is_admin) {
       router.push('/dashboard')
