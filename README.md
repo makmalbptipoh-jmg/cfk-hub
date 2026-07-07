@@ -79,6 +79,7 @@ NEXT_PUBLIC_SENTRY_DSN=            # pilihan — pemantauan ralat
 > 11. `log-aktiviti.sql` — log audit (trigger 10 jadual)
 > 12. `pendapatan-lain.sql` — pendapatan lain/sumbangan + bucket `bukti-pendapatan`
 > 13. `resit-pendapatan.sql` — nombor resit auto untuk pendapatan luar
+> 14. `rls-ketat.sql` — ketatkan RLS ikut peranan (baca terbuka, tulis admin; kecuali kehadiran & pelajar-update jurulatih)
 
 Jalankan SQL berikut dalam **Supabase → SQL Editor** mengikut urutan:
 
