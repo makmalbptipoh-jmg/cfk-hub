@@ -37,6 +37,15 @@ type BelanjaRow = {
   cawangan: { nama: string } | null
 }
 
+type PendapatanLainRow = {
+  tarikh: string
+  sumber: string
+  kategori: string
+  jumlah: number
+  kaedah: string | null
+  cawangan: { nama: string } | null
+}
+
 const FMT_RM = '#,##0.00'
 const KELABU = 'FFF1F5F9'
 const GELAP = 'FF1E293B'
@@ -50,7 +59,7 @@ export function BtnLaporanLHDN() {
     setLoading(true)
     try {
       const supabase = createClient()
-      const [{ data: resitData, error: e1 }, { data: belanjaData, error: e2 }] = await Promise.all([
+      const [{ data: resitData, error: e1 }, { data: belanjaData, error: e2 }, { data: pendapatanLainData, error: e3 }] = await Promise.all([
         supabase
           .from('resit')
           .select('nombor_resit, jenis, jumlah, tarikh_bayar, bulan_bayaran, kaedah_bayaran, pelajar:pelajar_id(nama_penuh)')
@@ -66,13 +75,21 @@ export function BtnLaporanLHDN() {
           .lte('tarikh', `${tahun}-12-31`)
           .order('tarikh')
           .limit(5000),
+        supabase
+          .from('pendapatan_lain')
+          .select('tarikh, sumber, kategori, jumlah, kaedah, cawangan:cawangan_id(nama)')
+          .gte('tarikh', `${tahun}-01-01`)
+          .lte('tarikh', `${tahun}-12-31`)
+          .order('tarikh')
+          .limit(5000),
       ])
-      if (e1 || e2) throw e1 ?? e2
+      if (e1 || e2 || e3) throw e1 ?? e2 ?? e3
 
       const resit = (resitData ?? []) as unknown as ResitRow[]
       const belanja = (belanjaData ?? []) as unknown as BelanjaRow[]
+      const pendapatanLain = (pendapatanLainData ?? []) as unknown as PendapatanLainRow[]
 
-      if (resit.length === 0 && belanja.length === 0) {
+      if (resit.length === 0 && belanja.length === 0 && pendapatanLain.length === 0) {
         toast.warning(`Tiada rekod kewangan untuk tahun ${tahun}.`)
         return
       }
@@ -82,11 +99,12 @@ export function BtnLaporanLHDN() {
       wb.creator = 'CFK HUB'
       wb.created = new Date()
 
-      binaSheetPenyata(wb, tahun, resit, belanja)
+      binaSheetPenyata(wb, tahun, resit, belanja, pendapatanLain)
       binaSheetBulanan(wb, tahun, resit)
       binaSheetPendapatan(wb, tahun, resit)
+      if (pendapatanLain.length > 0) binaSheetPendapatanLain(wb, tahun, pendapatanLain)
       binaSheetPerbelanjaan(wb, tahun, belanja)
-      binaSheetRekonsiliasi(wb, tahun, resit, belanja)
+      binaSheetRekonsiliasi(wb, tahun, resit, belanja, pendapatanLain)
 
       const buffer = await wb.xlsx.writeBuffer()
       const blob = new Blob([buffer], {
@@ -180,7 +198,7 @@ function barisKepala(ws: any, rowNum: number, labels: string[]) {
   })
 }
 
-function binaSheetPenyata(wb: any, tahun: number, resit: ResitRow[], belanja: BelanjaRow[]) {
+function binaSheetPenyata(wb: any, tahun: number, resit: ResitRow[], belanja: BelanjaRow[], pendapatanLain: PendapatanLainRow[]) {
   const ws = wb.addWorksheet('Penyata Pendapatan')
   ws.columns = [{ width: 46 }, { width: 18 }]
   tajukSheet(ws, 'Penyata Pendapatan dan Perbelanjaan', tahun, 'B')
@@ -189,11 +207,17 @@ function binaSheetPenyata(wb: any, tahun: number, resit: ResitRow[], belanja: Be
   for (const r of resit) {
     pendapatanJenis[r.jenis] = (pendapatanJenis[r.jenis] ?? 0) + r.jumlah
   }
+  const pendapatanLainKategori: Record<string, number> = {}
+  for (const p of pendapatanLain) {
+    pendapatanLainKategori[p.kategori] = (pendapatanLainKategori[p.kategori] ?? 0) + p.jumlah
+  }
   const belanjaKategori: Record<string, number> = {}
   for (const b of belanja) {
     belanjaKategori[b.kategori] = (belanjaKategori[b.kategori] ?? 0) + b.jumlah
   }
-  const jumlahPendapatan = resit.reduce((s, r) => s + r.jumlah, 0)
+  const jumlahPendapatan =
+    resit.reduce((s, r) => s + r.jumlah, 0) +
+    pendapatanLain.reduce((s, p) => s + p.jumlah, 0)
   const jumlahBelanja = belanja.reduce((s, b) => s + b.jumlah, 0)
 
   let r = 7
@@ -223,6 +247,9 @@ function binaSheetPenyata(wb: any, tahun: number, resit: ResitRow[], belanja: Be
   for (const jenis of ['Kumpulan', 'Personal', 'Pendaftaran']) {
     if (pendapatanJenis[jenis]) baris(LABEL_JENIS[jenis] ?? jenis, pendapatanJenis[jenis])
   }
+  for (const [kategori, nilai] of Object.entries(pendapatanLainKategori).sort((a, b) => b[1] - a[1])) {
+    baris(kategori, nilai)
+  }
   baris('JUMLAH PENDAPATAN', jumlahPendapatan, true)
   r++
 
@@ -242,7 +269,7 @@ function binaSheetPenyata(wb: any, tahun: number, resit: ResitRow[], belanja: Be
   ws.getCell(`B${r}`).border = { top: { style: 'thin' }, bottom: { style: 'double' } }
   r += 2
 
-  ws.getCell(`A${r}`).value = `Bilangan resit aktif: ${resit.length} · Bilangan rekod perbelanjaan: ${belanja.length}`
+  ws.getCell(`A${r}`).value = `Bilangan resit aktif: ${resit.length} · Pendapatan lain: ${pendapatanLain.length} · Rekod perbelanjaan: ${belanja.length}`
   ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
   r++
   ws.getCell(`A${r}`).value = `Dijana oleh CFK HUB pada ${new Date().toLocaleDateString('ms-MY')} · Pendapatan direkod mengikut tarikh bayar (asas tunai)`
@@ -318,7 +345,7 @@ function binaSheetPendapatan(wb: any, tahun: number, resit: ResitRow[]) {
   ws.getCell(`F${r}`).border = { top: { style: 'thin' }, bottom: { style: 'double' } }
 }
 
-function binaSheetRekonsiliasi(wb: any, tahun: number, resit: ResitRow[], belanja: BelanjaRow[]) {
+function binaSheetRekonsiliasi(wb: any, tahun: number, resit: ResitRow[], belanja: BelanjaRow[], pendapatanLain: PendapatanLainRow[]) {
   const ws = wb.addWorksheet('Rekonsiliasi Bank')
   ws.columns = [
     { width: 14 }, // Bulan
@@ -370,6 +397,11 @@ function binaSheetRekonsiliasi(wb: any, tahun: number, resit: ResitRow[], belanj
     if (rst.kaedah_bayaran === 'Tunai') tunai[m] += rst.jumlah
     else masukBank[m] += rst.jumlah
   }
+  for (const p of pendapatanLain) {
+    const m = new Date(p.tarikh + 'T00:00:00').getMonth()
+    if (p.kaedah === 'Tunai') tunai[m] += p.jumlah
+    else masukBank[m] += p.jumlah
+  }
   for (const b of belanja) {
     const m = new Date(b.tarikh + 'T00:00:00').getMonth()
     keluar[m] += b.jumlah
@@ -411,12 +443,39 @@ function binaSheetRekonsiliasi(wb: any, tahun: number, resit: ResitRow[], belanj
   r += 2
 
   ws.getCell(`A${r}`).value =
-    'Nota: "Masuk Bank" = resit kaedah Transfer (kaedah tidak dinyatakan dianggap Transfer). "Tunai" tidak melalui bank.'
+    'Nota: "Masuk Bank" = resit + pendapatan lain kaedah Transfer (kaedah tidak dinyatakan dianggap Transfer). "Tunai" tidak melalui bank.'
   ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
   r++
   ws.getCell(`A${r}`).value =
     'Perbelanjaan dianggap dibayar dari bank — jika ada belanja tunai, laraskan pemahaman beza dengan sewajarnya.'
   ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
+}
+
+function binaSheetPendapatanLain(wb: any, tahun: number, pendapatanLain: PendapatanLainRow[]) {
+  const ws = wb.addWorksheet('Butiran Pendapatan Lain')
+  ws.columns = [{ width: 13 }, { width: 20 }, { width: 30 }, { width: 13 }, { width: 16 }, { width: 14 }]
+  tajukSheet(ws, 'Butiran Pendapatan Lain / Sumbangan', tahun, 'F')
+
+  barisKepala(ws, 7, ['Tarikh', 'Kategori', 'Sumber', 'Kaedah', 'Cawangan', 'Jumlah (RM)'])
+
+  let r = 8
+  for (const p of pendapatanLain) {
+    ws.getCell(`A${r}`).value = p.tarikh
+    ws.getCell(`B${r}`).value = p.kategori
+    ws.getCell(`C${r}`).value = p.sumber
+    ws.getCell(`D${r}`).value = p.kaedah ?? 'Transfer'
+    ws.getCell(`E${r}`).value = p.cawangan?.nama ?? 'Umum'
+    ws.getCell(`F${r}`).value = p.jumlah
+    ws.getCell(`F${r}`).numFmt = FMT_RM
+    r++
+  }
+
+  ws.getCell(`E${r}`).value = 'JUMLAH'
+  ws.getCell(`E${r}`).font = { bold: true }
+  ws.getCell(`F${r}`).value = pendapatanLain.reduce((s, x) => s + x.jumlah, 0)
+  ws.getCell(`F${r}`).numFmt = FMT_RM
+  ws.getCell(`F${r}`).font = { bold: true }
+  ws.getCell(`F${r}`).border = { top: { style: 'thin' }, bottom: { style: 'double' } }
 }
 
 function binaSheetPerbelanjaan(wb: any, tahun: number, belanja: BelanjaRow[]) {

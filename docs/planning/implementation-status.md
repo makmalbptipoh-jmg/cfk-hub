@@ -20,6 +20,14 @@
 - Nota: hanya jenis amaran `belum_bayar` dihantar buat masa ini (paling jelas/bernilai). Jenis lain (kehadiran belum ditanda, aset) perlu kriteria jadual kelas dahulu — boleh tambah kemudian; seni bina sudah generik.
 - **BELUM diuji dalam browser** (perlu migration di-run + login admin). Tawaran: uji via Chrome extension selepas user run SQL.
 
+**Modul Pendapatan Lain / Sumbangan (belum commit → akan commit, build+typecheck LULUS):**
+- ⚠️ **WAJIB run `scripts/sql/pendapatan-lain.sql`** (jadual `pendapatan_lain` + RLS + bucket `bukti-pendapatan`) sebelum guna.
+- Sebab: pendapatan dalam sistem dulu HANYA resit yuran pelajar. Sumbangan/penajaan/yuran program luar tiada tempat direkod → tercicir dari laporan & rekonsiliasi bank.
+- Jadual: tarikh, sumber, kategori (Sumbangan/Penajaan/Yuran Program Luar/Sewa & Faedah/Lain-lain), jumlah, kaedah (Tunai/Transfer), cawangan opsional, nota, bukti (imej/PDF).
+- Page `/kewangan/pendapatan` (borang + jadual + bukti, sama corak Perbelanjaan) + tab "Pendapatan Lain" dalam KewanganNav.
+- Integrasi: Ringkasan Kewangan (jumlah + per cawangan + kiraan), Laporan Kewangan (jumlah + pecahan jenis + transaksi + CSV), Laporan LHDN Excel (Penyata PENDAPATAN, Rekonsiliasi ikut kaedah, sheet baharu Butiran Pendapatan Lain).
+- Konteks cukai: yuran program luar & penajaan lazimnya bercukai; derma ikhlas kelabu; CFK bukan badan s44(6). Rekod semua, tag kategori, biar akauntan klasifikasi.
+
 **Backup mingguan MASIH GAGAL (disahkan Sesi 6):** `gh secret list` kosong — secret `DATABASE_URL` belum diset. Fail workflow sudah betul (client-17). Tindakan USER: Supabase Connect → Session pooler URI → GitHub Settings → Secrets → Actions → `DATABASE_URL`.
 
 ---

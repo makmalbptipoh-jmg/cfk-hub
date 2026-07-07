@@ -523,6 +523,45 @@ export interface Database {
         }
         Relationships: []
       }
+      pendapatan_lain: {
+        Row: {
+          id: string
+          tarikh: string
+          sumber: string
+          kategori: string
+          jumlah: number
+          kaedah: string
+          cawangan_id: string | null
+          nota: string | null
+          bukti_path: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          tarikh: string
+          sumber: string
+          kategori: string
+          jumlah: number
+          kaedah?: string
+          cawangan_id?: string | null
+          nota?: string | null
+          bukti_path?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          tarikh?: string
+          sumber?: string
+          kategori?: string
+          jumlah?: number
+          kaedah?: string
+          cawangan_id?: string | null
+          nota?: string | null
+          bukti_path?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

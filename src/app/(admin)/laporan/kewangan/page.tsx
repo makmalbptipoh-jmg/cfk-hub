@@ -41,7 +41,7 @@ export default function LaporanKewanganPage() {
     const supabase = createClient()
     const { nama, tahun, mula, akhir } = bulanInfo(bulan)
 
-    const [{ data: resit }, { data: belanja }] = await Promise.all([
+    const [{ data: resit }, { data: belanja }, { data: pendapatanLain }] = await Promise.all([
       supabase
         .from('resit')
         .select('id, nombor_resit, jenis, jumlah, tarikh_bayar, kaedah_bayaran, pelajar:pelajar_id(nama_penuh)')
@@ -55,14 +55,25 @@ export default function LaporanKewanganPage() {
         .gte('tarikh', mula)
         .lte('tarikh', akhir)
         .order('tarikh'),
+      supabase
+        .from('pendapatan_lain')
+        .select('id, tarikh, sumber, kategori, jumlah, nota')
+        .gte('tarikh', mula)
+        .lte('tarikh', akhir)
+        .order('tarikh'),
     ])
 
-    const jumlahPendapatan = (resit ?? []).reduce((s, r) => s + r.jumlah, 0)
+    const jumlahPendapatan =
+      (resit ?? []).reduce((s, r) => s + r.jumlah, 0) +
+      (pendapatanLain ?? []).reduce((s, p) => s + p.jumlah, 0)
     const jumlahBelanja = (belanja ?? []).reduce((s, p) => s + p.jumlah, 0)
 
     const byJenis: Record<string, number> = {}
     for (const r of resit ?? []) {
       byJenis[r.jenis] = (byJenis[r.jenis] ?? 0) + r.jumlah
+    }
+    for (const p of pendapatanLain ?? []) {
+      byJenis[p.kategori] = (byJenis[p.kategori] ?? 0) + p.jumlah
     }
 
     const byKat: Record<string, number> = {}
@@ -88,7 +99,16 @@ export default function LaporanKewanganPage() {
       jumlah: p.jumlah,
     }))
 
-    const gabung = [...txnResit, ...txnBelanja].sort((a, b) => b.tarikh.localeCompare(a.tarikh))
+    const txnPendapatanLain: Transaksi[] = (pendapatanLain ?? []).map((p) => ({
+      tarikh: p.tarikh,
+      jenisTxn: 'masuk',
+      jenis: 'Pendapatan Lain',
+      kategori: p.kategori,
+      penerangan: p.nota ? `${p.sumber} — ${p.nota}` : p.sumber,
+      jumlah: p.jumlah,
+    }))
+
+    const gabung = [...txnResit, ...txnPendapatanLain, ...txnBelanja].sort((a, b) => b.tarikh.localeCompare(a.tarikh))
 
     setPendapatan(jumlahPendapatan)
     setPerbelanjaan(jumlahBelanja)

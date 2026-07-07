@@ -30,6 +30,7 @@ type DataKewangan = {
   pendapatanCawangan: Record<string, number>
   perbelanjaanCawangan: Record<string, number>
   bilResit: number
+  bilPendapatanLain: number
   bilBelanja: number
 }
 
@@ -54,6 +55,9 @@ export default function KewanganRingkasanPage() {
     let belanjaQuery = supabase
       .from('kewangan_perbelanjaan')
       .select('jumlah, cawangan:cawangan_id(nama)')
+    let pendapatanLainQuery = supabase
+      .from('pendapatan_lain')
+      .select('jumlah, cawangan:cawangan_id(nama)')
 
     if (bulanIdx) {
       const m = +bulanIdx
@@ -61,19 +65,29 @@ export default function KewanganRingkasanPage() {
       const akhir = akhirBulan(tahun, m)
       resitQuery = resitQuery.eq('bulan_bayaran', BULAN_MS[m - 1])
       belanjaQuery = belanjaQuery.gte('tarikh', mula).lte('tarikh', akhir)
+      pendapatanLainQuery = pendapatanLainQuery.gte('tarikh', mula).lte('tarikh', akhir)
     } else {
       belanjaQuery = belanjaQuery.gte('tarikh', `${tahun}-01-01`).lte('tarikh', `${tahun}-12-31`)
+      pendapatanLainQuery = pendapatanLainQuery.gte('tarikh', `${tahun}-01-01`).lte('tarikh', `${tahun}-12-31`)
     }
 
-    const [{ data: resit }, { data: belanja }] = await Promise.all([resitQuery, belanjaQuery])
+    const [{ data: resit }, { data: belanja }, { data: pendapatanLain }] = await Promise.all([
+      resitQuery, belanjaQuery, pendapatanLainQuery,
+    ])
 
-    const pendapatan = (resit ?? []).reduce((s, r) => s + r.jumlah, 0)
+    const pendapatan =
+      (resit ?? []).reduce((s, r) => s + r.jumlah, 0) +
+      (pendapatanLain ?? []).reduce((s, p) => s + p.jumlah, 0)
     const perbelanjaan = (belanja ?? []).reduce((s, p) => s + p.jumlah, 0)
 
     const pendapatanCawangan: Record<string, number> = {}
     for (const r of resit ?? []) {
       const key = (r.pelajar as any)?.cawangan?.nama ?? 'Lain-lain'
       pendapatanCawangan[key] = (pendapatanCawangan[key] ?? 0) + r.jumlah
+    }
+    for (const p of pendapatanLain ?? []) {
+      const key = (p.cawangan as any)?.nama ?? 'Umum'
+      pendapatanCawangan[key] = (pendapatanCawangan[key] ?? 0) + p.jumlah
     }
 
     const perbelanjaanCawangan: Record<string, number> = {}
@@ -88,6 +102,7 @@ export default function KewanganRingkasanPage() {
       pendapatanCawangan,
       perbelanjaanCawangan,
       bilResit: (resit ?? []).length,
+      bilPendapatanLain: (pendapatanLain ?? []).length,
       bilBelanja: (belanja ?? []).length,
     })
     setLoading(false)
@@ -157,6 +172,24 @@ export default function KewanganRingkasanPage() {
         >
           <Plus size={13} /> Rekod Perbelanjaan
         </Link>
+        <Link
+          href="/kewangan/pendapatan"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '9px 14px',
+            background: 'var(--bg)',
+            border: '1.5px solid var(--border)',
+            borderRadius: '10px',
+            fontSize: '13px',
+            fontWeight: 600,
+            color: 'var(--text)',
+            textDecoration: 'none',
+          }}
+        >
+          <Plus size={13} /> Rekod Pendapatan
+        </Link>
         <div style={{ marginLeft: 'auto' }}>
           <BtnLaporanLHDN />
         </div>
@@ -171,7 +204,7 @@ export default function KewanganRingkasanPage() {
             <KadStat
               label="Pendapatan"
               jumlah={data!.pendapatan}
-              sub={`${data!.bilResit} resit aktif`}
+              sub={`${data!.bilResit} resit${data!.bilPendapatanLain > 0 ? ` + ${data!.bilPendapatanLain} lain` : ''}`}
               warna="#166534"
               bg="#F0FDF4"
               border="#86EFAC"
