@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, UserMinus } from 'lucide-react'
+import { toast } from '@/lib/stores/toast-store'
 
 type Pelajar = {
   id: string
@@ -18,6 +19,10 @@ type Cawangan = {
 
 type ToggleStatus = 'Hadir' | 'Tidak Hadir' | 'Cuti'
 
+// Butang tanda kehadiran harian (jurulatih) — 'Tidak Hadir' dibuang untuk
+// rekod ringkas; pelajar yang berhenti ditanda Tak Aktif dan disembunyikan.
+const BUTANG_STATUS: ToggleStatus[] = ['Hadir', 'Cuti']
+
 interface Props {
   pelajar: Pelajar[]
   cawangan: Cawangan[]
@@ -28,19 +33,35 @@ interface Props {
 
 export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHariIni, rekodSedia }: Props) {
   const [cawanganChip, setCawanganChip] = useState<string>('')
+  const [senarai, setSenarai] = useState<Pelajar[]>(pelajar)
   const [toggles, setToggles] = useState<Record<string, ToggleStatus | null>>(rekodSedia)
   const [loading, setLoading] = useState(false)
   const [berjaya, setBerjaya] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
+  const [menyahaktif, setMenyahaktif] = useState<string | null>(null)
 
   const tarikhPapar = new Date(tarikhHariIni + 'T00:00:00').toLocaleDateString('ms-MY', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 
   const senaraiFiltred = useMemo(() => {
-    if (!cawanganChip) return pelajar
-    return pelajar.filter((p) => p.cawangan_daftar_id === cawanganChip)
-  }, [pelajar, cawanganChip])
+    if (!cawanganChip) return senarai
+    return senarai.filter((p) => p.cawangan_daftar_id === cawanganChip)
+  }, [senarai, cawanganChip])
+
+  const takAktif = async (p: Pelajar) => {
+    if (!confirm(`Tandai ${p.nama_penuh} sebagai TIDAK AKTIF? Pelajar ini akan hilang dari senarai kehadiran. (Boleh diaktifkan semula di tab Pelajar.)`)) return
+    setMenyahaktif(p.id)
+    const { error } = await createClient()
+      .from('pelajar')
+      .update({ status: 'Tidak Aktif' })
+      .eq('id', p.id)
+    setMenyahaktif(null)
+    if (error) { toast.error('Gagal tandai tidak aktif. Cuba lagi.'); return }
+    setSenarai((prev) => prev.filter((x) => x.id !== p.id))
+    setToggles((prev) => { const n = { ...prev }; delete n[p.id]; return n })
+    toast.success(`${p.nama_penuh} ditandai tidak aktif.`)
+  }
 
   const toggle = (pelajarId: string, status: ToggleStatus) => {
     setToggles((prev) => ({
@@ -161,7 +182,7 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
                   <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '1px' }}>{p.cawangan_nama}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  {(['Hadir', 'Tidak Hadir', 'Cuti'] as ToggleStatus[]).map((s) => {
+                  {BUTANG_STATUS.map((s) => {
                     const aktif = status === s
                     const w = warnaToggle[s]
                     return (
@@ -173,15 +194,34 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
                           border: `1.5px solid ${aktif ? w.aktif.border : 'var(--border)'}`,
                           background: aktif ? w.aktif.bg : 'transparent',
                           color: aktif ? w.aktif.color : 'var(--text-muted)',
-                          fontSize: '11.5px', fontWeight: aktif ? 700 : 500,
+                          fontSize: '12px', fontWeight: aktif ? 700 : 500,
                           cursor: 'pointer', fontFamily: 'inherit',
                           transition: 'all 0.1s',
                         }}
                       >
-                        {s === 'Tidak Hadir' ? 'X Hadir' : s}
+                        {s}
                       </button>
                     )
                   })}
+                  <button
+                    onClick={() => takAktif(p)}
+                    disabled={menyahaktif === p.id}
+                    title="Tandai pelajar tidak aktif"
+                    aria-label={`Tandai ${p.nama_penuh} tidak aktif`}
+                    style={{
+                      flex: 1, padding: '7px 4px',
+                      borderRadius: '8px',
+                      border: '1.5px solid var(--border)',
+                      background: 'transparent',
+                      color: '#9F1239',
+                      fontSize: '12px', fontWeight: 600,
+                      cursor: menyahaktif === p.id ? 'wait' : 'pointer', fontFamily: 'inherit',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                      transition: 'all 0.1s',
+                    }}
+                  >
+                    <UserMinus size={13} /> Tak Aktif
+                  </button>
                 </div>
               </div>
             )

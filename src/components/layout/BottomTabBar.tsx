@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { CalendarCheck, Users, Megaphone, LayoutDashboard, UserCheck } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { CalendarCheck, Users, Megaphone, LayoutDashboard, UserCheck, LogOut } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 const tabs = [
   { href: '/kehadiran', label: 'Kehadiran', icon: CalendarCheck },
@@ -14,6 +15,13 @@ const tabs = [
 
 export function BottomTabBar() {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const logKeluar = async () => {
+    if (!confirm('Log keluar dari CFK HUB?')) return
+    await createClient().auth.signOut()
+    router.push('/login')
+  }
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
@@ -70,6 +78,27 @@ export function BottomTabBar() {
           </Link>
         )
       })}
+      <button
+        onClick={logKeluar}
+        aria-label="Log keluar"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '4px',
+          padding: '8px 6px',
+          borderRadius: '12px',
+          border: 'none',
+          background: 'transparent',
+          color: 'var(--sidebar-muted)',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          minWidth: '54px',
+        }}
+      >
+        <LogOut size={22} strokeWidth={2} />
+        <span style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.02em' }}>Keluar</span>
+      </button>
     </nav>
   )
 }
