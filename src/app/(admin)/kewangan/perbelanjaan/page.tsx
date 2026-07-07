@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Paperclip, Plus, Trash2, Upload, Wallet, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { akhirBulan, formatRinggit, formatTarikh } from '@/lib/utils'
+import { akhirBulan, formatRinggit, formatTarikh, tarikhTempatan, bulanTempatan } from '@/lib/utils'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 import { toast } from '@/lib/stores/toast-store'
 
@@ -59,7 +59,7 @@ const gayaInput = {
 }
 
 export default function PerbelanjaanPage() {
-  const bulanDefault = new Date().toISOString().slice(0, 7)
+  const bulanDefault = bulanTempatan()
   const [bulan, setBulan] = useState(bulanDefault)
   const [filterKategori, setFilterKategori] = useState('')
   const [filterCawangan, setFilterCawangan] = useState('')
@@ -460,7 +460,7 @@ function ModalTambahPerbelanjaan({
   onTutup: () => void
   onBerjaya: (tarikh: string) => void
 }) {
-  const [tarikh, setTarikh] = useState(new Date().toISOString().split('T')[0])
+  const [tarikh, setTarikh] = useState(tarikhTempatan())
   const [kategori, setKategori] = useState(KATEGORI[0])
   const [penerangan, setPenerangan] = useState('')
   const [jumlah, setJumlah] = useState('')

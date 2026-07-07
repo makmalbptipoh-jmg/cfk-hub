@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { TrendingUp, TrendingDown, Minus, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { akhirBulan, formatRinggit, formatTarikh } from '@/lib/utils'
+import { akhirBulan, formatRinggit, formatTarikh, bulanTempatan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
 
 function bulanInfo(bm: string) {
@@ -27,7 +27,7 @@ type Transaksi = {
 }
 
 export default function LaporanKewanganPage() {
-  const bulanDefault = new Date().toISOString().slice(0, 7)
+  const bulanDefault = bulanTempatan()
   const [bulan, setBulan] = useState(bulanDefault)
   const [loading, setLoading] = useState(true)
   const [pendapatan, setPendapatan] = useState(0)

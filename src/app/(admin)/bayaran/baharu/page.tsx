@@ -7,7 +7,7 @@ import { ChevronRight, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CariPelajar } from '@/components/pelajar/CariPelajar'
 import { BtnUnduhResit } from '@/components/pdf/BtnUnduhResit'
-import { kirYuranBulanan } from '@/lib/utils'
+import { kirYuranBulanan, tarikhTempatan } from '@/lib/utils'
 
 type PelajarDipilih = {
   id: string
@@ -77,7 +77,7 @@ export default function RekodBayaranPage() {
   const [bulanInput, setBulanInput] = useState(bulanSemasa())
   const [jumlahCustom, setJumlahCustom] = useState('')
   const [kaedah, setKaedah] = useState<'Tunai' | 'Transfer'>('Tunai')
-  const [tarikhBayar, setTarikhBayar] = useState(new Date().toISOString().split('T')[0])
+  const [tarikhBayar, setTarikhBayar] = useState(tarikhTempatan())
 
   // Pakej adik-beradik (PD-008)
   const [adikBeradik, setAdikBeradik] = useState<AhliKeluarga[]>([])

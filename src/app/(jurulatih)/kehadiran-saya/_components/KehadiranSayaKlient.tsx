@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { CalendarCheck, Check, Star } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { akhirBulan, formatTarikh } from '@/lib/utils'
+import { akhirBulan, formatTarikh, tarikhTempatan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
 
 type Sesi = {
@@ -24,11 +24,6 @@ const WARNA: Record<string, { bg: string; text: string; border: string }> = {
   Hadir: { bg: 'var(--hadir-bg)', text: 'var(--hadir-text)', border: '#BBF7D0' },
   'Tidak Hadir': { bg: 'var(--tidak-hadir-bg)', text: 'var(--tidak-hadir-text)', border: '#FECDD3' },
   Cuti: { bg: 'var(--cuti-bg)', text: 'var(--cuti-text)', border: '#FDE68A' },
-}
-
-// Tarikh tempatan (Malaysia) — bukan UTC, supaya rekod jatuh pada hari yang betul
-function tarikhTempatan(d = new Date()) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 function bulanSemasa() {

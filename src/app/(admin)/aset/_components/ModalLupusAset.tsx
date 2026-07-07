@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { formatRinggit } from '@/lib/utils'
+import { formatRinggit, tarikhTempatan } from '@/lib/utils'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 
 interface Props {
@@ -31,7 +31,7 @@ export function ModalLupusAset({ aset, onTutup, onBerjaya }: Props) {
       .update({
         status: 'Lupus',
         sebab_lupus: sebab.trim(),
-        tarikh_lupus: new Date().toISOString().split('T')[0],
+        tarikh_lupus: tarikhTempatan(),
       })
       .eq('id', aset.id)
     if (error) { setRalat('Gagal lupus aset. Cuba lagi.'); setLoading(false); return }

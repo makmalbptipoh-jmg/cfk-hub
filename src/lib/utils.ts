@@ -37,6 +37,22 @@ export function akhirBulan(tahun: number, bulan1hingga12: number): string {
   return `${tahun}-${String(bulan1hingga12).padStart(2, '0')}-${String(hari).padStart(2, '0')}`
 }
 
+// Tarikh HARI INI waktu Malaysia (UTC+8) sebagai 'YYYY-MM-DD'.
+// JANGAN guna new Date().toISOString() — di pelayan Vercel (UTC) dan
+// antara 12 tengah malam–8 pagi MYT, ia memulangkan tarikh SEMALAM.
+// Menambah 8 jam pada instant semasa lalu baca medan UTC = kalendar MYT,
+// betul tanpa mengira zon masa pelayan atau browser.
+export function tarikhTempatan(d: Date = new Date()): string {
+  const myt = new Date(d.getTime() + 8 * 60 * 60 * 1000)
+  return myt.toISOString().split('T')[0]
+}
+
+// Bulan semasa waktu Malaysia sebagai 'YYYY-MM'.
+export function bulanTempatan(d: Date = new Date()): string {
+  const myt = new Date(d.getTime() + 8 * 60 * 60 * 1000)
+  return myt.toISOString().slice(0, 7)
+}
+
 export function getBulanTahun(date: Date = new Date()): string {
   return new Intl.DateTimeFormat('ms-MY', {
     month: 'long',

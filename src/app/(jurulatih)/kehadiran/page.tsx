@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { tarikhTempatan } from '@/lib/utils'
 import { JurulatihKehadiranKlient } from './_components/JurulatihKehadiranKlient'
 import { AdminKehadiranKlient } from './_components/AdminKehadiranKlient'
 import { KehadiranAdminTabs } from './_components/KehadiranAdminTabs'
@@ -20,7 +21,7 @@ export default async function KehadiranPage() {
     .eq('status', 'Aktif')
     .order('nama')
 
-  const tarikhHariIni = new Date().toISOString().split('T')[0]
+  const tarikhHariIni = tarikhTempatan()
 
   // Data untuk mod Rekod (S-08) — diperlukan oleh jurulatih DAN admin
   const [{ data: pelajarRaw }, { data: rekodHariIni }] = await Promise.all([

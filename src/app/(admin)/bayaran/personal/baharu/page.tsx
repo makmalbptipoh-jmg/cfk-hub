@@ -6,7 +6,7 @@ import { CheckCircle, ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CariPelajar, type PelajarCarian } from '@/components/pelajar/CariPelajar'
 import { BtnUnduhResit } from '@/components/pdf/BtnUnduhResit'
-import { formatRinggit, formatTarikh } from '@/lib/utils'
+import { formatRinggit, formatTarikh, tarikhTempatan } from '@/lib/utils'
 
 type FullPelajar = {
   id: string
@@ -56,7 +56,7 @@ export default function KelasPersonalBaharuPage() {
 
   const [pelajar, setPelajar] = useState<PelajarCarian | null>(null)
   const [fullPelajar, setFullPelajar] = useState<FullPelajar | null>(null)
-  const [tarikhSesi, setTarikhSesi] = useState(new Date().toISOString().split('T')[0])
+  const [tarikhSesi, setTarikhSesi] = useState(tarikhTempatan())
   const [kaedah, setKaedah] = useState<'Online' | 'Face-to-face'>('Face-to-face')
   const [lokasi, setLokasi] = useState('')
   const [jumlah, setJumlah] = useState('')
@@ -388,7 +388,7 @@ export default function KelasPersonalBaharuPage() {
               href="/bayaran/personal/baharu"
               onClick={() => {
                 setPelajar(null); setFullPelajar(null); setJumlah(''); setLokasi('')
-                setTarikhSesi(new Date().toISOString().split('T')[0])
+                setTarikhSesi(tarikhTempatan())
                 setLangkah(0)
               }}
               style={{

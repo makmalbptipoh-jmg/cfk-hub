@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { formatRinggit } from '@/lib/utils'
+import { formatRinggit, tarikhTempatan } from '@/lib/utils'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 import { toast } from '@/lib/stores/toast-store'
 
@@ -21,7 +21,7 @@ interface Props {
 export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bilSesiHadir, kadarPerSesi, onTutup, onBerjaya }: Props) {
   const [bilSesi, setBilSesi] = useState(bilSesiHadir)
   const [kadar, setKadar] = useState(kadarPerSesi)
-  const [tarikhBayar, setTarikhBayar] = useState(new Date().toISOString().split('T')[0])
+  const [tarikhBayar, setTarikhBayar] = useState(tarikhTempatan())
   const [nota, setNota] = useState('')
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)

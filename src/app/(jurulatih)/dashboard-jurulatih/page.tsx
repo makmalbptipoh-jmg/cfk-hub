@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { tarikhTempatan } from '@/lib/utils'
 import Link from 'next/link'
 import { CalendarCheck, Users, TrendingUp } from 'lucide-react'
 
@@ -7,13 +8,14 @@ export default async function DashboardJurulatihPage() {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const tarikhHariIni = new Date().toISOString().split('T')[0]
+  const tarikhHariIni = tarikhTempatan()
 
-  // Minggu ini: Isnin hingga hari ini
-  const hariIni = new Date()
-  const hariDlmMinggu = hariIni.getDay()
-  const hariIsnin = new Date(hariIni)
-  hariIsnin.setDate(hariIni.getDate() - (hariDlmMinggu === 0 ? 6 : hariDlmMinggu - 1))
+  // Minggu ini: Isnin hingga hari ini (ikut waktu Malaysia — medan UTC pada
+  // instant yang ditambah 8 jam = kalendar MYT, betul walau pelayan UTC).
+  const hariIniMyt = new Date(Date.now() + 8 * 60 * 60 * 1000)
+  const hariDlmMinggu = hariIniMyt.getUTCDay()
+  const hariIsnin = new Date(hariIniMyt)
+  hariIsnin.setUTCDate(hariIniMyt.getUTCDate() - (hariDlmMinggu === 0 ? 6 : hariDlmMinggu - 1))
   const tarikhIsnin = hariIsnin.toISOString().split('T')[0]
 
   const [
@@ -55,8 +57,8 @@ export default async function DashboardJurulatihPage() {
   const jumlahDitanda = (sudahDitanda ?? []).length
   const jumlahSesiMinggu = kehadiranMingguIni?.length ?? 0
 
-  const tarikhPapar = hariIni.toLocaleDateString('ms-MY', {
-    weekday: 'long', day: 'numeric', month: 'long',
+  const tarikhPapar = new Date().toLocaleDateString('ms-MY', {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kuala_Lumpur',
   })
 
   return (

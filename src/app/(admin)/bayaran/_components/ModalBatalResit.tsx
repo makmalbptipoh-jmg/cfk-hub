@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { tarikhTempatan } from '@/lib/utils'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 
 interface Props {
@@ -25,7 +26,7 @@ export function ModalBatalResit({ resit, onTutup, onBerjaya }: Props) {
     const { error } = await supabase.from('resit').update({
       status: 'Dibatalkan',
       sebab_batal: sebab,
-      tarikh_batal: new Date().toISOString().split('T')[0],
+      tarikh_batal: tarikhTempatan(),
       dibatal_oleh: user?.id ?? null,
     }).eq('id', resit.id)
     if (error) { setRalat('Gagal membatalkan resit. Cuba lagi.'); setLoading(false); return }

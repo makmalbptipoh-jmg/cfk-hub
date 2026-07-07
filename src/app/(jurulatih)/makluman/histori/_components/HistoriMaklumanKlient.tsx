@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ChevronDown, ChevronUp, Megaphone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { formatTarikh } from '@/lib/utils'
+import { formatTarikh, bulanTempatan } from '@/lib/utils'
 
 type Rekod = {
   id: string
@@ -25,8 +25,7 @@ const WARNA_JENIS: Record<string, { bg: string; text: string }> = {
 }
 
 function bulanSemasa() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  return bulanTempatan()
 }
 
 export function HistoriMaklumanKlient({ isAdmin }: { isAdmin: boolean }) {
@@ -39,8 +38,14 @@ export function HistoriMaklumanKlient({ isAdmin }: { isAdmin: boolean }) {
   const muatData = useCallback(async () => {
     setLoading(true)
     const [y, m] = bulan.split('-')
-    const mula = `${y}-${m}-01T00:00:00`
-    const akhir = new Date(+y, +m, 1).toISOString()
+    // Sempadan bulan waktu Malaysia (+08:00) supaya rekod awal pagi 1 hb tidak
+    // tercicir. created_at ialah timestamptz — offset eksplisit betul walau
+    // zon masa sesi DB berlainan.
+    const mn = +m
+    const nextY = mn === 12 ? +y + 1 : +y
+    const nextM = mn === 12 ? 1 : mn + 1
+    const mula = `${y}-${m}-01T00:00:00+08:00`
+    const akhir = `${nextY}-${String(nextM).padStart(2, '0')}-01T00:00:00+08:00`
 
     let q = createClient()
       .from('makluman_histori')

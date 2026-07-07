@@ -1,31 +1,41 @@
 import { createClient } from '@/lib/supabase/server'
-import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh } from '@/lib/utils'
+import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh, tarikhTempatan } from '@/lib/utils'
 import Link from 'next/link'
 import { Users, CalendarCheck, Wallet, AlertCircle, MessageCircle } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
+// Instant semasa ditambah 8 jam — medan getUTC* padanya = kalendar waktu
+// Malaysia (UTC+8), betul walaupun pelayan Vercel berjalan dalam UTC.
+function mytNow() {
+  return new Date(Date.now() + 8 * 60 * 60 * 1000)
+}
+
+const NAMA_BULAN = [
+  'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
+  'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember',
+]
+
 function bulanSekarang() {
-  const d = new Date()
-  return d.toLocaleString('ms-MY', { month: 'long' })
+  return NAMA_BULAN[mytNow().getUTCMonth()]
 }
 
 function tahunSekarang() {
-  return new Date().getFullYear()
+  return mytNow().getUTCFullYear()
 }
 
 function tarikhHariIni() {
-  return new Date().toISOString().split('T')[0]
+  return tarikhTempatan()
 }
 
 function mulaBulan() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+  const d = mytNow()
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`
 }
 
 function akhirBulan() {
-  const d = new Date()
-  return akhirBulanUtil(d.getFullYear(), d.getMonth() + 1)
+  const d = mytNow()
+  return akhirBulanUtil(d.getUTCFullYear(), d.getUTCMonth() + 1)
 }
 
 export default async function DashboardPage() {
