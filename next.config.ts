@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next'
 import withPWAInit from '@ducanh2912/next-pwa'
+import { withSentryConfig } from '@sentry/nextjs'
 
 const withPWA = withPWAInit({
   dest: 'public',
@@ -27,7 +28,8 @@ const csp = [
   `font-src 'self' https://fonts.gstatic.com`,
   // Supabase host: gambar profil jurulatih & bukti dari Storage (signed URL)
   `img-src 'self' data: blob: ${SUPABASE_HOST}`,
-  `connect-src 'self' ${SUPABASE_HOST} ${SUPABASE_WS} https://fonts.googleapis.com https://fonts.gstatic.com`,
+  // *.sentry.io: pemantauan ralat (client SDK hantar ke ingest Sentry)
+  `connect-src 'self' ${SUPABASE_HOST} ${SUPABASE_WS} https://fonts.googleapis.com https://fonts.gstatic.com https://*.sentry.io`,
   `worker-src 'self' blob:`,
   `frame-src 'self' blob:`,
   `object-src 'none'`,
@@ -54,4 +56,9 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withPWA(nextConfig)
+export default withSentryConfig(withPWA(nextConfig), {
+  silent: true,
+  telemetry: false,
+  // Jangan muat naik source map (perlu SENTRY_AUTH_TOKEN) — elak kegagalan build
+  sourcemaps: { disable: true },
+})
