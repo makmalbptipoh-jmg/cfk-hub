@@ -4,6 +4,34 @@
 
 ## ⚡ SESI 6 (7 Jul 2026)
 
+### Ringkasan penuh Sesi 6 (semua LIVE di production)
+Ciri baharu dibina & deploy sepanjang sesi (ikut turutan commit):
+- Fix zon masa tarikh "hari ini" (util `tarikhTempatan`/`bulanTempatan`)
+- Loceng notifikasi 🔔 amaran operasi + auto-logout 30 min → **`notifikasi.sql`** ✅ run
+- Log Aktiviti/Audit (trigger DB 10 jadual) → **`log-aktiviti.sql`** ✅ run
+- Modul Pendapatan Lain/Sumbangan → **`pendapatan-lain.sql`** ✅ run
+- Butang Edit rekod (kehadiran jurulatih penuh, perbelanjaan, pendapatan, kehadiran pelajar nota, resit)
+- Penapis Dashboard (Cawangan/Bulan/Tahun) + highlight tunggakan **berperingkat** (kuning→oren→merah, aging)
+- Rekod kehadiran ringkas (Hadir/Cuti/Tak Aktif) + logout jurulatih + buang tab Pelajar jurulatih
+- Login tanpa autofill (keselamatan selepas auto-logout)
+- Laporan Kehadiran **Per Kelas** (PDF+Excel) + Laporan **Tunggakan** (aging)
+- **Resit pendapatan luar** (jualan peralatan/khidmat kursus) → **`resit-pendapatan.sql`** ✅ run
+- **Sistem Rating Pelajar** (1 kehadiran = 1 bintang = 10 point; level catur Bidak→Raja) + **Kad Pelajar PDF** (`src/lib/rating.ts`)
+- **Carta trend dashboard** (pendapatan + kehadiran bulanan)
+- **Ujian vitest** (12 ujian: tarikh/wang/rating) + **CI GitHub Actions** (`.github/workflows/ci.yml`, hijau)
+- **Validasi zod** borang kewangan (`src/lib/validation/kewangan.ts`)
+- **Sentry** pemantauan ralat (`src/instrumentation*.ts`, `global-error.tsx`) — baca `NEXT_PUBLIC_SENTRY_DSN`; inert tanpa DSN
+
+### Tindakan USER masih tertunggak
+- **Vercel env `NEXT_PUBLIC_SENTRY_DSN`** (+ redeploy) untuk aktifkan Sentry — user dah daftar Sentry
+- **GitHub secret `DATABASE_URL`** untuk backup mingguan (masih gagal sejak Sesi 5)
+- Rekod sewa Mac/Julai; kaitkan akaun jurulatih harussani/aisyah; isi 22 pelajar placeholder
+
+### Tidak dibuat (keputusan user: "cukup setakat ini")
+- Cron peringatan yuran bulanan + e-mel Resend (item ke-5 pakej penambahbaikan)
+
+
+
 **Audit & polish — bug zon masa tarikh "hari ini" (belum commit, build+typecheck LULUS):**
 - Punca: baki `new Date().toISOString().split('T')[0]` beri tarikh UTC → antara 12 tgh malam–8 pagi MYT ia pulang SEMALAM (borang bayaran/perbelanjaan/sesi default tarikh salah; widget "Hadir Hari Ini" & dashboard salah hari).
 - Util baharu dalam `src/lib/utils.ts`: `tarikhTempatan()` + `bulanTempatan()` (kira UTC+8, betul di pelayan Vercel UTC & browser). Ganti di dashboard admin+jurulatih, kehadiran, 6 borang, 2 penapis bulan.

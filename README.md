@@ -2,14 +2,27 @@
 
 Sistem pengurusan dalaman untuk pusat latihan catur CFK (Catur Untuk Kanak-Kanak). Menguruskan pelajar, kehadiran, bayaran, jurulatih, kewangan, dan aset.
 
+## Ciri Utama
+
+- **Pelajar** — daftar/edit/import Google Forms; highlight tunggakan berperingkat (kuning→oren→merah); **sistem rating** (1 kehadiran = 1 bintang = 10 point, level catur) + **Kad Pelajar PDF** untuk ibu bapa
+- **Kehadiran** — rekod harian (Hadir/Cuti/Tak Aktif), self-service jurulatih, semak/edit admin
+- **Bayaran & Resit** — resit PDF, batal, edit; **resit pendapatan luar** (jualan peralatan/khidmat kursus)
+- **Jurulatih** — profil, gaji ikut kehadiran (point/star), slip gaji PDF
+- **Kewangan** — perbelanjaan, **pendapatan lain/sumbangan**, ringkasan, Laporan LHDN Excel (5 sheet), Laporan Tunggakan
+- **Laporan Kehadiran** — per pelajar & **per kelas** (PDF + Excel)
+- **Dashboard** — penapis Cawangan/Bulan/Tahun, **carta trend** bulanan
+- **Notifikasi** — loceng amaran operasi + **log aktiviti/audit** (siapa cipta/edit/padam + log masuk)
+- **Keselamatan** — RLS penuh, auto-logout 30 min, login tanpa autofill, pemantauan ralat Sentry
+
 ## Tech Stack
 
 - **Frontend/Backend:** Next.js 16 + TypeScript + React 19
 - **Database:** Supabase (PostgreSQL + Auth + Row Level Security)
 - **Styling:** CSS Variables (inline styles)
-- **PDF:** @react-pdf/renderer (lazy-loaded)
-- **Deploy:** Vercel
-- **PWA:** @ducanh2912/next-pwa
+- **PDF:** @react-pdf/renderer (lazy-loaded) · **Excel:** exceljs (lazy-loaded)
+- **Deploy:** Vercel · **PWA:** @ducanh2912/next-pwa
+- **Ujian:** Vitest · **CI:** GitHub Actions (typecheck + test + build)
+- **Pemantauan ralat:** Sentry (@sentry/nextjs)
 
 ---
 
@@ -44,14 +57,28 @@ NEXT_PUBLIC_SUPABASE_URL=https://[ref].supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=[anon-key]
 SUPABASE_SERVICE_ROLE_KEY=[service-role-key]
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_SENTRY_DSN=            # pilihan — pemantauan ralat
 ```
 
 ### 4. Setup Skema Database
 
-> **Nota:** Skema penuh terkini ada dalam `supabase/schema.sql`. Selepas itu, jalankan juga
-> semua migration dalam `scripts/sql/` mengikut tarikh (alamat pelajar, kuantiti aset,
-> keluarga_id, indexes, bukti perbelanjaan, jurulatih self-service, makluman histori,
-> gambar jurulatih) — setiap fail selamat dijalankan berulang kali.
+> **Nota:** Skema asas ada dalam `supabase/schema.sql`. Selepas itu, jalankan **SEMUA**
+> migration dalam `scripts/sql/` dalam **Supabase → SQL Editor** (setiap fail selamat
+> dijalankan berulang kali / idempotent). Urutan disyorkan:
+>
+> 1. `tambah-alamat-pelajar.sql` — kolum alamat pelajar
+> 2. `tambah-kuantiti-aset.sql` — kuantiti × harga aset
+> 3. `tambah-keluarga-pelajar.sql` — pakej adik-beradik (keluarga_id)
+> 4. `indexes.sql` — 15 index prestasi
+> 5. `tambah-bukti-perbelanjaan.sql` — kolum bukti + bucket `bukti-perbelanjaan`
+> 6. `tambah-gambar-jurulatih.sql` — gambar profil + bucket `gambar-jurulatih`
+> 7. `jurulatih-self-service.sql` — RLS kehadiran jurulatih (self-service)
+> 8. `kehadiran-jurulatih-cawangan.sql` — cawangan + jenis kelas pada sesi jurulatih
+> 9. `makluman-histori.sql` — sejarah makluman WA
+> 10. `notifikasi.sql` — loceng amaran operasi
+> 11. `log-aktiviti.sql` — log audit (trigger 10 jadual)
+> 12. `pendapatan-lain.sql` — pendapatan lain/sumbangan + bucket `bukti-pendapatan`
+> 13. `resit-pendapatan.sql` — nombor resit auto untuk pendapatan luar
 
 Jalankan SQL berikut dalam **Supabase → SQL Editor** mengikut urutan:
 
@@ -302,8 +329,34 @@ Buka [http://localhost:3000](http://localhost:3000)
    NEXT_PUBLIC_SUPABASE_ANON_KEY
    SUPABASE_SERVICE_ROLE_KEY
    NEXT_PUBLIC_APP_URL=https://[nama].vercel.app
+   NEXT_PUBLIC_SENTRY_DSN   # pilihan — pemantauan ralat (lihat bawah)
    ```
 4. Deploy!
+
+---
+
+## Ujian & CI
+
+```bash
+npm test          # jalankan ujian unit (vitest) sekali
+npm run test:watch  # mod tonton
+```
+
+Ujian meliputi logik tarikh waktu Malaysia (`tarikhTempatan`/`akhirBulan` —
+kelas bug zon masa), format wang, dan sistem rating pelajar. GitHub Actions
+(`.github/workflows/ci.yml`) jalankan typecheck + test + build pada setiap push/PR.
+
+---
+
+## Pemantauan Ralat (Sentry) — pilihan
+
+1. Daftar percuma di [sentry.io](https://sentry.io) → cipta projek **Next.js**
+2. Salin **DSN** (Settings → Client Keys) — DSN ialah kunci awam, selamat dikongsi
+3. Tambah env `NEXT_PUBLIC_SENTRY_DSN` di Vercel (Production) + `.env.local`
+4. Redeploy — ralat production (client/server/render) kini dilaporkan ke Sentry + amaran e-mel
+
+Tanpa DSN, Sentry duduk diam (tiada kesan pada app). Kod: `src/instrumentation.ts`,
+`src/instrumentation-client.ts`, `src/app/global-error.tsx`.
 
 ---
 
@@ -339,7 +392,7 @@ Buka [http://localhost:3000](http://localhost:3000)
 | Role | Akses | Redirect selepas login |
 |---|---|---|
 | Admin | Semua skrin | `/dashboard` |
-| Jurulatih | Kehadiran, Pelajar, Makluman, Dashboard | `/kehadiran` |
+| Jurulatih | Kehadiran, Sesi Saya, Makluman, Dashboard, Log Keluar | `/kehadiran` |
 
 ---
 
