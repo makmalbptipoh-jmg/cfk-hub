@@ -4,12 +4,12 @@
 export type Taraf = { nama: string; ikon: string; min: number; warna: string }
 
 export const TARAF: Taraf[] = [
-  { nama: 'Bidak', ikon: '♟', min: 0, warna: '#94A3B8' },
-  { nama: 'Kuda', ikon: '♞', min: 10, warna: '#65A30D' },
-  { nama: 'Gajah', ikon: '♝', min: 25, warna: '#0891B2' },
-  { nama: 'Benteng', ikon: '♜', min: 50, warna: '#7C3AED' },
-  { nama: 'Menteri', ikon: '♛', min: 100, warna: '#DB2777' },
-  { nama: 'Raja', ikon: '♚', min: 200, warna: '#D97706' },
+  { nama: 'Pawn', ikon: '♟', min: 0, warna: '#94A3B8' },
+  { nama: 'Knight', ikon: '♞', min: 10, warna: '#65A30D' },
+  { nama: 'Bishop', ikon: '♝', min: 25, warna: '#0891B2' },
+  { nama: 'Rook', ikon: '♜', min: 50, warna: '#7C3AED' },
+  { nama: 'Queen', ikon: '♛', min: 100, warna: '#DB2777' },
+  { nama: 'King', ikon: '♚', min: 200, warna: '#D97706' },
 ]
 
 export type Rating = {
