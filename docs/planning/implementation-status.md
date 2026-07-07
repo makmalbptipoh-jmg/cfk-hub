@@ -16,7 +16,7 @@ Ciri baharu dibina & deploy sepanjang sesi (ikut turutan commit):
 - Login tanpa autofill (keselamatan selepas auto-logout)
 - Laporan Kehadiran **Per Kelas** (PDF+Excel) + Laporan **Tunggakan** (aging)
 - **Resit pendapatan luar** (jualan peralatan/khidmat kursus) → **`resit-pendapatan.sql`** ✅ run
-- **Sistem Rating Pelajar** (1 kehadiran = 1 bintang = 10 point; level catur Bidak→Raja) + **Kad Pelajar PDF** (`src/lib/rating.ts`)
+- **Sistem Rating Pelajar** (1 kehadiran = 1 bintang = 10 point; level catur English Pawn→Knight→Bishop→Rook→Queen→King) + **Kad Pelajar PDF** (`src/lib/rating.ts`)
 - **Carta trend dashboard** (pendapatan + kehadiran bulanan)
 - **Ujian vitest** (12 ujian: tarikh/wang/rating) + **CI GitHub Actions** (`.github/workflows/ci.yml`, hijau)
 - **Validasi zod** borang kewangan (`src/lib/validation/kewangan.ts`)
@@ -28,6 +28,11 @@ Ciri baharu dibina & deploy sepanjang sesi (ikut turutan commit):
 
 ### Keselamatan RLS diketatkan (7 Jul 2026) ✅
 - `scripts/sql/rls-ketat.sql` **sudah di-run user**. Ganti polisi "auth" permisif (mana-mana login boleh tulis) dengan model peranan: BACA kekal terbuka; TULIS admin sahaja untuk resit/kewangan_perbelanjaan/aset/jurulatih/bayaran_jurulatih/cawangan/import_antrian. Kekal boleh tulis jurulatih: `kehadiran` (insert/update) + `pelajar` UPDATE (Tak Aktif). Ada blok ROLLBACK dalam fail. **Nota: perlu sahkan akaun jurulatih masih boleh rekod kehadiran (belum diuji end-to-end).**
+
+### Tweak lanjut (7 Jul 2026, hujung sesi)
+- Fix penjajaran butang "Tambah Sesi" dgn kotak bulan (S-27) — buang label bulan berlebihan
+- Level rating tukar nama Melayu → **English** (Pawn/Knight/Bishop/Rook/Queen/King) — terjemahan BM janggal
+- Panduan selenggara diberi kepada user: app "managed" (Vercel+Supabase), tiada selenggara harian; cuma pantau e-mel Sentry + semak backup hijau bulanan + update library beberapa bulan sekali
 
 ### Tindakan USER masih tertunggak (data, tidak kritikal)
 - Rekod sewa Mac/Julai; kaitkan akaun jurulatih harussani/aisyah; isi 22 pelajar placeholder
