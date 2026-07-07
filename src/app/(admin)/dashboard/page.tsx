@@ -3,6 +3,7 @@ import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh } from '@/lib
 import Link from 'next/link'
 import { Users, CalendarCheck, Wallet, AlertCircle, MessageCircle } from 'lucide-react'
 import { DashboardFilter } from './_components/DashboardFilter'
+import { CartaTrend } from './_components/CartaTrend'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +47,8 @@ export default async function DashboardPage({
     { data: resitTerkini },
     { data: cawangan },
     { data: profil },
+    { data: resitTahun },
+    { data: kehadiranTahun },
   ] = await Promise.all([
     pelajarQuery,
     supabase.from('kehadiran').select('pelajar_id, status, cawangan_sesi_id').gte('tarikh', mulaB).lte('tarikh', akhirB),
@@ -53,7 +56,23 @@ export default async function DashboardPage({
     supabase.from('resit').select('id, nombor_resit, pelajar_id, jenis, jumlah, tarikh_bayar, status, pelajar:pelajar_id(nama_penuh)').order('created_at', { ascending: false }).limit(10),
     supabase.from('cawangan').select('id, nama').eq('status', 'Aktif').order('nama'),
     supabase.from('pengguna_profil').select('nama').eq('id', (await supabase.auth.getUser()).data.user?.id ?? '').single(),
+    supabase.from('resit').select('jumlah, tarikh_bayar, pelajar:pelajar_id(cawangan_daftar_id)').eq('status', 'Aktif').gte('tarikh_bayar', `${tahun}-01-01`).lte('tarikh_bayar', `${tahun}-12-31`),
+    supabase.from('kehadiran').select('tarikh, cawangan_sesi_id').eq('status', 'Hadir').gte('tarikh', `${tahun}-01-01`).lte('tarikh', `${tahun}-12-31`),
   ])
+
+  // Siri 12-bulan untuk carta trend (ikut cawangan dipilih)
+  const pendapatanBulanan = Array(12).fill(0)
+  for (const r of resitTahun ?? []) {
+    if (cawId && (r as any).pelajar?.cawangan_daftar_id !== cawId) continue
+    const m = +String((r as any).tarikh_bayar).slice(5, 7)
+    if (m >= 1 && m <= 12) pendapatanBulanan[m - 1] += (r as any).jumlah ?? 0
+  }
+  const kehadiranBulanan = Array(12).fill(0)
+  for (const k of kehadiranTahun ?? []) {
+    if (cawId && (k as any).cawangan_sesi_id !== cawId) continue
+    const m = +String((k as any).tarikh).slice(5, 7)
+    if (m >= 1 && m <= 12) kehadiranBulanan[m - 1]++
+  }
 
   // Tapis resit ikut cawangan (melalui pelajar) jika cawangan dipilih
   const resitBulan = (resitBulanRaw ?? []).filter((r: any) => !cawId || r.pelajar?.cawangan_daftar_id === cawId)
@@ -192,6 +211,9 @@ export default async function DashboardPage({
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>pelajar berdaftar</div>
         </div>
       </div>
+
+      {/* Carta Trend */}
+      <CartaTrend pendapatan={pendapatanBulanan} kehadiran={kehadiranBulanan} tahun={tahun} />
 
       {/* 2 Kolum Utama */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: '18px', marginBottom: '18px' }}>
