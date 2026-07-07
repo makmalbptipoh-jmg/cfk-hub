@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
-import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh, tarikhTempatan } from '@/lib/utils'
+import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh } from '@/lib/utils'
 import Link from 'next/link'
 import { Users, CalendarCheck, Wallet, AlertCircle, MessageCircle } from 'lucide-react'
+import { DashboardFilter } from './_components/DashboardFilter'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,61 +17,52 @@ const NAMA_BULAN = [
   'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember',
 ]
 
-function bulanSekarang() {
-  return NAMA_BULAN[mytNow().getUTCMonth()]
-}
-
-function tahunSekarang() {
-  return mytNow().getUTCFullYear()
-}
-
-function tarikhHariIni() {
-  return tarikhTempatan()
-}
-
-function mulaBulan() {
-  const d = mytNow()
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`
-}
-
-function akhirBulan() {
-  const d = mytNow()
-  return akhirBulanUtil(d.getUTCFullYear(), d.getUTCMonth() + 1)
-}
-
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cawangan?: string; bulan?: string; tahun?: string }>
+}) {
   const supabase = await createClient()
+  const sp = await searchParams
 
-  const hariIni = tarikhHariIni()
-  const bulan = bulanSekarang()
-  const tahun = tahunSekarang()
-  const mulaB = mulaBulan()
-  const akhirB = akhirBulan()
+  // Tempoh dipilih (default: bulan semasa waktu Malaysia)
+  const now = mytNow()
+  const tahunSemasa = now.getUTCFullYear()
+  const cawId = sp.cawangan ?? ''
+  const tahun = sp.tahun ? +sp.tahun : tahunSemasa
+  const bulanNum = sp.bulan ? +sp.bulan : now.getUTCMonth() + 1
+  const bulan = NAMA_BULAN[bulanNum - 1]
+  const mulaB = `${tahun}-${String(bulanNum).padStart(2, '0')}-01`
+  const akhirB = akhirBulanUtil(tahun, bulanNum)
 
   // Parallel fetch semua data
+  let pelajarQuery = supabase.from('pelajar').select('id, nama_penuh, no_telefon, cawangan_daftar_id').eq('status', 'Aktif')
+  if (cawId) pelajarQuery = pelajarQuery.eq('cawangan_daftar_id', cawId)
+
   const [
     { data: pelajarAktif },
-    { data: kehadiranHariIni },
     { data: kehadiranBulan },
-    { data: resitBulan },
+    { data: resitBulanRaw },
     { data: resitTerkini },
     { data: cawangan },
     { data: profil },
   ] = await Promise.all([
-    supabase.from('pelajar').select('id, nama_penuh, no_telefon, cawangan_daftar_id').eq('status', 'Aktif'),
-    supabase.from('kehadiran').select('id, pelajar_id, status, cawangan_sesi_id').eq('tarikh', hariIni),
-    supabase.from('kehadiran').select('pelajar_id, status').eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
-    supabase.from('resit').select('pelajar_id, jumlah, status').eq('bulan_bayaran', bulan).eq('tahun_bayaran', tahun).eq('status', 'Aktif'),
+    pelajarQuery,
+    supabase.from('kehadiran').select('pelajar_id, status, cawangan_sesi_id').gte('tarikh', mulaB).lte('tarikh', akhirB),
+    supabase.from('resit').select('pelajar_id, jumlah, status, pelajar:pelajar_id(cawangan_daftar_id)').eq('bulan_bayaran', bulan).eq('tahun_bayaran', tahun).eq('status', 'Aktif'),
     supabase.from('resit').select('id, nombor_resit, pelajar_id, jenis, jumlah, tarikh_bayar, status, pelajar:pelajar_id(nama_penuh)').order('created_at', { ascending: false }).limit(10),
     supabase.from('cawangan').select('id, nama').eq('status', 'Aktif').order('nama'),
     supabase.from('pengguna_profil').select('nama').eq('id', (await supabase.auth.getUser()).data.user?.id ?? '').single(),
   ])
 
-  // === Widget 1: Pelajar Belum Bayar ===
-  const pelajarIdDgnResit = new Set((resitBulan ?? []).map((r: any) => r.pelajar_id))
+  // Tapis resit ikut cawangan (melalui pelajar) jika cawangan dipilih
+  const resitBulan = (resitBulanRaw ?? []).filter((r: any) => !cawId || r.pelajar?.cawangan_daftar_id === cawId)
+
+  // === Widget 1: Pelajar Belum Bayar (dalam skop cawangan) ===
+  const pelajarIdDgnResit = new Set(resitBulan.map((r: any) => r.pelajar_id))
   const kiraHadirBulan: Record<string, number> = {}
   for (const k of kehadiranBulan ?? []) {
-    kiraHadirBulan[k.pelajar_id] = (kiraHadirBulan[k.pelajar_id] ?? 0) + 1
+    if ((k as any).status === 'Hadir') kiraHadirBulan[k.pelajar_id] = (kiraHadirBulan[k.pelajar_id] ?? 0) + 1
   }
 
   const pelajarBelumBayar = (pelajarAktif ?? [])
@@ -82,25 +74,23 @@ export default async function DashboardPage() {
       bilHadir: kiraHadirBulan[p.id] ?? 0,
     }))
 
-  // === Widget 2: Hadir Hari Ini ===
-  const hadirHariIni = (kehadiranHariIni ?? []).filter((k: any) => k.status === 'Hadir').length
-  const tidakHadirHariIni = (kehadiranHariIni ?? []).filter((k: any) => k.status === 'Tidak Hadir').length
+  // === Widget 2: Hadir (bulan dipilih, ikut cawangan sesi jika ditapis) ===
+  const kehadiranSkop = (kehadiranBulan ?? []).filter((k: any) => !cawId || k.cawangan_sesi_id === cawId)
+  const hadirBulan = kehadiranSkop.filter((k: any) => k.status === 'Hadir').length
+  const tidakHadirBulan = kehadiranSkop.filter((k: any) => k.status === 'Tidak Hadir').length
 
-  // === Widget 3: Pendapatan Bulan Ini ===
-  const pendapatanBulan = (resitBulan ?? []).reduce((sum: number, r: any) => sum + (r.jumlah ?? 0), 0)
+  // === Widget 3: Pendapatan bulan dipilih ===
+  const pendapatanBulan = resitBulan.reduce((sum: number, r: any) => sum + (r.jumlah ?? 0), 0)
 
-  // === Widget 4: Jumlah Pelajar Aktif ===
+  // === Widget 4: Jumlah Pelajar Aktif (skop cawangan) ===
   const jumlahAktif = (pelajarAktif ?? []).length
 
-  // === Jadual: Kehadiran Per Cawangan (hari ini) ===
-  const petaCawangan: Record<string, string> = {}
-  for (const c of cawangan ?? []) petaCawangan[c.id] = c.nama
-
+  // === Jadual: Kehadiran bulan dipilih Per Cawangan ===
   const kehadiranPerCawangan: Record<string, { nama: string; hadir: number; tidakHadir: number; cuti: number }> = {}
   for (const c of cawangan ?? []) {
     kehadiranPerCawangan[c.id] = { nama: c.nama, hadir: 0, tidakHadir: 0, cuti: 0 }
   }
-  for (const k of kehadiranHariIni ?? []) {
+  for (const k of kehadiranSkop) {
     const cid = (k as any).cawangan_sesi_id
     if (kehadiranPerCawangan[cid]) {
       if ((k as any).status === 'Hadir') kehadiranPerCawangan[cid].hadir++
@@ -117,15 +107,24 @@ export default async function DashboardPage() {
   return (
     <div style={{ maxWidth: '1100px' }}>
       {/* Salam */}
-      <div style={{ marginBottom: '28px' }}>
+      <div style={{ marginBottom: '18px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}>
           {salam}, {namaPengguna} 👋
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-          {new Date().toLocaleDateString('ms-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          {' · '}Bulan {bulan} {tahun}
+          Memaparkan <strong style={{ color: 'var(--text)' }}>{bulan} {tahun}</strong>
+          {cawId ? <> · {(cawangan ?? []).find((c) => c.id === cawId)?.nama ?? 'Cawangan'}</> : ' · Semua Cawangan'}
         </p>
       </div>
+
+      {/* Penapis */}
+      <DashboardFilter
+        cawangan={cawangan ?? []}
+        cawId={cawId}
+        bulanNum={bulanNum}
+        tahun={tahun}
+        tahunSemasa={tahunSemasa}
+      />
 
       {/* 4 Widget */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '24px' }}>
@@ -152,14 +151,14 @@ export default async function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <CalendarCheck size={16} style={{ color: 'var(--hadir-text)' }} />
             <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--hadir-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Hadir Hari Ini
+              Hadir {bulan}
             </span>
           </div>
           <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--hadir-text)', lineHeight: 1 }}>
-            {hadirHariIni}
+            {hadirBulan}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--hadir-text)', marginTop: '6px', opacity: 0.7 }}>
-            {tidakHadirHariIni > 0 ? `${tidakHadirHariIni} tidak hadir` : 'tiada tidak hadir'}
+            {tidakHadirBulan > 0 ? `${tidakHadirBulan} tidak hadir` : 'tiada tidak hadir'}
           </div>
         </div>
 
@@ -199,11 +198,11 @@ export default async function DashboardPage() {
         {/* Kiri: Kehadiran Per Cawangan */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden' }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>Kehadiran Hari Ini Per Cawangan</h2>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>Kehadiran {bulan} Per Cawangan</h2>
           </div>
           {statCawangan.length === 0 ? (
             <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-              Tiada rekod kehadiran hari ini
+              Tiada rekod kehadiran untuk {bulan} {tahun}
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>

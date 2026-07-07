@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Search, Plus, Upload, ChevronLeft, ChevronRight, Eye } from 'lucide-react'
+import { Search, Plus, Upload, ChevronLeft, ChevronRight, Eye, AlertCircle } from 'lucide-react'
 import { formatRinggit } from '@/lib/utils'
 
 type Pelajar = {
@@ -22,15 +22,20 @@ type Cawangan = { id: string; nama: string }
 interface TabelPelajarProps {
   pelajar: Pelajar[]
   cawangan: Cawangan[]
+  belumBayarIds?: string[]
+  labelBulan?: string
 }
 
 const REKOD_PER_HALAMAN = 10
 
-export function TabelPelajar({ pelajar, cawangan }: TabelPelajarProps) {
+export function TabelPelajar({ pelajar, cawangan, belumBayarIds = [], labelBulan = '' }: TabelPelajarProps) {
   const [carian, setCarian] = useState('')
   const [filterCawangan, setFilterCawangan] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+  const [filterBayaran, setFilterBayaran] = useState('')
   const [halaman, setHalaman] = useState(1)
+
+  const setBelumBayar = useMemo(() => new Set(belumBayarIds), [belumBayarIds])
 
   const senarai = useMemo(() => {
     return pelajar.filter((p) => {
@@ -40,9 +45,10 @@ export function TabelPelajar({ pelajar, cawangan }: TabelPelajarProps) {
       )
       const cocokCawangan = !filterCawangan || p.cawangan_daftar_id === filterCawangan
       const cocokStatus = !filterStatus || p.status === filterStatus
-      return cocokCarian && cocokCawangan && cocokStatus
+      const cocokBayaran = !filterBayaran || setBelumBayar.has(p.id)
+      return cocokCarian && cocokCawangan && cocokStatus && cocokBayaran
     })
-  }, [pelajar, carian, filterCawangan, filterStatus])
+  }, [pelajar, carian, filterCawangan, filterStatus, filterBayaran, setBelumBayar])
 
   const jumlahHalaman = Math.max(1, Math.ceil(senarai.length / REKOD_PER_HALAMAN))
   const halamanSelamat = Math.min(halaman, jumlahHalaman)
@@ -51,6 +57,7 @@ export function TabelPelajar({ pelajar, cawangan }: TabelPelajarProps) {
   const handleCarian = (val: string) => { setCarian(val); setHalaman(1) }
   const handleFilterC = (val: string) => { setFilterCawangan(val); setHalaman(1) }
   const handleFilterS = (val: string) => { setFilterStatus(val); setHalaman(1) }
+  const handleFilterB = (val: string) => { setFilterBayaran(val); setHalaman(1) }
 
   const inputStyle = {
     padding: '9px 12px',
@@ -132,6 +139,16 @@ export function TabelPelajar({ pelajar, cawangan }: TabelPelajarProps) {
           <option value="Aktif">Aktif</option>
           <option value="Tidak Aktif">Tidak Aktif</option>
         </select>
+        <select value={filterBayaran} onChange={(e) => handleFilterB(e.target.value)} style={inputStyle}>
+          <option value="">Semua Bayaran</option>
+          <option value="belum">⚠ Belum Bayar{labelBulan ? ` (${labelBulan})` : ''}</option>
+        </select>
+        {setBelumBayar.size > 0 && (
+          <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: '#C2410C' }}>
+            <AlertCircle size={14} />
+            {setBelumBayar.size} belum bayar
+          </span>
+        )}
       </div>
 
       {/* Table */}
@@ -168,16 +185,25 @@ export function TabelPelajar({ pelajar, cawangan }: TabelPelajarProps) {
               </tr>
             </thead>
             <tbody>
-              {paparan.map((p, i) => (
+              {paparan.map((p, i) => {
+                const belum = setBelumBayar.has(p.id)
+                const baseBg = belum ? '#FFF1F2' : 'transparent'
+                return (
                 <tr key={p.id} style={{
                   borderBottom: i < paparan.length - 1 ? '1px solid var(--border)' : 'none',
+                  background: baseBg,
                   transition: 'background 0.1s',
                 }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#FAFBFC' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = belum ? '#FFE4E6' : '#FAFBFC' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = baseBg }}
                 >
-                  <td style={{ padding: '12px 16px' }}>
+                  <td style={{ padding: '12px 16px', borderLeft: belum ? '3px solid #EF4444' : '3px solid transparent' }}>
                     <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>{p.nama_penuh}</div>
+                    {belum && (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '3px', fontSize: '11px', fontWeight: 700, color: '#DC2626' }}>
+                        <AlertCircle size={11} /> Belum bayar{labelBulan ? ` ${labelBulan}` : ''}
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{p.cawangan_nama ?? '—'}</div>
@@ -219,7 +245,8 @@ export function TabelPelajar({ pelajar, cawangan }: TabelPelajarProps) {
                     </Link>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         )}
