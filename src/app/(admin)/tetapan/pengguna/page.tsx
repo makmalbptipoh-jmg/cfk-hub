@@ -36,6 +36,7 @@ export default async function PenggunaTetapanPage() {
     nama: p.nama,
     emel: petaEmel[p.id] ?? null,
     is_admin: p.is_admin,
+    cawangan_id: p.cawangan_id ?? null,
     cawangan_nama: p.cawangan?.nama ?? null,
     status: petaStatus[p.id] ?? 'Aktif',
   }))

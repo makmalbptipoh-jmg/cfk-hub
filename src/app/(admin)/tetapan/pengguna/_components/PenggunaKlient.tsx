@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, RotateCcw, UserX, UserCheck, Shield, User } from 'lucide-react'
+import { Plus, RotateCcw, UserX, UserCheck, Shield, User, Edit2 } from 'lucide-react'
 import { ModalResetKataLaluan } from '@/components/tetapan/ModalResetKataLaluan'
 import { ModalTambahPengguna } from './ModalTambahPengguna'
+import { ModalEditPengguna } from './ModalEditPengguna'
 import { kemaskiniStatusPengguna } from '@/app/actions/pengguna'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/lib/stores/toast-store'
@@ -13,6 +14,7 @@ type Pengguna = {
   nama: string
   emel: string | null
   is_admin: boolean
+  cawangan_id: string | null
   cawangan_nama: string | null
   status: 'Aktif' | 'Diblok'
 }
@@ -28,6 +30,7 @@ export function PenggunaKlient({ pengguna, cawangan }: Props) {
   const router = useRouter()
   const [modalReset, setModalReset] = useState<{ id: string; nama: string } | null>(null)
   const [modalTambah, setModalTambah] = useState(false)
+  const [modalEdit, setModalEdit] = useState<Pengguna | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
 
   const toggleStatus = async (p: Pengguna) => {
@@ -119,6 +122,20 @@ export function PenggunaKlient({ pengguna, cawangan }: Props) {
                   <td style={{ padding: '12px 16px' }}>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button
+                        onClick={() => setModalEdit(p)}
+                        title="Edit Maklumat"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          padding: '6px 10px',
+                          background: '#EFF6FF', border: '1px solid #BFDBFE',
+                          borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                          color: '#1E40AF', cursor: 'pointer', fontFamily: 'inherit',
+                        }}
+                      >
+                        <Edit2 size={12} />
+                        Edit
+                      </button>
+                      <button
                         onClick={() => setModalReset({ id: p.id, nama: p.nama })}
                         title="Reset Kata Laluan"
                         style={{
@@ -178,6 +195,19 @@ export function PenggunaKlient({ pengguna, cawangan }: Props) {
           onBerjaya={() => {
             setModalTambah(false)
             toast.success('Pengguna baharu berjaya ditambah.')
+            router.refresh()
+          }}
+        />
+      )}
+
+      {modalEdit && (
+        <ModalEditPengguna
+          pengguna={modalEdit}
+          cawangan={cawangan}
+          onTutup={() => setModalEdit(null)}
+          onBerjaya={() => {
+            setModalEdit(null)
+            toast.success('Maklumat pengguna dikemaskini.')
             router.refresh()
           }}
         />
