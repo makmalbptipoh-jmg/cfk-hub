@@ -97,7 +97,7 @@ export function PenggunaKlient({ pengguna, cawangan }: Props) {
                       <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>{p.nama}</span>
                     </div>
                   </td>
-                  <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{p.emel || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-muted)', textTransform: 'none' }}>{p.emel || '—'}</td>
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{
                       fontSize: '11.5px', padding: '3px 10px', borderRadius: '20px', fontWeight: 600,

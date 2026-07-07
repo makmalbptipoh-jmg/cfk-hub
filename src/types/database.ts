@@ -535,6 +535,7 @@ export interface Database {
           nota: string | null
           bukti_path: string | null
           no_resit: string | null
+          dokumen_id: string | null
           created_at: string
         }
         Insert: {
@@ -548,6 +549,7 @@ export interface Database {
           nota?: string | null
           bukti_path?: string | null
           no_resit?: string | null
+          dokumen_id?: string | null
           created_at?: string
         }
         Update: {
@@ -561,7 +563,95 @@ export interface Database {
           nota?: string | null
           bukti_path?: string | null
           no_resit?: string | null
+          dokumen_id?: string | null
           created_at?: string
+        }
+        Relationships: []
+      }
+      dokumen_jualan: {
+        Row: {
+          id: string
+          no_dokumen: string
+          tarikh: string
+          peringkat: 'Sebut Harga' | 'Invois' | 'Resit'
+          kategori: string
+          pembeli_nama: string
+          pembeli_alamat: string | null
+          pembeli_telefon: string | null
+          pembeli_emel: string | null
+          pembeli_pic: string | null
+          kaedah_bayaran: 'Tunai' | 'Transfer' | null
+          maklumat_bayaran: string | null
+          tarikh_bayar: string | null
+          sah_sehingga: string | null
+          cawangan_id: string | null
+          nota: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          no_dokumen?: string
+          tarikh: string
+          peringkat?: 'Sebut Harga' | 'Invois' | 'Resit'
+          kategori?: string
+          pembeli_nama: string
+          pembeli_alamat?: string | null
+          pembeli_telefon?: string | null
+          pembeli_emel?: string | null
+          pembeli_pic?: string | null
+          kaedah_bayaran?: 'Tunai' | 'Transfer' | null
+          maklumat_bayaran?: string | null
+          tarikh_bayar?: string | null
+          sah_sehingga?: string | null
+          cawangan_id?: string | null
+          nota?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          no_dokumen?: string
+          tarikh?: string
+          peringkat?: 'Sebut Harga' | 'Invois' | 'Resit'
+          kategori?: string
+          pembeli_nama?: string
+          pembeli_alamat?: string | null
+          pembeli_telefon?: string | null
+          pembeli_emel?: string | null
+          pembeli_pic?: string | null
+          kaedah_bayaran?: 'Tunai' | 'Transfer' | null
+          maklumat_bayaran?: string | null
+          tarikh_bayar?: string | null
+          sah_sehingga?: string | null
+          cawangan_id?: string | null
+          nota?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      dokumen_item: {
+        Row: {
+          id: string
+          dokumen_id: string
+          urutan: number
+          perihalan: string
+          kuantiti: number
+          harga_seunit: number
+        }
+        Insert: {
+          id?: string
+          dokumen_id: string
+          urutan?: number
+          perihalan: string
+          kuantiti?: number
+          harga_seunit?: number
+        }
+        Update: {
+          id?: string
+          dokumen_id?: string
+          urutan?: number
+          perihalan?: string
+          kuantiti?: number
+          harga_seunit?: number
         }
         Relationships: []
       }

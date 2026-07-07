@@ -212,10 +212,10 @@ export function LaporanPDF({
             color: perluBayar ? '#C2410C' : '#166534',
           }}>
             {perluBayar
-              ? `⚠ Yuran bulan ${bulan} ${tahun} perlu dijelaskan (${jumlahHadir} sesi hadir ≥ 4)`
+              ? `Yuran bulan ${bulan} ${tahun} perlu dijelaskan — ${jumlahHadir} sesi hadir (had minimum 4 sesi).`
               : jumlahHadir >= 4
-                ? `✓ Yuran bulan ${bulan} ${tahun} telah dijelaskan`
-                : `ℹ Bilangan kehadiran (${jumlahHadir} sesi) belum mencapai had minimum (4 sesi)`
+                ? `Yuran bulan ${bulan} ${tahun} telah dijelaskan.`
+                : `Bilangan kehadiran (${jumlahHadir} sesi) belum mencapai had minimum (4 sesi).`
             }
           </Text>
         </View>

@@ -57,11 +57,24 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Auto-huruf besar untuk semua medan teks (kecuali e-mel, kata laluan, tarikh, nombor) */
-input:not([type="email"]):not([type="password"]):not([type="date"]):not([type="month"]):not([type="number"]):not([type="tel"]):not([type="search"]):not([type="url"]),
-textarea {
+/* Huruf besar seluruh sistem supaya paparan konsisten (tidak mengubah data tersimpan) */
+body {
   text-transform: uppercase;
 }
+
+/* Kecualikan medan yang perlu kekal huruf asal: e-mel, kata laluan, tarikh, nombor, URL */
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="month"],
+input[type="number"],
+input[type="tel"],
+input[type="search"],
+input[type="url"] {
+  text-transform: none;
+}
+
+/* Petunjuk (placeholder) kekal huruf biasa supaya mudah dibaca */
 input::placeholder,
 textarea::placeholder {
   text-transform: none;

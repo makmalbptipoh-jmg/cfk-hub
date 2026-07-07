@@ -7,6 +7,7 @@ const tabs = [
   { href: '/kewangan', label: 'Ringkasan', exact: true },
   { href: '/kewangan/perbelanjaan', label: 'Perbelanjaan' },
   { href: '/kewangan/pendapatan', label: 'Pendapatan Lain' },
+  { href: '/kewangan/dokumen', label: 'Dokumen Jualan' },
 ]
 
 export function KewanganNav() {

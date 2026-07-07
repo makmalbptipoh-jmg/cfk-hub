@@ -376,7 +376,7 @@ export default function TambahPelajarPage() {
               { tajuk: 'Maklumat Ibu Bapa', baris: [
                 { label: 'Nama Ibu Bapa', nilai: data2.nama_ibu_bapa },
                 { label: 'No. Telefon', nilai: data2.no_telefon },
-                { label: 'E-mel', nilai: data2.emel_ibu_bapa || '—' },
+                { label: 'E-mel', nilai: <span style={{ textTransform: 'none' }}>{data2.emel_ibu_bapa || '—'}</span> },
                 { label: 'Alamat', nilai: data2.alamat?.trim() || '—' },
                 { label: 'Cawangan', nilai: cawanganPilihan?.nama || '—' },
               ]},

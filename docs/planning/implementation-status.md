@@ -1,6 +1,21 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 7 Jul 2026 (Sesi 6)
+**Dikemaskini:** 8 Jul 2026 (Sesi 7)
+
+## ⚡ SESI 7 (8 Jul 2026)
+
+### Kemas & pembetulan
+- Seluruh sistem paparan **HURUF BESAR** konsisten (`globals.css` — `body { text-transform: uppercase }`); e-mel paparan dikecualikan (senarai pengguna, profil jurulatih/pelajar, pengesahan daftar).
+- **Laporan Kehadiran PDF**: buang simbol `ℹ ⚠ ✓ ≥` yang tak disokong font Helvetica (punca teks bertindih pada "Bilangan…"). Semua PDF lain disemak — bersih.
+
+### Modul BAHARU: Dokumen Jualan (Sebut Harga / Invois / Resit Rasmi)
+Untuk jualan peralatan & perkhidmatan kepada sekolah/organisasi — dengan **alamat pembeli** + senarai item berperingkat.
+- **⚠️ TINDAKAN USER:** run **`scripts/sql/dokumen-jualan.sql`** dalam Supabase SQL Editor SEBELUM deploy.
+- Jadual `dokumen_jualan` + `dokumen_item`; nombor auto `YYYY-NNNNN` (prefix SH/INV/RS pada PDF).
+- Satu dokumen → cetak 3 jenis PDF (kongsi butiran pembeli & item). Komponen `src/components/pdf/DokumenJualanPDF.tsx` (1 komponen, 3 mod).
+- Page `/kewangan/dokumen` + tab "Dokumen Jualan" dalam KewanganNav; borang butiran pembeli (nama/alamat/PIC/tel/e-mel) + item dinamik (kuantiti × harga) + akaun bank manual/tunai.
+- Bila peringkat = **Resit**, jumlah auto-direkod ke `pendapatan_lain` (kolum baharu `dokumen_id`, FK ON DELETE CASCADE) → masuk Laporan Kewangan/LHDN.
+- Validasi `src/lib/validation/dokumen.ts`. Typecheck + 12 ujian LULUS.
 
 ## ⚡ SESI 6 (7 Jul 2026)
 

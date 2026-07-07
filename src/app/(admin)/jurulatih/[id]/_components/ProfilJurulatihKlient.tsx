@@ -225,7 +225,7 @@ export function ProfilJurulatihKlient({ jurulatih: j, statBulan, kehadiran, baya
             {[
               { label: 'No. IC', nilai: j.no_ic || '—' },
               { label: 'No. Telefon', nilai: j.no_telefon || '—' },
-              { label: 'E-mel', nilai: j.emel || '—' },
+              { label: 'E-mel', nilai: <span style={{ textTransform: 'none' }}>{j.emel || '—'}</span> },
               { label: 'Kadar / Sesi', nilai: j.kadar_bayaran ? formatRinggit(j.kadar_bayaran) : '—' },
               { label: 'Tarikh Mula', nilai: j.tarikh_mula ? formatTarikh(j.tarikh_mula) : '—' },
               { label: 'Kelayakan', nilai: j.kelayakan || '—' },
