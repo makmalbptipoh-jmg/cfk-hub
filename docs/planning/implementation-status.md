@@ -26,6 +26,9 @@ Ciri baharu dibina & deploy sepanjang sesi (ikut turutan commit):
 - ✅ **Sentry AKTIF** — user set `NEXT_PUBLIC_SENTRY_DSN` di Vercel + redeploy; disahkan ralat sampai ke Sentry Issues
 - ✅ **Backup mingguan BERJAYA** — user set GitHub secret `DATABASE_URL` (Session pooler URI); run manual berjaya, artifact ~38KB dihasilkan. Backup auto setiap Ahad 10 pagi MYT.
 
+### Keselamatan RLS diketatkan (7 Jul 2026) ✅
+- `scripts/sql/rls-ketat.sql` **sudah di-run user**. Ganti polisi "auth" permisif (mana-mana login boleh tulis) dengan model peranan: BACA kekal terbuka; TULIS admin sahaja untuk resit/kewangan_perbelanjaan/aset/jurulatih/bayaran_jurulatih/cawangan/import_antrian. Kekal boleh tulis jurulatih: `kehadiran` (insert/update) + `pelajar` UPDATE (Tak Aktif). Ada blok ROLLBACK dalam fail. **Nota: perlu sahkan akaun jurulatih masih boleh rekod kehadiran (belum diuji end-to-end).**
+
 ### Tindakan USER masih tertunggak (data, tidak kritikal)
 - Rekod sewa Mac/Julai; kaitkan akaun jurulatih harussani/aisyah; isi 22 pelajar placeholder
 
