@@ -118,10 +118,7 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
 
       {/* Kawalan: Bulan + Tambah */}
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px' }}>
-        <div>
-          <input type="month" value={bulan} onChange={(e) => setBulan(e.target.value)} style={gayaInput} />
-          <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>{namaBulan}</p>
-        </div>
+        <input type="month" value={bulan} onChange={(e) => setBulan(e.target.value)} style={gayaInput} />
         <button onClick={() => { setTambahMode(true); setFormBaru((f) => ({ ...formKosong, cawangan_id: f.cawangan_id })) }}
           disabled={tambahMode}
           style={{
