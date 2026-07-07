@@ -18,6 +18,7 @@ export default async function ProfilPelajarPage({
   const [
     { data: pelajarRaw, error },
     { data: kehadiran },
+    { data: kehadiranSemua },
     { data: kehadiranBulanIni },
     { data: resit },
     { data: resitBulanIni },
@@ -33,6 +34,10 @@ export default async function ProfilPelajarPage({
       .eq('pelajar_id', id)
       .order('tarikh', { ascending: false })
       .limit(50),
+    supabase
+      .from('kehadiran')
+      .select('status')
+      .eq('pelajar_id', id),
     supabase
       .from('kehadiran')
       .select('status')
@@ -60,6 +65,11 @@ export default async function ProfilPelajarPage({
     tidak_hadir: (kehadiranBulanIni ?? []).filter((k: any) => k.status === 'Tidak Hadir').length,
     cuti: (kehadiranBulanIni ?? []).filter((k: any) => k.status === 'Cuti').length,
   }
+  const total = {
+    hadir: (kehadiranSemua ?? []).filter((k: any) => k.status === 'Hadir').length,
+    tidak_hadir: (kehadiranSemua ?? []).filter((k: any) => k.status === 'Tidak Hadir').length,
+    cuti: (kehadiranSemua ?? []).filter((k: any) => k.status === 'Cuti').length,
+  }
 
   return (
     <ProfilPelajarKlient
@@ -78,6 +88,7 @@ export default async function ProfilPelajarPage({
         cawangan_nama: p.cawangan?.nama ?? '—',
       }}
       stat={stat}
+      total={total}
       sudahBayarBulanIni={(resitBulanIni ?? []).length > 0}
       kehadiran={kehadiran ?? []}
       resit={resit ?? []}

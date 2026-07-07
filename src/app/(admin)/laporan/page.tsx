@@ -144,8 +144,6 @@ export default function LaporanPage() {
     }
   }
 
-  const b = bulanMY(bulanInput)
-
   return (
     <div style={{ maxWidth: '760px' }}>
       {/* Header */}
@@ -188,7 +186,6 @@ export default function LaporanPage() {
                 boxSizing: 'border-box',
               }}
             />
-            <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>{b.nama} {b.tahun}</p>
           </div>
         </div>
 

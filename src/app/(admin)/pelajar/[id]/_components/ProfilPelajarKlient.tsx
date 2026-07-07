@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Edit2, UserX, UserCheck, CalendarCheck, Receipt } from 'lucide-react'
+import { Edit2, UserX, UserCheck, CalendarCheck, Receipt, Star } from 'lucide-react'
 import { ModalNyahaktif } from '@/components/pelajar/ModalNyahaktif'
 import { formatTarikh, formatRinggit } from '@/lib/utils'
+import { kiraRating } from '@/lib/rating'
+import { BtnKadPelajar } from '@/components/pdf/BtnKadPelajar'
 
 type Pelajar = {
   id: string
@@ -48,6 +50,7 @@ type Resit = {
 interface ProfilPelajarKlientProps {
   pelajar: Pelajar
   stat: StatKehadiran
+  total: StatKehadiran
   sudahBayarBulanIni: boolean
   kehadiran: Kehadiran[]
   resit: Resit[]
@@ -59,12 +62,16 @@ const warnaBadge: Record<string, { bg: string; text: string }> = {
   Cuti: { bg: 'var(--cuti-bg)', text: 'var(--cuti-text)' },
 }
 
-export function ProfilPelajarKlient({ pelajar, stat, sudahBayarBulanIni, kehadiran, resit }: ProfilPelajarKlientProps) {
+export function ProfilPelajarKlient({ pelajar, stat, total, sudahBayarBulanIni, kehadiran, resit }: ProfilPelajarKlientProps) {
   const [tab, setTab] = useState<'kehadiran' | 'bayaran'>('kehadiran')
   const [showModal, setShowModal] = useState(false)
 
   const jumlahSesi = stat.hadir + stat.tidak_hadir + stat.cuti
   const peratus = jumlahSesi > 0 ? Math.round((stat.hadir / jumlahSesi) * 100) : 0
+
+  const rating = kiraRating(total.hadir)
+  const jumlahSesiTotal = total.hadir + total.tidak_hadir + total.cuti
+  const peratusTotal = jumlahSesiTotal > 0 ? Math.round((total.hadir / jumlahSesiTotal) * 100) : 0
 
   return (
     <div style={{ maxWidth: '760px' }}>
@@ -87,6 +94,16 @@ export function ProfilPelajarKlient({ pelajar, stat, sudahBayarBulanIni, kehadir
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          <BtnKadPelajar
+            data={{
+              nama_penuh: pelajar.nama_penuh,
+              cawangan: pelajar.cawangan_nama,
+              jenis_kelas: pelajar.jenis_kelas,
+              total,
+              bilResit: resit.filter((r) => r.status === 'Aktif').length,
+              sudahBayarBulanIni,
+            }}
+          />
           <button
             onClick={() => setShowModal(true)}
             style={{
@@ -182,6 +199,49 @@ export function ProfilPelajarKlient({ pelajar, stat, sudahBayarBulanIni, kehadir
               color: sudahBayarBulanIni ? 'var(--hadir-text)' : (stat.hadir >= 4 ? '#C2410C' : 'var(--text-muted)'),
             }}>
               {sudahBayarBulanIni ? '✓ Sudah Bayar' : stat.hadir >= 4 ? '⚠ Perlu Bayar (≥4 sesi)' : `Belum Cukup Sesi (${stat.hadir}/4)`}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Rating & Kekuatan */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+          <h2 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Rating &amp; Kekuatan
+          </h2>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '5px 14px', borderRadius: '20px',
+            background: rating.level.warna, color: '#FFFFFF', fontSize: '13px', fontWeight: 800,
+          }}>
+            <span style={{ fontSize: '16px', lineHeight: 1 }}>{rating.level.ikon}</span> {rating.level.nama}
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: '18px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: '52px', lineHeight: 1, color: rating.level.warna, flexShrink: 0 }}>{rating.level.ikon}</div>
+          <div style={{ flex: 1, minWidth: '220px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '20px', background: '#FEF3C7', border: '1px solid #FDE68A', fontSize: '14px', fontWeight: 800, color: '#92400E' }}>
+                <Star size={14} fill="#F59E0B" stroke="#F59E0B" /> {rating.bintang} Bintang
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '20px', background: '#EFF6FF', border: '1px solid #BFDBFE', fontSize: '14px', fontWeight: 800, color: '#1E40AF' }}>
+                🏅 {rating.point} Point
+              </span>
+            </div>
+            {rating.levelSeterusnya ? (
+              <>
+                <div style={{ background: '#F1F5F9', borderRadius: '6px', height: '8px', overflow: 'hidden', marginBottom: '6px' }}>
+                  <div style={{ width: `${rating.peratusKemajuan}%`, height: '100%', background: rating.level.warna, borderRadius: '6px' }} />
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  <strong style={{ color: 'var(--text)' }}>{rating.bakiKeSeterusnya}</strong> bintang lagi ke level <strong style={{ color: 'var(--text)' }}>{rating.levelSeterusnya.ikon} {rating.levelSeterusnya.nama}</strong>
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: '13px', fontWeight: 700, color: rating.level.warna }}>👑 Tahap tertinggi dicapai!</div>
+            )}
+            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '8px' }}>
+              {total.hadir} kelas dihadiri sepanjang masa · kadar kehadiran {peratusTotal}% ({total.hadir}/{jumlahSesiTotal})
             </div>
           </div>
         </div>

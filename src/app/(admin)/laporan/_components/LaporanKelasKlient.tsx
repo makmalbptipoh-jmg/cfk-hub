@@ -160,8 +160,6 @@ export function LaporanKelasKlient() {
     } finally { setXlsLoading(false) }
   }
 
-  const b = bulanMY(bulanInput)
-
   return (
     <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '24px', marginBottom: '24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
@@ -181,7 +179,6 @@ export function LaporanKelasKlient() {
         <div>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bulan</label>
           <input type="month" value={bulanInput} onChange={(e) => setBulanInput(e.target.value)} style={inputStyle} />
-          <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>{b.nama} {b.tahun}</p>
         </div>
       </div>
 
