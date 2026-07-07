@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { NavigasiAtas } from '@/components/layout/NavigasiAtas'
+import { AutoLogout } from '@/components/layout/AutoLogout'
 
 export default async function AdminLayout({
   children,
@@ -26,6 +27,7 @@ export default async function AdminLayout({
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+      <AutoLogout />
       <Sidebar nama={profil.nama} email={user.email ?? ''} />
       <main
         style={{
@@ -35,7 +37,7 @@ export default async function AdminLayout({
           minWidth: 0,
         }}
       >
-        <NavigasiAtas homeHref="/dashboard" />
+        <NavigasiAtas homeHref="/dashboard" isAdmin />
         {children}
       </main>
     </div>

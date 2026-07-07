@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { BottomTabBar } from '@/components/layout/BottomTabBar'
 import { NavigasiAtas } from '@/components/layout/NavigasiAtas'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { AutoLogout } from '@/components/layout/AutoLogout'
 
 export default async function JurulatihLayout({
   children,
@@ -28,9 +29,10 @@ export default async function JurulatihLayout({
   if (isAdmin) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+        <AutoLogout />
         <Sidebar nama={profil?.nama ?? ''} email={user.email ?? ''} />
         <main style={{ flex: 1, overflow: 'auto', padding: '28px 32px', minWidth: 0 }}>
-          <NavigasiAtas homeHref="/dashboard" />
+          <NavigasiAtas homeHref="/dashboard" isAdmin />
           {children}
         </main>
       </div>
@@ -47,6 +49,7 @@ export default async function JurulatihLayout({
         position: 'relative',
       }}
     >
+      <AutoLogout />
       <main style={{ paddingBottom: '86px' }}>
         <div style={{ padding: '12px 16px 0' }}>
           <NavigasiAtas homeHref="/kehadiran" />

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Home } from 'lucide-react'
+import { LocengNotifikasi } from './LocengNotifikasi'
 
 const gayaBtn = {
   display: 'inline-flex',
@@ -20,11 +21,17 @@ const gayaBtn = {
   textDecoration: 'none',
 } as const
 
-export function NavigasiAtas({ homeHref = '/dashboard' }: { homeHref?: string }) {
+export function NavigasiAtas({
+  homeHref = '/dashboard',
+  isAdmin = false,
+}: {
+  homeHref?: string
+  isAdmin?: boolean
+}) {
   const router = useRouter()
 
   return (
-    <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
       <button onClick={() => router.back()} aria-label="Kembali" style={gayaBtn}>
         <ArrowLeft size={13} />
         Kembali
@@ -37,6 +44,11 @@ export function NavigasiAtas({ homeHref = '/dashboard' }: { homeHref?: string })
         <Home size={13} />
         Utama
       </Link>
+      {isAdmin && (
+        <div style={{ marginLeft: 'auto' }}>
+          <LocengNotifikasi />
+        </div>
+      )}
     </div>
   )
 }

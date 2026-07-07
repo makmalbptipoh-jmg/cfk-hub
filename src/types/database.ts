@@ -484,6 +484,45 @@ export interface Database {
         }
         Relationships: []
       }
+      notifikasi: {
+        Row: {
+          id: string
+          jenis: string
+          tajuk: string
+          mesej: string
+          pautan: string | null
+          kunci: string | null
+          rujukan_id: string | null
+          dibaca: boolean
+          dibaca_pada: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          jenis: string
+          tajuk: string
+          mesej: string
+          pautan?: string | null
+          kunci?: string | null
+          rujukan_id?: string | null
+          dibaca?: boolean
+          dibaca_pada?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          jenis?: string
+          tajuk?: string
+          mesej?: string
+          pautan?: string | null
+          kunci?: string | null
+          rujukan_id?: string | null
+          dibaca?: boolean
+          dibaca_pada?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

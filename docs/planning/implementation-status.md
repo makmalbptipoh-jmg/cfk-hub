@@ -1,8 +1,30 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 5 Jul 2026 (Sesi 5, hingga commit `3b18ba0`)
+**Dikemaskini:** 7 Jul 2026 (Sesi 6)
 
-## ⚡ MULA SINI SESI 6
+## ⚡ SESI 6 (7 Jul 2026)
+
+**Audit & polish — bug zon masa tarikh "hari ini" (belum commit, build+typecheck LULUS):**
+- Punca: baki `new Date().toISOString().split('T')[0]` beri tarikh UTC → antara 12 tgh malam–8 pagi MYT ia pulang SEMALAM (borang bayaran/perbelanjaan/sesi default tarikh salah; widget "Hadir Hari Ini" & dashboard salah hari).
+- Util baharu dalam `src/lib/utils.ts`: `tarikhTempatan()` + `bulanTempatan()` (kira UTC+8, betul di pelayan Vercel UTC & browser). Ganti di dashboard admin+jurulatih, kehadiran, 6 borang, 2 penapis bulan.
+- Baiki penapis Histori Makluman (sempadan bulan +08:00 konsisten — rekod awal pagi 1hb tak tercicir).
+- DRY: buang helper `tarikhTempatan` duplikat dalam KehadiranSayaKlient → guna util kongsi.
+
+**Notifikasi loceng 🔔 + sejarah + auto-logout (belum commit, build+typecheck LULUS):**
+- ⚠️ **WAJIB run `scripts/sql/notifikasi.sql` dalam Supabase SQL Editor** sebelum ciri berfungsi (kod merosot anggun jika jadual tiada — loceng kosong, tiada crash).
+- Jadual `notifikasi` (jenis/tajuk/mesej/pautan/kunci UNIQUE/rujukan_id/dibaca) + RLS `is_admin`.
+- Server actions `src/app/actions/notifikasi.ts`: `janaDanMuatNotifikasi` (jana amaran "pelajar belum bayar" ≥4 hadir tiada resit, dedup ikut kunci per pelajar/bulan, AUTO-SELESAI bila sudah bayar), `tandaDibaca`, `tandaSemuaDibaca`.
+- Loceng `LocengNotifikasi.tsx` dalam `NavigasiAtas` (admin sahaja): badge merah, panel dropdown, refresh tiap 5 min, tandai dibaca, pautan tindakan.
+- Page sejarah `/notifikasi` (admin): penapis Semua/Belum dibaca, tandai satu/semua.
+- **Auto-logout** `AutoLogout.tsx` (SEMUA pengguna, dipasang di kedua-dua layout): 30 min tidak aktif → modal amaran kiraan 60s → log keluar. Butang "Kekal Log Masuk" reset.
+- Nota: hanya jenis amaran `belum_bayar` dihantar buat masa ini (paling jelas/bernilai). Jenis lain (kehadiran belum ditanda, aset) perlu kriteria jadual kelas dahulu — boleh tambah kemudian; seni bina sudah generik.
+- **BELUM diuji dalam browser** (perlu migration di-run + login admin). Tawaran: uji via Chrome extension selepas user run SQL.
+
+**Backup mingguan MASIH GAGAL (disahkan Sesi 6):** `gh secret list` kosong — secret `DATABASE_URL` belum diset. Fail workflow sudah betul (client-17). Tindakan USER: Supabase Connect → Session pooler URI → GitHub Settings → Secrets → Actions → `DATABASE_URL`.
+
+---
+
+## ⚡ MULA SINI SESI 5→6 (rujukan lama)
 
 **Penghujung Sesi 5 (selepas `0a0fa71`):**
 - Butang Slip gaji juga dalam tab Bayaran profil jurulatih (`ffd62d6`) — user awalnya cari di situ
