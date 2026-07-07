@@ -109,7 +109,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate autoComplete="off">
           {/* Email */}
           <div style={{ marginBottom: '16px' }}>
             <label
@@ -129,7 +129,7 @@ export default function LoginPage() {
             <input
               id="email"
               type="email"
-              autoComplete="email"
+              autoComplete="off"
               placeholder="nama@email.com"
               {...register('email')}
               style={{
@@ -172,7 +172,7 @@ export default function LoginPage() {
             <input
               id="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               placeholder="••••••••"
               {...register('password')}
               style={{

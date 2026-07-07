@@ -5,6 +5,7 @@ import { FileText, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { akhirBulan } from '@/lib/utils'
 import { CariPelajar, type PelajarCarian } from '@/components/pelajar/CariPelajar'
+import { LaporanKelasKlient } from './_components/LaporanKelasKlient'
 import { toast } from '@/lib/stores/toast-store'
 
 type Rekod = {
@@ -153,11 +154,14 @@ export default function LaporanPage() {
           Laporan Kehadiran
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-          Jana laporan kehadiran bulanan pelajar dalam format PDF
+          Jana laporan kehadiran bulanan — per kelas (cawangan) atau per pelajar, dalam format PDF/Excel
         </p>
       </div>
 
-      {/* Borang Jana */}
+      {/* Laporan Per Kelas (PDF + Excel) */}
+      <LaporanKelasKlient />
+
+      {/* Borang Jana (Per Pelajar) */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '24px', marginBottom: '24px' }}>
         <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginBottom: '20px' }}>Pilih Pelajar & Bulan</h2>
 
