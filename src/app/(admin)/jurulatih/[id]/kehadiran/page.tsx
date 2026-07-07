@@ -2,9 +2,10 @@
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
-import { Plus, Trash2, Check } from 'lucide-react'
+import { Plus, Trash2, Check, Edit2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { akhirBulan } from '@/lib/utils'
+import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 import { toast } from '@/lib/stores/toast-store'
 
 type Sesi = {
@@ -46,8 +47,7 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
   const formKosong = { tarikh: '', status: 'Hadir' as Sesi['status'], cawangan_id: '', jenis_kelas: 'Kumpulan' as Sesi['jenis_kelas'], nota: '' }
   const [formBaru, setFormBaru] = useState(formKosong)
   const [menyimpan, setMenyimpan] = useState(false)
-  const [editId, setEditId] = useState<string | null>(null)
-  const [editStatus, setEditStatus] = useState<Sesi['status']>('Hadir')
+  const [editSesi, setEditSesi] = useState<Sesi | null>(null)
 
   const muatData = async () => {
     setLoading(true)
@@ -86,16 +86,6 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
     }, { onConflict: 'jurulatih_id,tarikh,cawangan_id,jenis_kelas' })
     if (!error) { toast.success('Sesi berjaya ditambah.'); setTambahMode(false); setFormBaru({ ...formKosong, cawangan_id: formBaru.cawangan_id }); muatData() }
     else { toast.error('Gagal tambah sesi. Cuba lagi.') }
-    setMenyimpan(false)
-  }
-
-  const simpanEdit = async (sesiId: string) => {
-    setMenyimpan(true)
-    const { error } = await createClient().from('kehadiran_jurulatih').update({ status: editStatus }).eq('id', sesiId)
-    if (error) toast.error('Gagal kemaskini status.')
-    else toast.success('Status dikemaskini.')
-    setEditId(null)
-    muatData()
     setMenyimpan(false)
   }
 
@@ -256,7 +246,6 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
                 const d = new Date(s.tarikh)
                 const hari = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'][d.getDay()]
                 const w = WARNA[s.status]
-                const sedangEdit = editId === s.id
                 return (
                   <tr key={s.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}>
                     <td style={{ padding: '10px 14px', fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>
@@ -274,35 +263,17 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
                       </span>
                     </td>
                     <td style={{ padding: '10px 14px' }}>
-                      {sedangEdit ? (
-                        <select value={editStatus} onChange={(e) => setEditStatus(e.target.value as Sesi['status'])}
-                          style={{ padding: '5px 10px', border: '1.5px solid var(--border)', borderRadius: '8px', fontSize: '12.5px', color: 'var(--text)', background: 'var(--card)', fontFamily: 'inherit', cursor: 'pointer' }}>
-                          <option>Hadir</option><option>Tidak Hadir</option><option>Cuti</option>
-                        </select>
-                      ) : (
-                        <span
-                          onClick={() => { setEditId(s.id); setEditStatus(s.status) }}
-                          title="Klik untuk tukar status"
-                          style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '20px', fontWeight: 600, background: w.bg, color: w.text, cursor: 'pointer' }}>
-                          {s.status}
-                        </span>
-                      )}
+                      <span style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '20px', fontWeight: 600, background: w.bg, color: w.text }}>
+                        {s.status}
+                      </span>
                     </td>
                     <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>{s.nota || '—'}</td>
                     <td style={{ padding: '10px 14px' }}>
                       <div style={{ display: 'flex', gap: '5px' }}>
-                        {sedangEdit && (
-                          <>
-                            <button onClick={() => simpanEdit(s.id)} disabled={menyimpan}
-                              style={{ padding: '5px 10px', background: 'var(--accent)', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, color: 'var(--accent-text)', cursor: 'pointer', fontFamily: 'inherit' }}>
-                              <Check size={12} />
-                            </button>
-                            <button onClick={() => setEditId(null)}
-                              style={{ padding: '5px 10px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>
-                              ×
-                            </button>
-                          </>
-                        )}
+                        <button onClick={() => setEditSesi(s)} title="Edit" aria-label="Edit sesi"
+                          style={{ padding: '5px 8px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '8px', cursor: 'pointer', color: '#1E40AF', fontFamily: 'inherit' }}>
+                          <Edit2 size={12} />
+                        </button>
                         <button onClick={() => padam(s.id)} title="Padam" aria-label="Padam sesi"
                           style={{ padding: '5px 8px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '8px', cursor: 'pointer', color: '#9F1239', fontFamily: 'inherit' }}>
                           <Trash2 size={12} />
@@ -315,6 +286,133 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
             </tbody>
           </table>
         )}
+      </div>
+
+      {editSesi && (
+        <ModalEditSesi
+          sesi={editSesi}
+          cawangan={cawangan}
+          onTutup={() => setEditSesi(null)}
+          onBerjaya={() => { setEditSesi(null); muatData() }}
+        />
+      )}
+    </div>
+  )
+}
+
+function ModalEditSesi({
+  sesi,
+  cawangan,
+  onTutup,
+  onBerjaya,
+}: {
+  sesi: Sesi
+  cawangan: Cawangan[]
+  onTutup: () => void
+  onBerjaya: () => void
+}) {
+  const [tarikh, setTarikh] = useState(sesi.tarikh)
+  const [status, setStatus] = useState<Sesi['status']>(sesi.status)
+  const [cawanganId, setCawanganId] = useState(sesi.cawangan_id ?? '')
+  const [jenisKelas, setJenisKelas] = useState<Sesi['jenis_kelas']>(sesi.jenis_kelas)
+  const [nota, setNota] = useState(sesi.nota ?? '')
+  const [menyimpan, setMenyimpan] = useState(false)
+  const [ralat, setRalat] = useState<string | null>(null)
+  useTutupEscape(onTutup)
+
+  const simpan = async () => {
+    if (!tarikh) { setRalat('Sila isi tarikh.'); return }
+    if (!cawanganId) { setRalat('Sila pilih cawangan.'); return }
+    setMenyimpan(true)
+    setRalat(null)
+    const { error } = await createClient()
+      .from('kehadiran_jurulatih')
+      .update({ tarikh, status, cawangan_id: cawanganId, jenis_kelas: jenisKelas, nota: nota.trim() || null })
+      .eq('id', sesi.id)
+    setMenyimpan(false)
+    if (error) {
+      if (error.code === '23505') {
+        setRalat('Sudah ada sesi lain dengan tarikh, cawangan & jenis kelas yang sama.')
+      } else {
+        setRalat('Gagal simpan perubahan. Cuba lagi.')
+      }
+      return
+    }
+    toast.success('Sesi dikemaskini.')
+    onBerjaya()
+  }
+
+  const modalInput = {
+    padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: '10px',
+    fontSize: '13.5px', color: 'var(--text)', background: 'var(--card)', outline: 'none',
+    fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' as const,
+  }
+  const labelStyle = { display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px', textTransform: 'uppercase' as const, letterSpacing: '0.05em' }
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onTutup() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Edit Sesi Kehadiran Jurulatih"
+    >
+      <div style={{ background: 'var(--card)', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '460px', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+          <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text)' }}>Edit Sesi</h2>
+          <button onClick={onTutup} aria-label="Tutup" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={labelStyle}>Tarikh</label>
+              <input type="date" value={tarikh} onChange={(e) => setTarikh(e.target.value)} style={modalInput} />
+            </div>
+            <div>
+              <label style={labelStyle}>Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value as Sesi['status'])} style={{ ...modalInput, cursor: 'pointer' }}>
+                <option>Hadir</option><option>Tidak Hadir</option><option>Cuti</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={labelStyle}>Cawangan</label>
+              <select value={cawanganId} onChange={(e) => setCawanganId(e.target.value)} style={{ ...modalInput, cursor: 'pointer' }}>
+                <option value="">— Pilih cawangan —</option>
+                {cawangan.map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Jenis Kelas</label>
+              <select value={jenisKelas} onChange={(e) => setJenisKelas(e.target.value as Sesi['jenis_kelas'])} style={{ ...modalInput, cursor: 'pointer' }}>
+                <option>Kumpulan</option><option>Personal</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Nota (pilihan)</label>
+            <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Contoh: Cuti sakit" style={modalInput} />
+          </div>
+        </div>
+
+        {ralat && (
+          <div style={{ background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', padding: '10px 14px', fontSize: '13px', color: '#9F1239', marginTop: '14px' }}>
+            {ralat}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+          <button onClick={onTutup} style={{ flex: 1, padding: '11px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: '12px', fontSize: '13.5px', fontWeight: 600, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            Batal
+          </button>
+          <button onClick={simpan} disabled={menyimpan} style={{ flex: 2, padding: '11px', background: menyimpan ? '#94A3B8' : 'var(--accent)', border: 'none', borderRadius: '12px', fontSize: '13.5px', fontWeight: 700, color: 'var(--accent-text)', cursor: menyimpan ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+            {menyimpan ? 'Menyimpan...' : 'Simpan Perubahan'}
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { Edit2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatTarikhPendek } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
@@ -35,6 +36,7 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
   const [loading, setLoading] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [editStatus, setEditStatus] = useState<string>('')
+  const [editNota, setEditNota] = useState<string>('')
   const [simpanLoading, setSimpanLoading] = useState(false)
 
   const muatRekod = useCallback(async () => {
@@ -73,19 +75,21 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
   const mulaEdit = (r: RekodKehadiran) => {
     setEditId(r.id)
     setEditStatus(r.status)
+    setEditNota(r.nota ?? '')
   }
 
   const simpanEdit = async () => {
     if (!editId) return
     setSimpanLoading(true)
     const supabase = createClient()
+    const notaBaru = editNota.trim() || null
     const { error } = await supabase
       .from('kehadiran')
-      .update({ status: editStatus as 'Hadir' | 'Tidak Hadir' | 'Cuti' })
+      .update({ status: editStatus as 'Hadir' | 'Tidak Hadir' | 'Cuti', nota: notaBaru })
       .eq('id', editId)
 
     if (!error) {
-      setRekod((prev) => prev.map((r) => r.id === editId ? { ...r, status: editStatus as any } : r))
+      setRekod((prev) => prev.map((r) => r.id === editId ? { ...r, status: editStatus as any, nota: notaBaru } : r))
       toast.success('Rekod berjaya dikemaskini.')
     } else {
       toast.error('Gagal kemaskini rekod. Cuba lagi.')
@@ -184,7 +188,7 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                {['Pelajar', 'Cawangan Daftar', 'Cawangan Sesi', 'Status', 'Tindakan'].map((h) => (
+                {['Pelajar', 'Cawangan Daftar', 'Cawangan Sesi', 'Status', 'Nota', 'Tindakan'].map((h) => (
                   <th key={h} style={{
                     padding: '10px 16px', textAlign: 'left',
                     fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)',
@@ -229,6 +233,18 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
                         </span>
                       )}
                     </td>
+                    <td style={{ padding: '11px 16px', fontSize: '12.5px', color: 'var(--text-muted)', maxWidth: '220px' }}>
+                      {sedangEdit ? (
+                        <input
+                          value={editNota}
+                          onChange={(e) => setEditNota(e.target.value)}
+                          placeholder="Nota (pilihan)"
+                          style={{ width: '100%', padding: '5px 10px', border: '1.5px solid var(--border)', borderRadius: '8px', fontSize: '12.5px', color: 'var(--text)', background: 'var(--card)', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                        />
+                      ) : (
+                        r.nota || '—'
+                      )}
+                    </td>
                     <td style={{ padding: '11px 16px' }}>
                       {sedangEdit ? (
                         <div style={{ display: 'flex', gap: '6px' }}>
@@ -258,14 +274,16 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
                       ) : (
                         <button
                           onClick={() => mulaEdit(r)}
+                          aria-label={`Edit kehadiran ${r.pelajar_nama}`}
                           style={{
-                            padding: '5px 12px', background: 'var(--bg)',
-                            border: '1px solid var(--border)', borderRadius: '7px',
+                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                            padding: '5px 12px', background: '#EFF6FF',
+                            border: '1px solid #BFDBFE', borderRadius: '7px',
                             fontSize: '12px', fontWeight: 600,
-                            color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit',
+                            color: '#1E40AF', cursor: 'pointer', fontFamily: 'inherit',
                           }}
                         >
-                          Edit
+                          <Edit2 size={12} /> Edit
                         </button>
                       )}
                     </td>

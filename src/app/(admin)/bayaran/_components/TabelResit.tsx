@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Plus, Search, X } from 'lucide-react'
+import { Edit2, Plus, Search, X } from 'lucide-react'
 import { ModalBatalResit } from './ModalBatalResit'
+import { ModalEditResit } from './ModalEditResit'
 import { BtnUnduhResit } from '@/components/pdf/BtnUnduhResit'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/lib/stores/toast-store'
@@ -39,6 +40,7 @@ export function TabelResit({ resit, bulanTersedia }: Props) {
   const [filterStatus, setFilterStatus] = useState('')
   const [halaman, setHalaman] = useState(1)
   const [modalBatal, setModalBatal] = useState<Resit | null>(null)
+  const [modalEdit, setModalEdit] = useState<Resit | null>(null)
 
   const hasil = resit.filter((r) => {
     const cariCocokan = !carian || r.nombor_resit.toLowerCase().includes(carian.toLowerCase()) || r.nama_pelajar.toLowerCase().includes(carian.toLowerCase())
@@ -204,16 +206,27 @@ export function TabelResit({ resit, bulanTersedia }: Props) {
                           sebab_batal: r.sebab_batal,
                         }} />
                         {r.status === 'Aktif' && (
-                          <button onClick={() => setModalBatal(r)}
-                            style={{
-                              display: 'inline-flex', alignItems: 'center',
-                              padding: '5px 10px',
-                              background: '#FFF1F2', border: '1px solid #FECDD3',
-                              borderRadius: '8px', fontSize: '12px', fontWeight: 600,
-                              color: '#9F1239', cursor: 'pointer', fontFamily: 'inherit',
-                            }}>
-                            Batal
-                          </button>
+                          <>
+                            <button onClick={() => setModalEdit(r)} title="Edit" aria-label={`Edit resit ${r.nombor_resit}`}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center',
+                                padding: '5px 8px',
+                                background: '#EFF6FF', border: '1px solid #BFDBFE',
+                                borderRadius: '8px', color: '#1E40AF', cursor: 'pointer', fontFamily: 'inherit',
+                              }}>
+                              <Edit2 size={13} />
+                            </button>
+                            <button onClick={() => setModalBatal(r)}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center',
+                                padding: '5px 10px',
+                                background: '#FFF1F2', border: '1px solid #FECDD3',
+                                borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                                color: '#9F1239', cursor: 'pointer', fontFamily: 'inherit',
+                              }}>
+                              Batal
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -254,6 +267,27 @@ export function TabelResit({ resit, bulanTersedia }: Props) {
           onBerjaya={() => {
             setModalBatal(null)
             toast.success(`Resit ${modalBatal.nombor_resit} berjaya dibatalkan.`)
+            router.refresh()
+          }}
+        />
+      )}
+
+      {modalEdit && (
+        <ModalEditResit
+          resit={{
+            id: modalEdit.id,
+            nombor_resit: modalEdit.nombor_resit,
+            nama_pelajar: modalEdit.nama_pelajar,
+            jenis: modalEdit.jenis,
+            bulan_bayaran: modalEdit.bulan_bayaran,
+            tahun_bayaran: modalEdit.tahun_bayaran,
+            jumlah: modalEdit.jumlah,
+            kaedah_bayaran: modalEdit.kaedah_bayaran,
+            tarikh_bayar: modalEdit.tarikh_bayar,
+          }}
+          onTutup={() => setModalEdit(null)}
+          onBerjaya={() => {
+            setModalEdit(null)
             router.refresh()
           }}
         />

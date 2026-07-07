@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Paperclip, Plus, Trash2, Upload, TrendingUp, X } from 'lucide-react'
+import { Edit2, Paperclip, Plus, Trash2, Upload, TrendingUp, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { akhirBulan, formatRinggit, formatTarikh, tarikhTempatan, bulanTempatan } from '@/lib/utils'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
@@ -66,6 +66,7 @@ export default function PendapatanLainPage() {
   const [cawangan, setCawangan] = useState<{ id: string; nama: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(false)
+  const [rekodEdit, setRekodEdit] = useState<Pendapatan | null>(null)
   const [jumlahTotal, setJumlahTotal] = useState(0)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
 
@@ -288,16 +289,24 @@ export default function PendapatanLainPage() {
                     )}
                   </td>
                   <td style={{ padding: '10px 14px' }}>
-                    <button
-                      onClick={() => padam(p)}
-                      title="Padam"
-                      aria-label={`Padam pendapatan ${p.sumber}`}
-                      style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', opacity: 0.6 }}
-                      onMouseEnter={(e) => { e.currentTarget.style.opacity = '1' }}
-                      onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6' }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                      <button
+                        onClick={() => setRekodEdit(p)}
+                        title="Edit"
+                        aria-label={`Edit pendapatan ${p.sumber}`}
+                        style={{ padding: '5px 8px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '8px', cursor: 'pointer', color: '#1E40AF', display: 'flex', alignItems: 'center' }}
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        onClick={() => padam(p)}
+                        title="Padam"
+                        aria-label={`Padam pendapatan ${p.sumber}`}
+                        style={{ padding: '5px 8px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '8px', color: '#9F1239', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -306,15 +315,18 @@ export default function PendapatanLainPage() {
         </div>
       )}
 
-      {modal && (
+      {(modal || rekodEdit) && (
         <ModalTambahPendapatan
+          rekodEdit={rekodEdit}
           cawangan={cawangan}
-          onTutup={() => setModal(false)}
+          onTutup={() => { setModal(false); setRekodEdit(null) }}
           onBerjaya={(tarikhBaru) => {
+            const edit = !!rekodEdit
             setModal(false)
+            setRekodEdit(null)
             const bulanBaru = tarikhBaru.slice(0, 7)
             const labelBulan = new Date(tarikhBaru + 'T00:00:00').toLocaleString('ms-MY', { month: 'long', year: 'numeric' })
-            toast.success(`Pendapatan disimpan (${labelBulan}).`)
+            toast.success(edit ? 'Pendapatan dikemaskini.' : `Pendapatan disimpan (${labelBulan}).`)
             if (bulanBaru !== bulan) setBulan(bulanBaru)
             else muatData()
           }}
@@ -325,21 +337,24 @@ export default function PendapatanLainPage() {
 }
 
 function ModalTambahPendapatan({
+  rekodEdit,
   cawangan,
   onTutup,
   onBerjaya,
 }: {
+  rekodEdit?: Pendapatan | null
   cawangan: { id: string; nama: string }[]
   onTutup: () => void
   onBerjaya: (tarikh: string) => void
 }) {
-  const [tarikh, setTarikh] = useState(tarikhTempatan())
-  const [kategori, setKategori] = useState(KATEGORI[0])
-  const [sumber, setSumber] = useState('')
-  const [jumlah, setJumlah] = useState('')
-  const [kaedah, setKaedah] = useState<(typeof KAEDAH)[number]>('Transfer')
-  const [cawanganId, setCawanganId] = useState('')
-  const [nota, setNota] = useState('')
+  const edit = !!rekodEdit
+  const [tarikh, setTarikh] = useState(rekodEdit?.tarikh ?? tarikhTempatan())
+  const [kategori, setKategori] = useState(rekodEdit?.kategori ?? KATEGORI[0])
+  const [sumber, setSumber] = useState(rekodEdit?.sumber ?? '')
+  const [jumlah, setJumlah] = useState(rekodEdit ? String(rekodEdit.jumlah) : '')
+  const [kaedah, setKaedah] = useState<(typeof KAEDAH)[number]>((rekodEdit?.kaedah as (typeof KAEDAH)[number]) ?? 'Transfer')
+  const [cawanganId, setCawanganId] = useState(rekodEdit?.cawangan_id ?? '')
+  const [nota, setNota] = useState(rekodEdit?.nota ?? '')
   const [failBukti, setFailBukti] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
@@ -355,30 +370,40 @@ function ModalTambahPendapatan({
     setLoading(true)
     setRalat(null)
     const supabase = createClient()
-    const { data: rekod, error } = await supabase
-      .from('pendapatan_lain')
-      .insert({
-        tarikh,
-        kategori,
-        sumber: sumber.trim(),
-        jumlah: +jumlah,
-        kaedah,
-        cawangan_id: cawanganId || null,
-        nota: nota.trim() || null,
-      })
-      .select('id')
-      .single()
-    if (error || !rekod) { setRalat('Gagal simpan. Cuba lagi.'); setLoading(false); return }
+    const medan = {
+      tarikh,
+      kategori,
+      sumber: sumber.trim(),
+      jumlah: +jumlah,
+      kaedah,
+      cawangan_id: cawanganId || null,
+      nota: nota.trim() || null,
+    }
+
+    let rekodId: string
+    if (edit && rekodEdit) {
+      const { error } = await supabase.from('pendapatan_lain').update(medan).eq('id', rekodEdit.id)
+      if (error) { setRalat('Gagal simpan. Cuba lagi.'); setLoading(false); return }
+      rekodId = rekodEdit.id
+    } else {
+      const { data: rekod, error } = await supabase
+        .from('pendapatan_lain')
+        .insert(medan)
+        .select('id')
+        .single()
+      if (error || !rekod) { setRalat('Gagal simpan. Cuba lagi.'); setLoading(false); return }
+      rekodId = rekod.id
+    }
 
     if (failBukti) {
-      const path = pathBukti(rekod.id, tarikh, failBukti.name)
+      const path = pathBukti(rekodId, tarikh, failBukti.name)
       const { error: errUpload } = await supabase.storage
         .from(BUKTI_BUCKET)
         .upload(path, failBukti, { upsert: true })
       if (errUpload) {
         toast.error('Rekod disimpan tetapi bukti gagal dimuat naik. Guna butang Upload dalam jadual.')
       } else {
-        await supabase.from('pendapatan_lain').update({ bukti_path: path }).eq('id', rekod.id)
+        await supabase.from('pendapatan_lain').update({ bukti_path: path }).eq('id', rekodId)
       }
     }
     onBerjaya(tarikh)
@@ -393,11 +418,11 @@ function ModalTambahPendapatan({
       onClick={(e) => { if (e.target === e.currentTarget) onTutup() }}
       role="dialog"
       aria-modal="true"
-      aria-label="Rekod Pendapatan Lain"
+      aria-label={edit ? 'Edit Pendapatan Lain' : 'Rekod Pendapatan Lain'}
     >
       <div style={{ background: 'var(--card)', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '480px', boxShadow: '0 20px 60px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
-          <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text)' }}>Rekod Pendapatan Lain</h2>
+          <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text)' }}>{edit ? 'Edit Pendapatan Lain' : 'Rekod Pendapatan Lain'}</h2>
           <button onClick={onTutup} aria-label="Tutup" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
             <X size={18} />
           </button>
@@ -478,7 +503,7 @@ function ModalTambahPendapatan({
             Batal
           </button>
           <button onClick={simpan} disabled={loading} style={{ flex: 2, padding: '11px', background: loading ? '#94A3B8' : 'var(--accent)', border: 'none', borderRadius: '12px', fontSize: '13.5px', fontWeight: 700, color: 'var(--accent-text)', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-            {loading ? 'Menyimpan...' : 'Simpan Pendapatan'}
+            {loading ? 'Menyimpan...' : edit ? 'Simpan Perubahan' : 'Simpan Pendapatan'}
           </button>
         </div>
       </div>
