@@ -10,15 +10,14 @@ const NAMA_BULAN = [
 export default async function PelajarPage() {
   const supabase = await createClient()
 
-  // Bulan semasa waktu Malaysia (UTC+8)
+  // Setakat bulan semasa waktu Malaysia (UTC+8), meliputi sepanjang tahun
   const myt = new Date(Date.now() + 8 * 60 * 60 * 1000)
   const tahun = myt.getUTCFullYear()
-  const bulanNum = myt.getUTCMonth() + 1
-  const namaBulan = NAMA_BULAN[bulanNum - 1]
-  const mulaB = `${tahun}-${String(bulanNum).padStart(2, '0')}-01`
-  const akhirB = akhirBulan(tahun, bulanNum)
+  const bulanSemasa = myt.getUTCMonth() + 1
+  const mulaThn = `${tahun}-01-01`
+  const akhirThn = akhirBulan(tahun, bulanSemasa)
 
-  const [{ data: pelajarRaw }, { data: cawangan }, { data: kehadiranBulan }, { data: resitBulan }] = await Promise.all([
+  const [{ data: pelajarRaw }, { data: cawangan }, { data: kehadiran }, { data: resit }] = await Promise.all([
     supabase
       .from('pelajar')
       .select('id, nama_penuh, nama_ibu_bapa, no_telefon, jenis_kelas, yuran_bulanan, status, cawangan_daftar_id, cawangan:cawangan_daftar_id(nama)')
@@ -28,15 +27,26 @@ export default async function PelajarPage() {
       .select('id, nama')
       .eq('status', 'Aktif')
       .order('nama'),
-    supabase.from('kehadiran').select('pelajar_id, status').eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
-    supabase.from('resit').select('pelajar_id').eq('bulan_bayaran', namaBulan).eq('tahun_bayaran', tahun).eq('status', 'Aktif'),
+    supabase.from('kehadiran').select('pelajar_id, tarikh').eq('status', 'Hadir').gte('tarikh', mulaThn).lte('tarikh', akhirThn),
+    supabase.from('resit').select('pelajar_id, bulan_bayaran').eq('tahun_bayaran', tahun).eq('status', 'Aktif'),
   ])
 
-  // Set pelajar belum bayar bulan ini (≥4 hadir, tiada resit aktif) — sama peraturan dashboard
-  const idDgnResit = new Set((resitBulan ?? []).map((r: any) => r.pelajar_id))
-  const kiraHadir: Record<string, number> = {}
-  for (const k of kehadiranBulan ?? []) kiraHadir[k.pelajar_id] = (kiraHadir[k.pelajar_id] ?? 0) + 1
-  const belumBayarIds = Object.keys(kiraHadir).filter((id) => kiraHadir[id] >= 4 && !idDgnResit.has(id))
+  // Aging: bilangan bulan tertunggak per pelajar sepanjang tahun
+  // (bulan dengan ≥4 hadir TETAPI tiada resit aktif) — sama logik Laporan Tunggakan.
+  const hadir: Record<string, Record<number, number>> = {}
+  for (const k of kehadiran ?? []) {
+    const m = +(k.tarikh as string).slice(5, 7)
+    ;(hadir[k.pelajar_id] ??= {})[m] = ((hadir[k.pelajar_id] ??= {})[m] ?? 0) + 1
+  }
+  const dibayar = new Set((resit ?? []).map((r: any) => `${r.pelajar_id}|${r.bulan_bayaran}`))
+  const tunggakanCount: Record<string, number> = {}
+  for (const pid of Object.keys(hadir)) {
+    let n = 0
+    for (let m = 1; m <= bulanSemasa; m++) {
+      if ((hadir[pid][m] ?? 0) >= 4 && !dibayar.has(`${pid}|${NAMA_BULAN[m - 1]}`)) n++
+    }
+    if (n > 0) tunggakanCount[pid] = n
+  }
 
   const pelajar = (pelajarRaw ?? []).map((p: any) => ({
     id: p.id,
@@ -54,8 +64,8 @@ export default async function PelajarPage() {
     <TabelPelajar
       pelajar={pelajar}
       cawangan={cawangan ?? []}
-      belumBayarIds={belumBayarIds}
-      labelBulan={`${namaBulan} ${tahun}`}
+      tunggakanCount={tunggakanCount}
+      tahun={tahun}
     />
   )
 }

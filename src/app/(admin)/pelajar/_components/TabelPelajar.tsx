@@ -22,20 +22,27 @@ type Cawangan = { id: string; nama: string }
 interface TabelPelajarProps {
   pelajar: Pelajar[]
   cawangan: Cawangan[]
-  belumBayarIds?: string[]
-  labelBulan?: string
+  tunggakanCount?: Record<string, number>
+  tahun?: number
 }
 
 const REKOD_PER_HALAMAN = 10
 
-export function TabelPelajar({ pelajar, cawangan, belumBayarIds = [], labelBulan = '' }: TabelPelajarProps) {
+// Warna ikut umur tunggakan (bilangan bulan)
+function gayaTunggakan(n: number) {
+  if (n >= 3) return { bg: '#FFF1F2', hover: '#FFE4E6', border: '#EF4444', badge: '#DC2626' } // merah
+  if (n === 2) return { bg: '#FFF7ED', hover: '#FFEDD5', border: '#F97316', badge: '#C2410C' } // oren
+  return { bg: '#FEFCE8', hover: '#FEF9C3', border: '#EAB308', badge: '#A16207' } // kuning
+}
+
+export function TabelPelajar({ pelajar, cawangan, tunggakanCount = {}, tahun }: TabelPelajarProps) {
   const [carian, setCarian] = useState('')
   const [filterCawangan, setFilterCawangan] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterBayaran, setFilterBayaran] = useState('')
   const [halaman, setHalaman] = useState(1)
 
-  const setBelumBayar = useMemo(() => new Set(belumBayarIds), [belumBayarIds])
+  const bilTunggakan = useMemo(() => Object.keys(tunggakanCount).length, [tunggakanCount])
 
   const senarai = useMemo(() => {
     return pelajar.filter((p) => {
@@ -45,10 +52,10 @@ export function TabelPelajar({ pelajar, cawangan, belumBayarIds = [], labelBulan
       )
       const cocokCawangan = !filterCawangan || p.cawangan_daftar_id === filterCawangan
       const cocokStatus = !filterStatus || p.status === filterStatus
-      const cocokBayaran = !filterBayaran || setBelumBayar.has(p.id)
+      const cocokBayaran = !filterBayaran || (tunggakanCount[p.id] ?? 0) > 0
       return cocokCarian && cocokCawangan && cocokStatus && cocokBayaran
     })
-  }, [pelajar, carian, filterCawangan, filterStatus, filterBayaran, setBelumBayar])
+  }, [pelajar, carian, filterCawangan, filterStatus, filterBayaran, tunggakanCount])
 
   const jumlahHalaman = Math.max(1, Math.ceil(senarai.length / REKOD_PER_HALAMAN))
   const halamanSelamat = Math.min(halaman, jumlahHalaman)
@@ -141,12 +148,12 @@ export function TabelPelajar({ pelajar, cawangan, belumBayarIds = [], labelBulan
         </select>
         <select value={filterBayaran} onChange={(e) => handleFilterB(e.target.value)} style={inputStyle}>
           <option value="">Semua Bayaran</option>
-          <option value="belum">⚠ Belum Bayar{labelBulan ? ` (${labelBulan})` : ''}</option>
+          <option value="belum">⚠ Ada Tunggakan{tahun ? ` (${tahun})` : ''}</option>
         </select>
-        {setBelumBayar.size > 0 && (
+        {bilTunggakan > 0 && (
           <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: '#C2410C' }}>
             <AlertCircle size={14} />
-            {setBelumBayar.size} belum bayar
+            {bilTunggakan} pelajar bertunggak
           </span>
         )}
       </div>
@@ -186,22 +193,23 @@ export function TabelPelajar({ pelajar, cawangan, belumBayarIds = [], labelBulan
             </thead>
             <tbody>
               {paparan.map((p, i) => {
-                const belum = setBelumBayar.has(p.id)
-                const baseBg = belum ? '#FFF1F2' : 'transparent'
+                const nTunggak = tunggakanCount[p.id] ?? 0
+                const g = nTunggak > 0 ? gayaTunggakan(nTunggak) : null
+                const baseBg = g ? g.bg : 'transparent'
                 return (
                 <tr key={p.id} style={{
                   borderBottom: i < paparan.length - 1 ? '1px solid var(--border)' : 'none',
                   background: baseBg,
                   transition: 'background 0.1s',
                 }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = belum ? '#FFE4E6' : '#FAFBFC' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = g ? g.hover : '#FAFBFC' }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = baseBg }}
                 >
-                  <td style={{ padding: '12px 16px', borderLeft: belum ? '3px solid #EF4444' : '3px solid transparent' }}>
+                  <td style={{ padding: '12px 16px', borderLeft: g ? `3px solid ${g.border}` : '3px solid transparent' }}>
                     <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>{p.nama_penuh}</div>
-                    {belum && (
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '3px', fontSize: '11px', fontWeight: 700, color: '#DC2626' }}>
-                        <AlertCircle size={11} /> Belum bayar{labelBulan ? ` ${labelBulan}` : ''}
+                    {g && (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '3px', fontSize: '11px', fontWeight: 700, color: g.badge }}>
+                        <AlertCircle size={11} /> {nTunggak} bulan tertunggak
                       </div>
                     )}
                   </td>
