@@ -1,16 +1,18 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Edit2, Paperclip, Plus, Trash2, Upload, TrendingUp, X } from 'lucide-react'
+import { Edit2, FileText, Paperclip, Plus, Trash2, Upload, TrendingUp, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { akhirBulan, formatRinggit, formatTarikh, tarikhTempatan, bulanTempatan } from '@/lib/utils'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 import { toast } from '@/lib/stores/toast-store'
 
 const KATEGORI = [
-  'Sumbangan',
-  'Penajaan',
+  'Jualan Peralatan',
+  'Khidmat Kursus',
   'Yuran Program Luar',
+  'Penajaan',
+  'Sumbangan',
   'Sewa & Faedah',
   'Lain-lain',
 ]
@@ -27,6 +29,7 @@ type Pendapatan = {
   cawangan_id: string | null
   nota: string | null
   bukti_path: string | null
+  no_resit: string | null
   cawangan: { id: string; nama: string } | null
 }
 
@@ -69,6 +72,29 @@ export default function PendapatanLainPage() {
   const [rekodEdit, setRekodEdit] = useState<Pendapatan | null>(null)
   const [jumlahTotal, setJumlahTotal] = useState(0)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
+  const [resitId, setResitId] = useState<string | null>(null)
+
+  const unduhResit = async (p: Pendapatan) => {
+    if (!p.no_resit) return
+    setResitId(p.id)
+    try {
+      const { pdf } = await import('@react-pdf/renderer')
+      const { ResitPendapatanPDF } = await import('@/components/pdf/ResitPendapatanPDF')
+      const blob = await pdf(
+        <ResitPendapatanPDF no_resit={p.no_resit} sumber={p.sumber} kategori={p.kategori} nota={p.nota} jumlah={p.jumlah} kaedah={p.kaedah} tarikh={p.tarikh} />
+      ).toBlob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = `Resit_${p.no_resit}.pdf`; a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Resit dimuat turun.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Gagal jana resit. Refresh (Ctrl+Shift+R) dan cuba lagi.')
+    } finally {
+      setResitId(null)
+    }
+  }
 
   const muatData = useCallback(async () => {
     setLoading(true)
@@ -79,7 +105,7 @@ export default function PendapatanLainPage() {
 
     let q = supabase
       .from('pendapatan_lain')
-      .select('id, tarikh, sumber, kategori, jumlah, kaedah, cawangan_id, nota, bukti_path, cawangan:cawangan_id(id, nama)')
+      .select('id, tarikh, sumber, kategori, jumlah, kaedah, cawangan_id, nota, bukti_path, no_resit, cawangan:cawangan_id(id, nama)')
       .gte('tarikh', mula)
       .lte('tarikh', akhir)
 
@@ -290,6 +316,17 @@ export default function PendapatanLainPage() {
                   </td>
                   <td style={{ padding: '10px 14px' }}>
                     <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                      {p.no_resit && (
+                        <button
+                          onClick={() => unduhResit(p)}
+                          disabled={resitId === p.id}
+                          title={`Muat turun resit ${p.no_resit}`}
+                          aria-label={`Resit ${p.sumber}`}
+                          style={{ padding: '5px 8px', background: '#F1F5F9', border: '1px solid var(--border)', borderRadius: '8px', cursor: resitId === p.id ? 'wait' : 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center' }}
+                        >
+                          <FileText size={13} />
+                        </button>
+                      )}
                       <button
                         onClick={() => setRekodEdit(p)}
                         title="Edit"

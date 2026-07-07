@@ -534,6 +534,7 @@ export interface Database {
           cawangan_id: string | null
           nota: string | null
           bukti_path: string | null
+          no_resit: string | null
           created_at: string
         }
         Insert: {
@@ -546,6 +547,7 @@ export interface Database {
           cawangan_id?: string | null
           nota?: string | null
           bukti_path?: string | null
+          no_resit?: string | null
           created_at?: string
         }
         Update: {
@@ -558,6 +560,7 @@ export interface Database {
           cawangan_id?: string | null
           nota?: string | null
           bukti_path?: string | null
+          no_resit?: string | null
           created_at?: string
         }
         Relationships: []
