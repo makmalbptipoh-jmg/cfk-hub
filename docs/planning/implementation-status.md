@@ -20,6 +20,10 @@
 - Nota: hanya jenis amaran `belum_bayar` dihantar buat masa ini (paling jelas/bernilai). Jenis lain (kehadiran belum ditanda, aset) perlu kriteria jadual kelas dahulu — boleh tambah kemudian; seni bina sudah generik.
 - **BELUM diuji dalam browser** (perlu migration di-run + login admin). Tawaran: uji via Chrome extension selepas user run SQL.
 
+**Dashboard penapis + highlight belum bayar (commit `777de2b`, LIVE & diuji browser):**
+- Dashboard: bar penapis Cawangan/Bulan/Tahun (URL searchParams, `_components/DashboardFilter.tsx`); widget & jadual ikut tempoh+cawangan. Widget "hari ini" ditukar ikut bulan supaya konsisten. Diuji: Mei vs Julai papar angka berbeza ✅.
+- Senarai Pelajar: baris belum bayar (≥4 hadir, tiada resit bulan semasa) highlight MERAH + badge + kiraan + penapis "Belum Bayar". (Julai 2026 = 0 belum bayar, jadi tiada merah buat masa ini.)
+
 **Butang Edit untuk betulkan rekod (commit `63b3722`, LIVE):**
 - Kehadiran Jurulatih S-27: modal edit PENUH (tarikh/status/cawangan/jenis/nota) + tangani ralat unique 23505; ganti edit-status inline.
 - Perbelanjaan & Pendapatan Lain: modal edit (guna semula modal tambah, prop `rekodEdit`).
