@@ -24,6 +24,9 @@ type ToggleStatus = 'Hadir' | 'Tidak Hadir' | 'Cuti'
 // rekod ringkas; pelajar yang berhenti ditanda Tak Aktif dan disembunyikan.
 const BUTANG_STATUS: ToggleStatus[] = ['Hadir', 'Cuti']
 
+// Nilai chip khas untuk penapis pelajar kelas Personal (bukan id cawangan)
+const CHIP_PERSONAL = '__personal__'
+
 interface Props {
   pelajar: Pelajar[]
   cawangan: Cawangan[]
@@ -45,8 +48,15 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 
-  // Pelajar kumpulan ikut penapis cawangan; pelajar Personal boleh hadir di semua cawangan
+  // Pelajar kumpulan ikut penapis cawangan; pelajar Personal boleh hadir di semua cawangan.
+  // Chip khas "Personal" papar HANYA pelajar personal (semua cawangan).
   const { senaraiKumpulan, senaraiPersonal } = useMemo(() => {
+    if (cawanganChip === CHIP_PERSONAL) {
+      return {
+        senaraiKumpulan: [] as Pelajar[],
+        senaraiPersonal: senarai.filter((p) => p.jenis_kelas !== 'Kumpulan'),
+      }
+    }
     const kumpulan = senarai.filter(
       (p) => p.jenis_kelas !== 'Personal' && (!cawanganChip || p.cawangan_daftar_id === cawanganChip)
     )
@@ -90,7 +100,8 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
     setBerjaya(false)
 
     const supabase = createClient()
-    const cawanganSesiId = cawanganChip || null
+    // Chip Personal bukan cawangan sebenar — guna cawangan daftar pelajar
+    const cawanganSesiId = cawanganChip && cawanganChip !== CHIP_PERSONAL ? cawanganChip : null
 
     const records = senaraiFiltred
       .filter((p) => toggles[p.id] != null)
@@ -212,7 +223,7 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
 
       {/* Chip Cawangan */}
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '16px', paddingBottom: '4px' }}>
-        {[{ id: '', nama: 'Semua' }, ...cawangan].map((c) => {
+        {[{ id: '', nama: 'Semua' }, ...cawangan, { id: CHIP_PERSONAL, nama: 'Personal' }].map((c) => {
           const aktif = cawanganChip === c.id
           return (
             <button key={c.id}
@@ -247,7 +258,9 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
       {/* Senarai Pelajar */}
       {senaraiFiltred.length === 0 ? (
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '40px 20px', textAlign: 'center' }}>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Tiada pelajar untuk cawangan ini</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+            {cawanganChip === CHIP_PERSONAL ? 'Tiada pelajar kelas personal' : 'Tiada pelajar untuk cawangan ini'}
+          </p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
