@@ -9,6 +9,7 @@
 - Pelajar `Kumpulan+Personal`: dalam senarai biasa bila chip padan cawangan daftar; masuk section Personal bila chip cawangan lain dipilih. Badge "Personal" pada kad.
 - Simpan guna logik sedia ada — `cawangan_sesi_id` = chip dipilih (atau cawangan daftar bila "Semua"); view Semak admin sudah tapis ikut `cawangan_sesi_id`, tiada ubah.
 - Digabung (rebase) dengan kerja desktop Sesi 7 — kad pelajar kekalkan butang Hadir/Cuti + Tak Aktif baharu.
+- Susulan arahan user: chip penapis **"Personal"** di hujung barisan chip (`bc36bcb`); section personal DISOROK untuk chip UPLINK sahaja — dipadan ikut nama cawangan (`fafb27b`); **kotak carian nama** di atas ringkasan — tapis paparan sahaja, tanda yang tersembunyi tetap disimpan (`5f11312`).
 
 ### Kemas & pembetulan
 - Seluruh sistem paparan **HURUF BESAR** konsisten (`globals.css` — `body { text-transform: uppercase }`); e-mel paparan dikecualikan (senarai pengguna, profil jurulatih/pelajar, pengesahan daftar).
