@@ -1,4 +1,5 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
+import { LOGO_CFK } from './logoCfk'
 
 // Maklumat syarikat (tetap)
 const CFK = {
@@ -92,9 +93,12 @@ export function DokumenJualanPDF({
       <Page size="A4" style={s.page}>
         {/* Kepala */}
         <View style={s.header}>
-          <View>
-            <Text style={s.logoText}>{CFK.nama}</Text>
-            <Text style={s.logoSub}>{CFK.alamat}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Image src={LOGO_CFK} style={{ height: 32, width: 40 }} />
+            <View>
+              <Text style={s.logoText}>{CFK.nama}</Text>
+              <Text style={s.logoSub}>{CFK.alamat}</Text>
+            </View>
           </View>
           <Text style={s.badge}>{meta.tajuk}</Text>
         </View>

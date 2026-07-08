@@ -1,4 +1,5 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
+import { LOGO_CFK } from './logoCfk'
 
 const s = StyleSheet.create({
   page: { fontFamily: 'Helvetica', fontSize: 10, padding: '40px 48px', color: '#0F172A', backgroundColor: '#FFFFFF' },
@@ -40,9 +41,12 @@ export function ResitPendapatanPDF({ no_resit, sumber, kategori, nota, jumlah, k
     <Document title={`Resit ${no_resit}`} author="CFK HUB" creator="CFK HUB">
       <Page size="A4" style={s.page}>
         <View style={s.header}>
-          <View>
-            <Text style={s.logoText}>CHESS FOR KIDS (CFK)</Text>
-            <Text style={s.logoSub}>5B, Laluan Klebang 21, Klebang Perdana, 31200 Chemor, Perak</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Image src={LOGO_CFK} style={{ height: 32, width: 40 }} />
+            <View>
+              <Text style={s.logoText}>CHESS FOR KIDS (CFK)</Text>
+              <Text style={s.logoSub}>5B, Laluan Klebang 21, Klebang Perdana, 31200 Chemor, Perak</Text>
+            </View>
           </View>
           <Text style={s.resitBadge}>RESIT RASMI</Text>
         </View>

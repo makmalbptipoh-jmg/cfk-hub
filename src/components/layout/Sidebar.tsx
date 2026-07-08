@@ -72,7 +72,10 @@ export function Sidebar({ nama, email }: SidebarProps) {
       {/* Logo */}
       <div style={{ padding: '28px 20px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '28px', lineHeight: 1, color: '#FFC94D' }}>{'♟︎'}</span>
+          <div style={{ background: '#FFFFFF', borderRadius: '10px', padding: '5px 7px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-cfk.png" alt="Logo CFK" style={{ height: '30px', width: 'auto', display: 'block' }} />
+          </div>
           <div>
             <div
               style={{

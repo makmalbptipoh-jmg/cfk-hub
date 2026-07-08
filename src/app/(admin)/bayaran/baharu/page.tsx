@@ -455,7 +455,10 @@ export default function RekodBayaranPage() {
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '20px', color: '#FFC94D' }}>{'♟︎'}</span>
+                <div style={{ background: '#FFFFFF', borderRadius: '8px', padding: '4px 6px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo-cfk.png" alt="Logo CFK" style={{ height: '24px', width: 'auto', display: 'block' }} />
+                </div>
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF' }}>CFK HUB</div>
                   <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}>Catur Untuk Kanak-Kanak</div>

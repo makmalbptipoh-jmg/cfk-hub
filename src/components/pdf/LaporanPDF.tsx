@@ -1,4 +1,5 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
+import { LOGO_CFK } from './logoCfk'
 
 const s = StyleSheet.create({
   page: {
@@ -123,9 +124,12 @@ export function LaporanPDF({
       <Page size="A4" style={s.page}>
         {/* Header */}
         <View style={s.header}>
-          <View>
-            <Text style={s.logoText}>CFK HUB</Text>
-            <Text style={s.logoSub}>Catur Untuk Kanak-Kanak</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Image src={LOGO_CFK} style={{ height: 32, width: 40 }} />
+            <View>
+              <Text style={s.logoText}>CFK HUB</Text>
+              <Text style={s.logoSub}>Catur Untuk Kanak-Kanak</Text>
+            </View>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={s.tajuk}>Laporan Kehadiran</Text>

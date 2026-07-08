@@ -1,4 +1,5 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
+import { LOGO_CFK } from './logoCfk'
 
 const s = StyleSheet.create({
   page: {
@@ -101,7 +102,8 @@ export function ResitPDF({
 
         {/* Header */}
         <View style={s.header}>
-          <View style={s.logo}>
+          <View style={[s.logo, { alignItems: 'center' }]}>
+            <Image src={LOGO_CFK} style={{ height: 32, width: 40 }} />
             <View>
               <Text style={s.logoText}>CHESS FOR KIDS (CFK)</Text>
               <Text style={s.logoSub}>5B, Laluan Klebang 21, Klebang Perdana, 31200 Chemor, Perak</Text>

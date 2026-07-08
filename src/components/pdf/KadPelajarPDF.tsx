@@ -1,4 +1,5 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
+import { LOGO_CFK } from './logoCfk'
 import { kiraRating } from '@/lib/rating'
 
 const s = StyleSheet.create({
@@ -42,9 +43,12 @@ export function KadPelajarPDF({ nama_penuh, cawangan, jenis_kelas, total, bilRes
     <Document title={`Kad Pelajar - ${nama_penuh}`} author="CFK HUB">
       <Page size="A4" style={s.page}>
         <View style={s.header}>
-          <View>
-            <Text style={s.logoText}>CHESS FOR KIDS (CFK)</Text>
-            <Text style={s.logoSub}>Catur Untuk Kanak-Kanak</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Image src={LOGO_CFK} style={{ height: 32, width: 40 }} />
+            <View>
+              <Text style={s.logoText}>CHESS FOR KIDS (CFK)</Text>
+              <Text style={s.logoSub}>Catur Untuk Kanak-Kanak</Text>
+            </View>
           </View>
           <Text style={s.badge}>KAD PELAJAR {tahun}</Text>
         </View>
