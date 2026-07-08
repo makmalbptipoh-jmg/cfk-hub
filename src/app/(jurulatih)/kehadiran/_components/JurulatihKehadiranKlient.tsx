@@ -10,6 +10,7 @@ type Pelajar = {
   nama_penuh: string
   cawangan_daftar_id: string
   cawangan_nama: string
+  jenis_kelas: 'Kumpulan' | 'Personal' | 'Kumpulan+Personal'
 }
 
 type Cawangan = {
@@ -44,9 +45,16 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 
-  const senaraiFiltred = useMemo(() => {
-    if (!cawanganChip) return senarai
-    return senarai.filter((p) => p.cawangan_daftar_id === cawanganChip)
+  // Pelajar kumpulan ikut penapis cawangan; pelajar Personal boleh hadir di semua cawangan
+  const { senaraiKumpulan, senaraiPersonal } = useMemo(() => {
+    const kumpulan = senarai.filter(
+      (p) => p.jenis_kelas !== 'Personal' && (!cawanganChip || p.cawangan_daftar_id === cawanganChip)
+    )
+    const dalamKumpulan = new Set(kumpulan.map((p) => p.id))
+    const personal = senarai.filter(
+      (p) => p.jenis_kelas !== 'Kumpulan' && !dalamKumpulan.has(p.id)
+    )
+    return { senaraiKumpulan: kumpulan, senaraiPersonal: personal }
   }, [senarai, cawanganChip])
 
   const takAktif = async (p: Pelajar) => {
@@ -62,6 +70,11 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
     setToggles((prev) => { const n = { ...prev }; delete n[p.id]; return n })
     toast.success(`${p.nama_penuh} ditandai tidak aktif.`)
   }
+
+  const senaraiFiltred = useMemo(
+    () => [...senaraiKumpulan, ...senaraiPersonal],
+    [senaraiKumpulan, senaraiPersonal]
+  )
 
   const toggle = (pelajarId: string, status: ToggleStatus) => {
     setToggles((prev) => ({
@@ -119,6 +132,74 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
     Cuti: { aktif: { bg: 'var(--cuti-bg)', border: 'var(--cuti-text)', color: 'var(--cuti-text)' }, pasif: {} },
   }
 
+  const kadPelajar = (p: Pelajar) => {
+    const status = toggles[p.id] ?? null
+    return (
+      <div key={p.id} style={{
+        background: 'var(--card)', border: '1px solid var(--border)',
+        borderRadius: '14px', padding: '12px 14px',
+      }}>
+        <div style={{ marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>{p.nama_penuh}</span>
+            {p.jenis_kelas !== 'Kumpulan' && (
+              <span style={{
+                fontSize: '10px', fontWeight: 700,
+                padding: '2px 7px', borderRadius: '10px',
+                background: 'var(--cuti-bg)', color: 'var(--cuti-text)',
+              }}>
+                Personal
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '1px' }}>{p.cawangan_nama}</div>
+        </div>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {BUTANG_STATUS.map((s) => {
+            const aktif = status === s
+            const w = warnaToggle[s]
+            return (
+              <button key={s}
+                onClick={() => toggle(p.id, s)}
+                style={{
+                  flex: 1, padding: '7px 4px',
+                  borderRadius: '8px',
+                  border: `1.5px solid ${aktif ? w.aktif.border : 'var(--border)'}`,
+                  background: aktif ? w.aktif.bg : 'transparent',
+                  color: aktif ? w.aktif.color : 'var(--text-muted)',
+                  fontSize: '12px', fontWeight: aktif ? 700 : 500,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  transition: 'all 0.1s',
+                }}
+              >
+                {s}
+              </button>
+            )
+          })}
+          <button
+            onClick={() => takAktif(p)}
+            disabled={menyahaktif === p.id}
+            title="Tandai pelajar tidak aktif"
+            aria-label={`Tandai ${p.nama_penuh} tidak aktif`}
+            style={{
+              flex: 1, padding: '7px 4px',
+              borderRadius: '8px',
+              border: '1.5px solid var(--border)',
+              background: 'transparent',
+              color: '#9F1239',
+              fontSize: '12px', fontWeight: 600,
+              cursor: menyahaktif === p.id ? 'wait' : 'pointer', fontFamily: 'inherit',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+              transition: 'all 0.1s',
+            }}
+          >
+            <UserMinus size={13} /> Tak Aktif
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ padding: '16px', paddingBottom: '100px' }}>
       {/* Header */}
@@ -170,62 +251,22 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {senaraiFiltred.map((p) => {
-            const status = toggles[p.id] ?? null
-            return (
-              <div key={p.id} style={{
-                background: 'var(--card)', border: '1px solid var(--border)',
-                borderRadius: '14px', padding: '12px 14px',
-              }}>
-                <div style={{ marginBottom: '10px' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>{p.nama_penuh}</div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '1px' }}>{p.cawangan_nama}</div>
-                </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {BUTANG_STATUS.map((s) => {
-                    const aktif = status === s
-                    const w = warnaToggle[s]
-                    return (
-                      <button key={s}
-                        onClick={() => toggle(p.id, s)}
-                        style={{
-                          flex: 1, padding: '7px 4px',
-                          borderRadius: '8px',
-                          border: `1.5px solid ${aktif ? w.aktif.border : 'var(--border)'}`,
-                          background: aktif ? w.aktif.bg : 'transparent',
-                          color: aktif ? w.aktif.color : 'var(--text-muted)',
-                          fontSize: '12px', fontWeight: aktif ? 700 : 500,
-                          cursor: 'pointer', fontFamily: 'inherit',
-                          transition: 'all 0.1s',
-                        }}
-                      >
-                        {s}
-                      </button>
-                    )
-                  })}
-                  <button
-                    onClick={() => takAktif(p)}
-                    disabled={menyahaktif === p.id}
-                    title="Tandai pelajar tidak aktif"
-                    aria-label={`Tandai ${p.nama_penuh} tidak aktif`}
-                    style={{
-                      flex: 1, padding: '7px 4px',
-                      borderRadius: '8px',
-                      border: '1.5px solid var(--border)',
-                      background: 'transparent',
-                      color: '#9F1239',
-                      fontSize: '12px', fontWeight: 600,
-                      cursor: menyahaktif === p.id ? 'wait' : 'pointer', fontFamily: 'inherit',
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
-                      transition: 'all 0.1s',
-                    }}
-                  >
-                    <UserMinus size={13} /> Tak Aktif
-                  </button>
-                </div>
+          {senaraiKumpulan.map(kadPelajar)}
+
+          {/* Section Kelas Personal — pelajar personal boleh hadir di semua cawangan */}
+          {senaraiPersonal.length > 0 && (
+            <>
+              <div style={{ marginTop: senaraiKumpulan.length > 0 ? '12px' : 0 }}>
+                <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>
+                  Kelas Personal
+                </h2>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                  Boleh hadir kelas di semua cawangan
+                </p>
               </div>
-            )
-          })}
+              {senaraiPersonal.map(kadPelajar)}
+            </>
+          )}
         </div>
       )}
 

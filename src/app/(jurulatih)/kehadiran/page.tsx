@@ -27,7 +27,7 @@ export default async function KehadiranPage() {
   const [{ data: pelajarRaw }, { data: rekodHariIni }] = await Promise.all([
     supabase
       .from('pelajar')
-      .select('id, nama_penuh, cawangan_daftar_id, cawangan:cawangan_daftar_id(nama)')
+      .select('id, nama_penuh, cawangan_daftar_id, jenis_kelas, cawangan:cawangan_daftar_id(nama)')
       .eq('status', 'Aktif')
       .order('nama_penuh'),
     supabase
@@ -41,6 +41,7 @@ export default async function KehadiranPage() {
     nama_penuh: p.nama_penuh,
     cawangan_daftar_id: p.cawangan_daftar_id,
     cawangan_nama: p.cawangan?.nama ?? '—',
+    jenis_kelas: p.jenis_kelas,
   }))
 
   const rekodSedia: Record<string, 'Hadir' | 'Tidak Hadir' | 'Cuti'> = {}
