@@ -33,6 +33,8 @@ Periksa `/docs/planning/implementation-status.md` untuk lihat status terkini.
 | **Part J** | Kelas Personal & Laporan Kewangan | S-17, S-20 | Fasa 3 |
 | **Part K** | PWA, Backup & Pelancaran | — | Fasa 3 |
 
+> **Ciri selepas pelancaran (Sesi 5–7):** Pendapatan Lain/Sumbangan, Log Aktiviti, Notifikasi, Jurulatih self-service, dan **Dokumen Jualan** (Sebut Harga/Invois/Resit, S-30) TIDAK termasuk dalam jadual Part 0–K asal di atas. Ciri-ciri ini dibina selepas pelancaran dan dijejak penuh dalam **`implementation-status.md`** (log ikut sesi).
+
 ---
 
 ## PART 0 — Asas Projek (Foundation)

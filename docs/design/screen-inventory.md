@@ -1,7 +1,7 @@
 # Inventori Skrin — CFK HUB
 
-**Versi:** 1.0  
-**Tarikh:** 27 Jun 2026  
+**Versi:** 1.1  
+**Tarikh:** 8 Jul 2026 (tambah S-29 Pendapatan Lain, S-30 Dokumen Jualan)  
 **Berdasarkan:** IA, PRD, DD-001 hingga DD-010
 
 ---
@@ -275,6 +275,35 @@
 
 ---
 
+### S-29: Pendapatan Lain / Sumbangan
+**Route:** `/kewangan/pendapatan`  **Akses:** A  
+
+| | |
+|---|---|
+| **Tujuan** | Rekod wang masuk selain yuran pelajar (jualan, sumbangan, penajaan, sewa, dll) |
+| **Data IN** | `tarikh`, `kategori`, `sumber`, `jumlah`, `kaedah`, `cawangan`, `nota`, `bukti`, `no_resit` |
+| **Data OUT** | Rekod pendapatan + auto `no_resit` (CFK-L-YYYY-NNNNN) |
+| **Penapisan** | Bulan, Kategori, Cawangan |
+| **Tindakan** | [+ Rekod Pendapatan], Edit, Padam, Muat naik bukti, [Resit PDF] |
+| **Nota** | Masuk Ringkasan Kewangan + Laporan LHDN |
+
+---
+
+### S-30: Dokumen Jualan (Sebut Harga / Invois / Resit)
+**Route:** `/kewangan/dokumen`  **Akses:** A  
+
+| | |
+|---|---|
+| **Tujuan** | Jualan peralatan & perkhidmatan kepada sekolah/organisasi — dengan alamat pembeli & senarai item |
+| **Data IN** | `no_dokumen`, `tarikh`, `peringkat` (Sebut Harga/Invois/Resit), `pembeli` (nama/alamat/PIC/tel/emel), senarai item (perihalan × kuantiti × harga), `kaedah_bayaran`, `maklumat_bayaran`, `tarikh_bayar` |
+| **Data OUT** | Dokumen + item; bila `peringkat=Resit` → auto-rekod ke `pendapatan_lain` (`dokumen_id`) |
+| **Penapisan** | Bulan, Peringkat |
+| **Format** | Satu dokumen → 3 jenis PDF (SH/INV/RS) kongsi nombor asas `YYYY-NNNNN` |
+| **Tindakan** | [Dokumen Baharu], Edit, Padam, muat turun [SH]/[INV]/[RS] |
+| **Fasa** | Sesi 7 (8 Jul 2026) |
+
+---
+
 ### S-19: Senarai Aset
 **Route:** `/aset`  **Akses:** A  
 
@@ -513,11 +542,11 @@
 | Kategori | Bilangan |
 |---|---|
 | Halaman Dikongsi (Admin+Jurulatih) | 6 |
-| Halaman Admin Sahaja | 21 |
+| Halaman Admin Sahaja | 23 |
 | Halaman Jurulatih Sahaja | 1 |
 | Modal | 6 |
 | Panel | 2 |
-| **JUMLAH** | **36** |
+| **JUMLAH** | **38** |
 
 ---
 

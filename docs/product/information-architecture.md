@@ -1,7 +1,7 @@
 # Seni Bina Maklumat & Navigasi — CFK HUB
 
-**Versi:** 1.0  
-**Tarikh:** 27 Jun 2026  
+**Versi:** 1.1  
+**Tarikh:** 8 Jul 2026 (kemas kini: modul Kewangan — Pendapatan Lain + Dokumen Jualan)  
 **Berdasarkan:** DR-001 hingga DR-037, PD-001 hingga PD-022
 
 ---
@@ -94,17 +94,21 @@ CFK HUB (Admin)
     │       ├── [Tapis] Cawangan / Bulan
     │       └── Peratusan kehadiran per pelajar
     │
-    ├── 💸 Modul Kewangan
+    ├── 💸 Modul Kewangan  (tab: Ringkasan | Perbelanjaan | Pendapatan Lain | Dokumen Jualan)
+    │   ├── Ringkasan Kewangan
+    │   │   ├── Pendapatan (Yuran + Pendapatan Lain) vs Perbelanjaan
+    │   │   └── Baki bersih + pecahan per cawangan
     │   ├── Rekod Perbelanjaan
-    │   │   ├── Senarai Perbelanjaan
-    │   │   │   ├── [Tapis] Cawangan (Klebang/Buntong/Sri Iskandar/SMK Star/Umum)
-    │   │   │   └── [Tapis] Tarikh / Kategori
-    │   │   ├── Tambah Perbelanjaan Baharu
-    │   │   └── Edit / Padam Perbelanjaan
-    │   └── Ringkasan Kewangan
-    │       ├── Pendapatan (Kumpulan + Personal)
-    │       ├── Perbelanjaan (per cawangan + Umum)
-    │       └── Baki bersih
+    │   │   ├── Senarai + [Tapis] Cawangan (Klebang/Buntong/Sri Iskandar/SMK Star/Umum) / Tarikh / Kategori
+    │   │   └── Tambah / Edit / Padam (+ lampiran bukti)
+    │   ├── Pendapatan Lain / Sumbangan
+    │   │   ├── Rekod wang masuk selain yuran (jualan, sumbangan, penajaan, sewa…)
+    │   │   └── Auto nombor resit (CFK-L-YYYY-NNNNN) + muat turun resit PDF
+    │   └── Dokumen Jualan — Sebut Harga / Invois / Resit  ← BAHARU (Sesi 7)
+    │       ├── Satu dokumen → 3 jenis PDF (SH / INV / RS) kongsi nombor asas
+    │       ├── Butiran pembeli (nama sekolah + alamat + PIC) + senarai item berperingkat
+    │       ├── Akaun bank taip manual / tunai
+    │       └── Auto-rekod ke Pendapatan bila peringkat 'Resit'
     │
     ├── 🗂️ Modul Aset
     │   ├── Senarai Aset Aktif
@@ -211,7 +215,9 @@ CFK HUB (Jurulatih)
 | Senarai Pelajar Belum Bayar | Terhad Admin sahaja (PD-018) |
 | Laporan Kehadiran Ibu Bapa | Jana PDF BM |
 | Laporan Kewangan LHDN | Jana Excel / PDF |
-| Rekod Perbelanjaan | Tambah, edit, senarai |
+| Rekod Perbelanjaan | Tambah, edit, senarai (+ bukti) |
+| Pendapatan Lain / Sumbangan | Wang masuk selain yuran + resit PDF |
+| Dokumen Jualan | Sebut Harga / Invois / Resit untuk jualan peralatan & khidmat (Sesi 7) |
 | Ringkasan Kewangan | Pendapatan vs Perbelanjaan |
 | Modul Aset (semua) | Tambah, edit, lupus |
 | Pengurusan Pengguna | Tambah / reset kata laluan Jurulatih |
@@ -305,6 +311,15 @@ Edit Teks (jika perlu) → [Salin] untuk group / [WhatsApp] untuk individu
 ```
 Bayaran & Resit → Rekod Bayaran Personal → Pilih Pelajar →
 Isi Tarikh/Kaedah/Lokasi/Jumlah → Status Bayaran → Simpan → Jana Resit
+```
+
+### UF-08: Jualan Peralatan / Khidmat ke Sekolah (Admin) — Sesi 7
+```
+Kewangan → Dokumen Jualan → Dokumen Baharu (Peringkat: Sebut Harga) →
+Isi pembeli + alamat + senarai item → Simpan → Muat turun SH → hantar sekolah
+  → [sekolah setuju] Edit → Peringkat: Invois (+ akaun bank) → Muat turun INV
+  → [sekolah bayar] Edit → Peringkat: Resit (+ tarikh bayar) → Muat turun RS
+     → jumlah auto-masuk Pendapatan (Laporan Kewangan/LHDN)
 ```
 
 ---

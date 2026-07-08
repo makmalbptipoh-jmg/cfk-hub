@@ -65,6 +65,8 @@
 - Update keselamatan library (beberapa bulan sekali)
 - App tak boleh dibuka / masalah teknikal
 
+> **Nota:** Sesetengah ciri baharu perlu **fail SQL dijalankan di Supabase** (Supabase → SQL Editor → paste → Run) SEBELUM ciri itu boleh guna. Pembangun akan beritahu bila perlu. Fail SQL disimpan dalam `scripts/sql/`. Selamat dijalankan berulang kali.
+
 ---
 
 ## ⚠️ Kredential penting (JANGAN kongsi / hilang)
@@ -77,4 +79,4 @@
 
 ---
 
-*Dikemas kini: 7 Julai 2026. Untuk butiran teknikal penuh, lihat `docs/planning/implementation-status.md` & `README.md`.*
+*Dikemas kini: 8 Julai 2026. Untuk butiran teknikal penuh, lihat `docs/planning/implementation-status.md` & `README.md`.*
