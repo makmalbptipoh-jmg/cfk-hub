@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { CheckCircle2, UserMinus } from 'lucide-react'
+import { CheckCircle2, UserMinus, Search, X } from 'lucide-react'
 import { toast } from '@/lib/stores/toast-store'
 
 type Pelajar = {
@@ -37,6 +37,7 @@ interface Props {
 
 export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHariIni, rekodSedia }: Props) {
   const [cawanganChip, setCawanganChip] = useState<string>('')
+  const [carian, setCarian] = useState('')
   const [senarai, setSenarai] = useState<Pelajar[]>(pelajar)
   const [toggles, setToggles] = useState<Record<string, ToggleStatus | null>>(rekodSedia)
   const [loading, setLoading] = useState(false)
@@ -90,6 +91,12 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
     () => [...senaraiKumpulan, ...senaraiPersonal],
     [senaraiKumpulan, senaraiPersonal]
   )
+
+  // Carian hanya menapis PAPARAN — pelajar yang sudah ditanda tetap disimpan
+  const kataCari = carian.trim().toUpperCase()
+  const sepadanCarian = (p: Pelajar) => !kataCari || p.nama_penuh.toUpperCase().includes(kataCari)
+  const kumpulanPapar = senaraiKumpulan.filter(sepadanCarian)
+  const personalPapar = senaraiPersonal.filter(sepadanCarian)
 
   const toggle = (pelajarId: string, status: ToggleStatus) => {
     setToggles((prev) => ({
@@ -248,6 +255,45 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
         })}
       </div>
 
+      {/* Carian Nama */}
+      <div style={{ position: 'relative', marginBottom: '12px' }}>
+        <Search size={15} style={{
+          position: 'absolute', left: '13px', top: '50%',
+          transform: 'translateY(-50%)', color: 'var(--text-muted)',
+          pointerEvents: 'none',
+        }} />
+        <input
+          type="search"
+          value={carian}
+          onChange={(e) => setCarian(e.target.value)}
+          placeholder="Cari nama pelajar..."
+          aria-label="Cari nama pelajar"
+          style={{
+            width: '100%', padding: '10px 38px 10px 36px',
+            borderRadius: '12px', border: '1.5px solid var(--border)',
+            background: 'var(--card)', color: 'var(--text)',
+            fontSize: '13px', fontFamily: 'inherit', outline: 'none',
+          }}
+        />
+        {carian && (
+          <button
+            onClick={() => setCarian('')}
+            aria-label="Kosongkan carian"
+            style={{
+              position: 'absolute', right: '8px', top: '50%',
+              transform: 'translateY(-50%)',
+              width: '24px', height: '24px',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              border: 'none', borderRadius: '50%',
+              background: 'var(--border)', color: 'var(--text-muted)',
+              cursor: 'pointer',
+            }}
+          >
+            <X size={13} />
+          </button>
+        )}
+      </div>
+
       {/* Ringkasan */}
       <div style={{
         background: 'var(--card)', border: '1px solid var(--border)',
@@ -261,20 +307,22 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
       </div>
 
       {/* Senarai Pelajar */}
-      {senaraiFiltred.length === 0 ? (
+      {kumpulanPapar.length + personalPapar.length === 0 ? (
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '40px 20px', textAlign: 'center' }}>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-            {cawanganChip === CHIP_PERSONAL ? 'Tiada pelajar kelas personal' : 'Tiada pelajar untuk cawangan ini'}
+            {kataCari
+              ? `Tiada pelajar sepadan "${carian.trim()}"`
+              : cawanganChip === CHIP_PERSONAL ? 'Tiada pelajar kelas personal' : 'Tiada pelajar untuk cawangan ini'}
           </p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {senaraiKumpulan.map(kadPelajar)}
+          {kumpulanPapar.map(kadPelajar)}
 
           {/* Section Kelas Personal — pelajar personal boleh hadir di semua cawangan */}
-          {senaraiPersonal.length > 0 && (
+          {personalPapar.length > 0 && (
             <>
-              <div style={{ marginTop: senaraiKumpulan.length > 0 ? '12px' : 0 }}>
+              <div style={{ marginTop: kumpulanPapar.length > 0 ? '12px' : 0 }}>
                 <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>
                   Kelas Personal
                 </h2>
@@ -282,7 +330,7 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
                   Boleh hadir kelas di semua cawangan
                 </p>
               </div>
-              {senaraiPersonal.map(kadPelajar)}
+              {personalPapar.map(kadPelajar)}
             </>
           )}
         </div>
