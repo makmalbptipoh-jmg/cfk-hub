@@ -4,6 +4,12 @@
 
 ## ⚡ SESI 7 (8 Jul 2026)
 
+### Section Kelas Personal dalam Rekod Kehadiran (`88e1ce7`)
+- Page Rekod Kehadiran (S-08) kini ada **section "Kelas Personal"** di bawah senarai biasa: pelajar `jenis_kelas` Personal muncul pada SEMUA penapis cawangan (mereka boleh hadir kelas di mana-mana cawangan — arahan user).
+- Pelajar `Kumpulan+Personal`: dalam senarai biasa bila chip padan cawangan daftar; masuk section Personal bila chip cawangan lain dipilih. Badge "Personal" pada kad.
+- Simpan guna logik sedia ada — `cawangan_sesi_id` = chip dipilih (atau cawangan daftar bila "Semua"); view Semak admin sudah tapis ikut `cawangan_sesi_id`, tiada ubah.
+- Digabung (rebase) dengan kerja desktop Sesi 7 — kad pelajar kekalkan butang Hadir/Cuti + Tak Aktif baharu.
+
 ### Kemas & pembetulan
 - Seluruh sistem paparan **HURUF BESAR** konsisten (`globals.css` — `body { text-transform: uppercase }`); e-mel paparan dikecualikan (senarai pengguna, profil jurulatih/pelajar, pengesahan daftar).
 - **Laporan Kehadiran PDF**: buang simbol `ℹ ⚠ ✓ ≥` yang tak disokong font Helvetica (punca teks bertindih pada "Bilangan…"). Semua PDF lain disemak — bersih.
