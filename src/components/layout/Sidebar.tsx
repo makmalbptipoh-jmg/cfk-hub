@@ -72,9 +72,9 @@ export function Sidebar({ nama, email }: SidebarProps) {
       {/* Logo */}
       <div style={{ padding: '28px 20px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ background: '#FFFFFF', borderRadius: '10px', padding: '5px 7px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-cfk.png" alt="Logo CFK" style={{ height: '30px', width: 'auto', display: 'block' }} />
+            <img src="/logo-cfk.png" alt="Logo CFK" style={{ height: '42px', width: 'auto', display: 'block' }} />
           </div>
           <div>
             <div
@@ -87,7 +87,7 @@ export function Sidebar({ nama, email }: SidebarProps) {
             >
               CFK HUB
             </div>
-            <div style={{ fontSize: '10px', color: 'var(--sidebar-muted)', marginTop: '1px' }}>
+            <div style={{ display: 'inline-block', fontSize: '9px', fontWeight: 700, color: '#FFFFFF', background: '#3B82F6', padding: '2px 8px', borderRadius: '6px', marginTop: '4px', letterSpacing: '0.04em' }}>
               Panel Admin
             </div>
           </div>

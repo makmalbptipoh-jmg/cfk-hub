@@ -85,7 +85,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-cfk.png" alt="Logo Chess For Kids" style={{ height: '64px', width: 'auto', display: 'block' }} />
+            <img src="/logo-cfk.png" alt="Logo Chess For Kids" style={{ height: '88px', width: 'auto', display: 'block' }} />
           </div>
           <h1
             style={{
