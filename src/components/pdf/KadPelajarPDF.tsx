@@ -44,7 +44,7 @@ export function KadPelajarPDF({ nama_penuh, cawangan, jenis_kelas, total, bilRes
       <Page size="A4" style={s.page}>
         <View style={s.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Image src={LOGO_CFK} style={{ height: 32, width: 40 }} />
+            <Image src={LOGO_CFK} style={{ height: 42, width: 52 }} />
             <View>
               <Text style={s.logoText}>CHESS FOR KIDS (CFK)</Text>
               <Text style={s.logoSub}>Catur Untuk Kanak-Kanak</Text>

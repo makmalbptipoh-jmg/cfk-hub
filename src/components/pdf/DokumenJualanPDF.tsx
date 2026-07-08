@@ -94,7 +94,7 @@ export function DokumenJualanPDF({
         {/* Kepala */}
         <View style={s.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Image src={LOGO_CFK} style={{ height: 32, width: 40 }} />
+            <Image src={LOGO_CFK} style={{ height: 42, width: 52 }} />
             <View>
               <Text style={s.logoText}>{CFK.nama}</Text>
               <Text style={s.logoSub}>{CFK.alamat}</Text>
