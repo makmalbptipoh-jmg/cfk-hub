@@ -1,6 +1,19 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 8 Jul 2026 (Sesi 7)
+**Dikemaskini:** 8 Jul 2026 (penutup Sesi 7, hingga commit `9c4141e`)
+
+## ⚡ MULA SINI SESI 8
+
+**Penting: Sesi 7 dibuat di DUA mesin** (desktop + laptop) — SENTIASA `git pull --rebase` sebelum mula kerja; laptop pernah konflik rebase pada `JurulatihKehadiranKlient.tsx` sebab desktop push dulu. Selepas pull, jalankan `npm install` (desktop tambah dependency `@sentry/nextjs` + `vitest`).
+
+**Penghujung Sesi 7 (laptop):** semua ciri kehadiran personal LIVE — section Kelas Personal, chip Personal, sorok UPLINK, carian nama (lihat butiran Sesi 7 di bawah). Build + typecheck lulus, deploy auto berjalan.
+
+**Semak/tertunggak Sesi 8:**
+1. Cawangan baharu **UPLINK** didaftar user (8 Jul) — belum ada pelajar. Section personal disorok untuk UPLINK **ikut nama cawangan**; jika user tukar nama cawangan itu, peraturan lupus.
+2. Dari Sesi 6: sahkan akaun jurulatih masih boleh rekod kehadiran selepas RLS ketat (`rls-ketat.sql`) — belum diuji end-to-end.
+3. Tertunggak lama user: kaitkan akaun HARUSSANI; 22 pelajar placeholder; sewa Mac/Julai + bukti Apr–Jun.
+
+---
 
 ## ⚡ SESI 7 (8 Jul 2026)
 
