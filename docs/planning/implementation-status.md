@@ -10,12 +10,19 @@
 
 ### Modul BAHARU: Dokumen Jualan (Sebut Harga / Invois / Resit Rasmi)
 Untuk jualan peralatan & perkhidmatan kepada sekolah/organisasi — dengan **alamat pembeli** + senarai item berperingkat.
-- **⚠️ TINDAKAN USER:** run **`scripts/sql/dokumen-jualan.sql`** dalam Supabase SQL Editor SEBELUM deploy.
+- **`scripts/sql/dokumen-jualan.sql`** ✅ sudah run di Supabase (LIVE).
 - Jadual `dokumen_jualan` + `dokumen_item`; nombor auto `YYYY-NNNNN` (prefix SH/INV/RS pada PDF).
 - Satu dokumen → cetak 3 jenis PDF (kongsi butiran pembeli & item). Komponen `src/components/pdf/DokumenJualanPDF.tsx` (1 komponen, 3 mod).
 - Page `/kewangan/dokumen` + tab "Dokumen Jualan" dalam KewanganNav; borang butiran pembeli (nama/alamat/PIC/tel/e-mel) + item dinamik (kuantiti × harga) + akaun bank manual/tunai.
 - Bila peringkat = **Resit**, jumlah auto-direkod ke `pendapatan_lain` (kolum baharu `dokumen_id`, FK ON DELETE CASCADE) → masuk Laporan Kewangan/LHDN.
 - Validasi `src/lib/validation/dokumen.ts`. Typecheck + 12 ujian LULUS.
+
+### Logo rasmi CFK jadi logo utama (LIVE)
+Logo CFK (knight + "CHESS FOR KIDS") ganti lambang pawn emas `♟︎` di seluruh sistem.
+- Aset dijana guna **`scripts/generate-logo-assets.mjs`** (sharp): `public/logo-cfk.png` (web), `src/components/pdf/logoCfk.ts` (base64 ~17KB dikongsi PDF), `public/icon-192.png`/`icon-512.png` (logo atas kotak #1E293B untuk ikon app/favicon). Jalankan semula skrip bila tukar logo.
+- **Web header**: Sidebar (logo 42px latar gelap + badge biru "Panel Admin"), Login (logo 88px), pratonton resit `/bayaran/baharu` — kekal teks "CFK HUB".
+- **7 PDF** (Resit, Resit Pendapatan, Dokumen Jualan, Slip Gaji, Laporan, Laporan Kelas, Kad Pelajar): logo di header (42px, ~30% lebih besar) — kekal nama syarikat + alamat.
+- **Ikon app telefon (PWA)**: perlu buang & pasang semula sekali untuk ikon baharu keluar (OS cache). ✅ disahkan berjaya.
 
 ## ⚡ SESI 6 (7 Jul 2026)
 
