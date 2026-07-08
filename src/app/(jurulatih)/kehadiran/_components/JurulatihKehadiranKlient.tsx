@@ -60,12 +60,17 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
     const kumpulan = senarai.filter(
       (p) => p.jenis_kelas !== 'Personal' && (!cawanganChip || p.cawangan_daftar_id === cawanganChip)
     )
+    // UPLINK tiada kelas personal — sorok section personal untuk cawangan ini sahaja
+    const namaChip = cawangan.find((c) => c.id === cawanganChip)?.nama ?? ''
+    if (namaChip.trim().toUpperCase() === 'UPLINK') {
+      return { senaraiKumpulan: kumpulan, senaraiPersonal: [] as Pelajar[] }
+    }
     const dalamKumpulan = new Set(kumpulan.map((p) => p.id))
     const personal = senarai.filter(
       (p) => p.jenis_kelas !== 'Kumpulan' && !dalamKumpulan.has(p.id)
     )
     return { senaraiKumpulan: kumpulan, senaraiPersonal: personal }
-  }, [senarai, cawanganChip])
+  }, [senarai, cawanganChip, cawangan])
 
   const takAktif = async (p: Pelajar) => {
     if (!confirm(`Tandai ${p.nama_penuh} sebagai TIDAK AKTIF? Pelajar ini akan hilang dari senarai kehadiran. (Boleh diaktifkan semula di tab Pelajar.)`)) return
