@@ -1,6 +1,19 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 8 Jul 2026 (penutup Sesi 7, hingga commit `9c4141e`)
+**Dikemaskini:** 14 Jul 2026 (Sesi 8)
+
+## ⚡ SESI 8 (14 Jul 2026)
+
+### Laporan Per Kelas — mod Harian + Bulanan (Laporan → Kehadiran)
+- **Definisi kelas (arahan user):** kelas = **cawangan + hari** (cth. KLEBANG · Ahad = 1 kelas). Sebelum ini laporan cawangan hanya boleh dijana **sebulan sekali** — jurulatih tak boleh dapat senarai kelas pada satu tarikh.
+- `LaporanKelasKlient.tsx` kini ada **toggle mod**:
+  - **Harian** — pilih cawangan + 1 tarikh → senarai nama + status (Hadir/Tidak Hadir/Cuti) + nota untuk kelas hari itu; tajuk papar nama hari.
+  - **Bulanan** — pilih cawangan + bulan + **penapis Hari** (Semua/Ahad…Sabtu) → grid **tarikh × nama** (H/T/C/-) + jumlah H/T/C/% per pelajar.
+- Sumber data: `kehadiran.cawangan_sesi_id` (bukan `cawangan_daftar_id`) — jadi pelajar Personal yang hadir di cawangan lain ikut masuk kelas yang betul. Baris = pelajar yang ada rekod pada tempoh itu.
+- `LaporanKelasPDF.tsx` ditulis semula: props `{cawangan, tempoh, mod, tarikhKolum, baris}`; PDF bulanan auto-**landscape** bila > 5 sesi. Excel juga ikut mod (harian: Status+Nota; bulanan: grid tarikh).
+- **Diuji dalam browser (data sebenar)**: Harian Klebang 5 Jul 2026 (Ahad) → 52 pelajar + status ✅, PDF turun 29KB ✅; Bulanan Klebang Julai + hari Ahad → grid 1 sesi (5 Jul) × 52 nama ✅. Nota: **12 Jul (Ahad lepas) TIADA rekod kehadiran langsung** dalam DB — jurulatih belum tanda; laporan 0 pelajar itu betul.
+- Fix sampingan `next.config.ts`: `'unsafe-eval'` ditambah pada `script-src` **dalam dev sahaja** (React dev mode perlukan eval → console error). CSP production kekal ketat.
+- Typecheck + build LULUS.
 
 ## ⚡ MULA SINI SESI 8
 

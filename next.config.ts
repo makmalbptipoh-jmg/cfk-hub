@@ -23,7 +23,8 @@ const csp = [
   `default-src 'self'`,
   // wasm-unsafe-eval: @react-pdf/renderer guna enjin layout Yoga (WebAssembly) —
   // tanpa ini semua butang jana PDF gagal senyap di production
-  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'`,
+  // unsafe-eval: HANYA dev — React dev mode perlukan eval() untuk callstack/HMR; production kekal tanpa
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
   `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
   `font-src 'self' https://fonts.gstatic.com`,
   // Supabase host: gambar profil jurulatih & bukti dari Storage (signed URL)

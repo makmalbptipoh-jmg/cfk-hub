@@ -152,7 +152,7 @@ export default function LaporanPage() {
           Laporan Kehadiran
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-          Jana laporan kehadiran bulanan — per kelas (cawangan) atau per pelajar, dalam format PDF/Excel
+          Jana laporan kehadiran — per kelas (cawangan + hari, harian atau bulanan) atau per pelajar, dalam format PDF/Excel
         </p>
       </div>
 
