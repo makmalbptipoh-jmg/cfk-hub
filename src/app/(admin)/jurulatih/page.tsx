@@ -19,7 +19,7 @@ export default async function JurulatihPage() {
       .select('id, nama_penuh, no_telefon, kadar_bayaran, tarikh_mula, status, cawangan_ids')
       .order('nama_penuh'),
     supabase.from('cawangan').select('id, nama'),
-    supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, status, bulan_bayaran, tahun_bayaran'),
+    supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, status, bulan_bayaran, tahun_bayaran, tarikh_bayar, created_at'),
     supabase.from('kehadiran_jurulatih').select('jurulatih_id, tarikh').eq('status', 'Hadir'),
   ])
 
@@ -33,6 +33,24 @@ export default async function JurulatihPage() {
       gajiPerJurulatih[b.jurulatih_id] = (gajiPerJurulatih[b.jurulatih_id] ?? 0) + b.jumlah
     }
   }
+  // Bayaran 'Sudah Bayar' terkini per jurulatih (ikut tarikh_bayar, fallback created_at)
+  type BayaranTerkini = { bulan_bayaran: string; tahun_bayaran: number; jumlah: number; tarikh_bayar: string | null }
+  const terkiniPerJurulatih: Record<string, BayaranTerkini & { kunci: string }> = {}
+  for (const b of bayaran ?? []) {
+    if (b.status !== 'Sudah Bayar') continue
+    const kunci = b.tarikh_bayar ?? b.created_at ?? ''
+    const sedia = terkiniPerJurulatih[b.jurulatih_id]
+    if (!sedia || kunci > sedia.kunci) {
+      terkiniPerJurulatih[b.jurulatih_id] = {
+        bulan_bayaran: b.bulan_bayaran,
+        tahun_bayaran: b.tahun_bayaran,
+        jumlah: b.jumlah,
+        tarikh_bayar: b.tarikh_bayar,
+        kunci,
+      }
+    }
+  }
+
   const pointPerJurulatih: Record<string, number> = {}
   const sesiBulanIniPerJurulatih: Record<string, number> = {}
   for (const k of hadir ?? []) {
@@ -53,6 +71,14 @@ export default async function JurulatihPage() {
     gaji_dibayar: gajiPerJurulatih[j.id] ?? 0,
     sesi_bulan_ini: sesiBulanIniPerJurulatih[j.id] ?? 0,
     point: pointPerJurulatih[j.id] ?? 0,
+    bayaran_terkini: terkiniPerJurulatih[j.id]
+      ? {
+          bulan_bayaran: terkiniPerJurulatih[j.id].bulan_bayaran,
+          tahun_bayaran: terkiniPerJurulatih[j.id].tahun_bayaran,
+          jumlah: terkiniPerJurulatih[j.id].jumlah,
+          tarikh_bayar: terkiniPerJurulatih[j.id].tarikh_bayar,
+        }
+      : null,
   }))
 
   // Statistik dashboard keseluruhan

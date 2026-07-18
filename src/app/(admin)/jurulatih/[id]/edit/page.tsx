@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Camera, X } from 'lucide-react'
+import { Camera, QrCode, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type Cawangan = { id: string; nama: string }
@@ -39,6 +39,11 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
   const [failGambar, setFailGambar] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [buangGambar, setBuangGambar] = useState(false)
+  const [qrPath, setQrPath] = useState<string | null>(null)
+  const [qrUrl, setQrUrl] = useState<string | null>(null)
+  const [failQr, setFailQr] = useState<File | null>(null)
+  const [previewQr, setPreviewQr] = useState<string | null>(null)
+  const [buangQr, setBuangQr] = useState(false)
 
   const [form, setForm] = useState({
     nama_penuh: '',
@@ -52,6 +57,7 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
     kelayakan: '',
     status: 'Aktif',
     pengguna_id: '',
+    no_tng: '',
   })
 
   useEffect(() => {
@@ -74,11 +80,17 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
           kelayakan: j.kelayakan ?? '',
           status: j.status ?? 'Aktif',
           pengguna_id: j.pengguna_id ?? '',
+          no_tng: j.no_tng ?? '',
         })
         if (j.gambar_path) {
           setGambarPath(j.gambar_path)
           supabase.storage.from(GAMBAR_BUCKET).createSignedUrl(j.gambar_path, 3600)
             .then(({ data }) => { if (data?.signedUrl) setGambarUrl(data.signedUrl) })
+        }
+        if (j.tng_qr_path) {
+          setQrPath(j.tng_qr_path)
+          supabase.storage.from(GAMBAR_BUCKET).createSignedUrl(j.tng_qr_path, 3600)
+            .then(({ data }) => { if (data?.signedUrl) setQrUrl(data.signedUrl) })
         }
       }
       setCawangan(c ?? [])
@@ -96,6 +108,17 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
     setBuangGambar(false)
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setPreviewUrl(URL.createObjectURL(file))
+  }
+
+  const pilihQr = (file: File) => {
+    if (file.size > GAMBAR_MAX_SAIZ) { setRalat('Gambar QR terlalu besar. Had maksimum 2MB.'); return }
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+    if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext)) { setRalat('Hanya gambar JPG/PNG/WebP dibenarkan.'); return }
+    setRalat(null)
+    setFailQr(file)
+    setBuangQr(false)
+    if (previewQr) URL.revokeObjectURL(previewQr)
+    setPreviewQr(URL.createObjectURL(file))
   }
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }))
@@ -131,6 +154,22 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
       gambarPathBaru = null
     }
 
+    // Urus gambar QR TNG
+    let qrPathBaru: string | null = qrPath
+    if (failQr) {
+      const ext = failQr.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+      const path = `tng-qr/${id}.${ext}`
+      const { error: errQr } = await supabase.storage
+        .from(GAMBAR_BUCKET)
+        .upload(path, failQr, { upsert: true })
+      if (errQr) { setRalat('Gagal muat naik gambar QR. Cuba lagi.'); setMenyimpan(false); return }
+      if (qrPath && qrPath !== path) await supabase.storage.from(GAMBAR_BUCKET).remove([qrPath])
+      qrPathBaru = path
+    } else if (buangQr && qrPath) {
+      await supabase.storage.from(GAMBAR_BUCKET).remove([qrPath])
+      qrPathBaru = null
+    }
+
     const { error } = await supabase.from('jurulatih').update({
       nama_penuh: form.nama_penuh.toUpperCase(),
       no_ic: form.no_ic || null,
@@ -144,6 +183,8 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
       status: form.status as 'Aktif' | 'Tidak Aktif',
       pengguna_id: form.pengguna_id || null,
       gambar_path: gambarPathBaru,
+      no_tng: form.no_tng || null,
+      tng_qr_path: qrPathBaru,
     }).eq('id', id)
     if (error) { setRalat('Gagal simpan. Sila cuba lagi.'); setMenyimpan(false); return }
     router.push(`/jurulatih/${id}`)
@@ -303,6 +344,82 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
           <div>
             <label style={labelInput}>Pengalaman Ringkas</label>
             <textarea value={form.pengalaman_ringkas} onChange={(e) => set('pengalaman_ringkas', e.target.value)} rows={3} placeholder="Contoh: 5 tahun mengajar catur..." style={{ ...gayaInput, resize: 'vertical' }} />
+          </div>
+        </div>
+
+        {/* TNG eWallet */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '24px' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginBottom: '6px' }}>TNG eWallet</h2>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+            Untuk transfer gaji. Masukkan no telefon TNG jurulatih dan muat naik gambar QR terima duit
+            (buka app TNG jurulatih → Terima Wang → screenshot QR).
+          </p>
+          <div style={{ marginBottom: '14px' }}>
+            <label style={labelInput}>No. Telefon TNG eWallet</label>
+            <input value={form.no_tng} onChange={(e) => set('no_tng', e.target.value)} placeholder="01X-XXXXXXX" style={gayaInput} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+            <div
+              style={{
+                width: '110px', height: '110px', borderRadius: '14px',
+                background: 'var(--bg)', border: '2px solid var(--border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', flexShrink: 0,
+              }}
+            >
+              {previewQr || (qrUrl && !buangQr) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={previewQr ?? qrUrl ?? ''}
+                  alt={`QR TNG ${form.nama_penuh || 'jurulatih'}`}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              ) : (
+                <QrCode size={26} style={{ color: 'var(--border)' }} />
+              )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '8px 14px', background: 'var(--bg)',
+                  border: '1.5px solid var(--border)', borderRadius: '10px',
+                  fontSize: '12.5px', fontWeight: 600, color: 'var(--text)',
+                  cursor: 'pointer', width: 'fit-content',
+                }}
+              >
+                <QrCode size={13} />
+                {previewQr || qrUrl ? 'Tukar QR' : 'Pilih Gambar QR'}
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    e.target.value = ''
+                    if (file) pilihQr(file)
+                  }}
+                />
+              </label>
+              {(previewQr || (qrUrl && !buangQr)) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (previewQr) { URL.revokeObjectURL(previewQr); setPreviewQr(null); setFailQr(null) }
+                    if (qrPath) setBuangQr(true)
+                  }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                    padding: '6px 12px', background: 'none', border: 'none',
+                    fontSize: '12px', fontWeight: 600, color: '#EF4444',
+                    cursor: 'pointer', fontFamily: 'inherit', width: 'fit-content',
+                  }}
+                >
+                  <X size={12} /> Buang QR
+                </button>
+              )}
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>JPG/PNG/WebP, max 2MB</span>
+            </div>
           </div>
         </div>
 

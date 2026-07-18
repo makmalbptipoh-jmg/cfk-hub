@@ -56,6 +56,8 @@ export default async function DashboardPage({
     { data: slotHariIni },
     { data: aktivitiHariIni },
     { data: senaraiJurulatih },
+    { data: hadirJurulatihBulan },
+    { data: gajiJurulatihBulan },
   ] = await Promise.all([
     pelajarQuery,
     supabase.from('kehadiran').select('pelajar_id, status, cawangan_sesi_id').gte('tarikh', mulaB).lte('tarikh', akhirB),
@@ -67,7 +69,9 @@ export default async function DashboardPage({
     supabase.from('kehadiran').select('tarikh, cawangan_sesi_id').eq('status', 'Hadir').gte('tarikh', `${tahun}-01-01`).lte('tarikh', `${tahun}-12-31`),
     supabase.from('jadual_slot').select('id, jenis, masa_mula, lokasi, jurulatih_ids, cawangan:cawangan_id(nama), pelajar:pelajar_id(nama_penuh)').eq('status', 'Aktif').eq('hari_minggu', hariIni).order('masa_mula'),
     supabase.from('aktiviti').select('id, nama, kategori, masa_mula, lokasi, pelajar:pelajar_id(nama_penuh)').eq('status', 'Aktif').eq('tarikh', tarikhHariIni).order('masa_mula'),
-    supabase.from('jurulatih').select('id, nama_penuh'),
+    supabase.from('jurulatih').select('id, nama_penuh, kadar_bayaran, status'),
+    supabase.from('kehadiran_jurulatih').select('jurulatih_id').eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
+    supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, status').eq('bulan_bayaran', bulan).eq('tahun_bayaran', tahun),
   ])
 
   // Siri 12-bulan untuk carta trend (ikut cawangan dipilih)
@@ -153,6 +157,28 @@ export default async function DashboardPage({
       warnaText: '#92400E',
     })),
   ].sort((a, b) => (a.masa ?? '99').localeCompare(b.masa ?? '99'))
+
+  // === Widget: Gaji Jurulatih (hari gaji 30hb) ===
+  const sesiJurulatihBulan: Record<string, number> = {}
+  for (const k of hadirJurulatihBulan ?? []) {
+    sesiJurulatihBulan[k.jurulatih_id] = (sesiJurulatihBulan[k.jurulatih_id] ?? 0) + 1
+  }
+  const idJurulatihSudahBayar = new Set(
+    (gajiJurulatihBulan ?? []).filter((b: any) => b.status === 'Sudah Bayar').map((b: any) => b.jurulatih_id)
+  )
+  const totalGajiDibayarBulan = (gajiJurulatihBulan ?? [])
+    .filter((b: any) => b.status === 'Sudah Bayar')
+    .reduce((s: number, b: any) => s + (b.jumlah ?? 0), 0)
+  const jurulatihBelumGaji = (senaraiJurulatih ?? [])
+    .filter((j: any) => j.status === 'Aktif' && (sesiJurulatihBulan[j.id] ?? 0) > 0 && !idJurulatihSudahBayar.has(j.id))
+    .map((j: any) => ({
+      id: j.id,
+      nama_penuh: j.nama_penuh,
+      sesi: sesiJurulatihBulan[j.id] ?? 0,
+      anggaran: (sesiJurulatihBulan[j.id] ?? 0) * (j.kadar_bayaran ?? 0),
+    }))
+  const totalPerluBayarGaji = jurulatihBelumGaji.reduce((s, j) => s + j.anggaran, 0)
+  const dekatHariGaji = now.getUTCDate() >= 27
 
   const namaPengguna = (profil as any)?.nama ?? 'Admin'
   const waktu = new Date().getHours()
@@ -393,6 +419,69 @@ export default async function DashboardPage({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Gaji Jurulatih — hari gaji 30hb */}
+      <div style={{
+        background: 'var(--card)',
+        border: `1px solid ${jurulatihBelumGaji.length > 0 && dekatHariGaji ? '#FED7AA' : 'var(--border)'}`,
+        borderRadius: '16px', overflow: 'hidden', marginBottom: '18px',
+      }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <Wallet size={15} style={{ color: 'var(--text-muted)' }} />
+            Gaji Jurulatih — {bulan} {tahun}
+          </h2>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Hari gaji: 30hb</span>
+        </div>
+        <div style={{ display: 'flex', gap: '24px', padding: '14px 20px', borderBottom: jurulatihBelumGaji.length > 0 ? '1px solid var(--border)' : 'none', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+              Perlu Dibayar
+            </div>
+            <div style={{ fontSize: '22px', fontWeight: 800, color: totalPerluBayarGaji > 0 && dekatHariGaji ? '#C2410C' : 'var(--text)' }}>
+              {formatRinggit(totalPerluBayarGaji)}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{jurulatihBelumGaji.length} jurulatih belum dibayar</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+              Sudah Dibayar
+            </div>
+            <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--hadir-text)' }}>
+              {formatRinggit(totalGajiDibayarBulan)}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{idJurulatihSudahBayar.size} jurulatih</div>
+          </div>
+        </div>
+        {jurulatihBelumGaji.length > 0 && (
+          <div>
+            {jurulatihBelumGaji.map((j, i) => (
+              <div key={j.id} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '11px 20px',
+                borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+              }}>
+                <div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>{j.nama_penuh}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                    {j.sesi} sesi hadir · anggaran {formatRinggit(j.anggaran)}
+                  </div>
+                </div>
+                <Link href={`/jurulatih/${j.id}/bayaran`}
+                  style={{
+                    padding: '6px 12px',
+                    background: 'var(--accent)', border: 'none',
+                    borderRadius: '8px', fontSize: '12px', fontWeight: 700,
+                    color: 'var(--accent-text)', textDecoration: 'none',
+                  }}
+                >
+                  Bayar Gaji
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Resit Terkini */}

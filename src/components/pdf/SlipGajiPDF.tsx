@@ -66,6 +66,8 @@ export type SlipGajiData = {
   bilangan_sesi: number
   kadar_per_sesi: number
   jumlah: number
+  potongan_advance?: number
+  kaedah_bayaran?: string | null
   tarikh_bayar: string | null
   status: string
   nota: string | null
@@ -82,8 +84,10 @@ function formatTarikhPDF(dateStr: string) {
 
 export function SlipGajiPDF({
   nama_jurulatih, no_ic, bulan_bayaran, tahun_bayaran,
-  bilangan_sesi, kadar_per_sesi, jumlah, tarikh_bayar, status, nota,
+  bilangan_sesi, kadar_per_sesi, jumlah, potongan_advance = 0, kaedah_bayaran = null,
+  tarikh_bayar, status, nota,
 }: SlipGajiData) {
+  const bersih = jumlah - potongan_advance
   return (
     <Document title={`Slip Gaji ${nama_jurulatih} — ${bulan_bayaran} ${tahun_bayaran}`} author="CFK HUB" creator="CFK HUB">
       <Page size="A4" style={s.page}>
@@ -134,6 +138,12 @@ export function SlipGajiPDF({
             <Text style={s.label}>Status Bayaran</Text>
             <Text style={s.value}>{status}</Text>
           </View>
+          {kaedah_bayaran && (
+            <View style={s.row}>
+              <Text style={s.label}>Kaedah Bayaran</Text>
+              <Text style={s.value}>{kaedah_bayaran}</Text>
+            </View>
+          )}
         </View>
 
         {/* Pengiraan */}
@@ -148,16 +158,30 @@ export function SlipGajiPDF({
               <Text style={{ color: '#64748B', fontSize: 10 }}>Kadar Seunit Sesi</Text>
               <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 10 }}>{formatRM(kadar_per_sesi)}</Text>
             </View>
-            <View style={[s.kiraanRow, { marginBottom: 0 }]}>
+            <View style={[s.kiraanRow, { marginBottom: potongan_advance > 0 ? 6 : 0 }]}>
               <Text style={{ color: '#64748B', fontSize: 10 }}>Pengiraan</Text>
               <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 10 }}>
                 {bilangan_sesi} sesi × {formatRM(kadar_per_sesi)}
               </Text>
             </View>
+            {potongan_advance > 0 && (
+              <>
+                <View style={s.kiraanRow}>
+                  <Text style={{ color: '#64748B', fontSize: 10 }}>Gaji Kasar</Text>
+                  <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 10 }}>{formatRM(jumlah)}</Text>
+                </View>
+                <View style={[s.kiraanRow, { marginBottom: 0 }]}>
+                  <Text style={{ color: '#B91C1C', fontSize: 10 }}>Tolak: Advance Gaji</Text>
+                  <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 10, color: '#B91C1C' }}>
+                    ({formatRM(potongan_advance)})
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
           <View style={s.jumlahBox}>
             <Text style={s.jumlahLabel}>JUMLAH GAJI BERSIH</Text>
-            <Text style={s.jumlahNilai}>{formatRM(jumlah)}</Text>
+            <Text style={s.jumlahNilai}>{formatRM(bersih)}</Text>
           </View>
           {nota && (
             <View style={s.row}>

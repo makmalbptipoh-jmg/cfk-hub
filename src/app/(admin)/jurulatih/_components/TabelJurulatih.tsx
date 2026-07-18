@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Plus, Eye, Wallet, CalendarCheck, Star } from 'lucide-react'
-import { formatRinggit } from '@/lib/utils'
+import { formatRinggit, formatTarikh } from '@/lib/utils'
 
 type Jurulatih = {
   id: string
@@ -15,6 +15,12 @@ type Jurulatih = {
   gaji_dibayar: number
   sesi_bulan_ini: number
   point: number
+  bayaran_terkini: {
+    bulan_bayaran: string
+    tahun_bayaran: number
+    jumlah: number
+    tarikh_bayar: string | null
+  } | null
 }
 
 type Stat = {
@@ -97,7 +103,7 @@ export function TabelJurulatih({ jurulatih, stat }: Props) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                {['Nama', 'Cawangan', 'Kadar/Sesi', 'Sesi Bln Ini', 'Point', 'Gaji Dibayar', 'Status', ''].map((h) => (
+                {['Nama', 'Cawangan', 'Kadar/Sesi', 'Sesi Bln Ini', 'Point', 'Gaji Dibayar', 'Bayaran Terkini', 'Status', ''].map((h) => (
                   <th key={h} style={{
                     padding: '11px 16px', textAlign: 'left',
                     fontSize: '11px', fontWeight: 700,
@@ -137,6 +143,20 @@ export function TabelJurulatih({ jurulatih, stat }: Props) {
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>
                     {formatRinggit(j.gaji_dibayar)}
+                  </td>
+                  <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                    {j.bayaran_terkini ? (
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>
+                          {j.bayaran_terkini.bulan_bayaran} {j.bayaran_terkini.tahun_bayaran} · {formatRinggit(j.bayaran_terkini.jumlah)}
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          {j.bayaran_terkini.tarikh_bayar ? formatTarikh(j.bayaran_terkini.tarikh_bayar) : '—'}
+                        </div>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>—</span>
+                    )}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{

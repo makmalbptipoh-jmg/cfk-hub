@@ -29,11 +29,13 @@ export default async function ProfilJurulatihPage({
     { data: kehadiran },
     { data: bayaran },
     { data: cawangan },
+    { data: advance },
   ] = await Promise.all([
     supabase.from('jurulatih').select('*').eq('id', id).single(),
     supabase.from('kehadiran_jurulatih').select('id, tarikh, status, jenis_kelas, nota, cawangan:cawangan_id(nama)').eq('jurulatih_id', id).order('tarikh', { ascending: false }).limit(50),
-    supabase.from('bayaran_jurulatih').select('id, bulan_bayaran, tahun_bayaran, bilangan_sesi, kadar_per_sesi, jumlah, tarikh_bayar, status').eq('jurulatih_id', id).order('tahun_bayaran', { ascending: false }).order('bulan_bayaran', { ascending: false }),
+    supabase.from('bayaran_jurulatih').select('id, bulan_bayaran, tahun_bayaran, bilangan_sesi, kadar_per_sesi, jumlah, potongan_advance, kaedah_bayaran, tarikh_bayar, status').eq('jurulatih_id', id).order('tahun_bayaran', { ascending: false }).order('bulan_bayaran', { ascending: false }),
     supabase.from('cawangan').select('id, nama'),
+    supabase.from('advance_jurulatih').select('id, jumlah, baki, tarikh_advance, kaedah_bayaran, status, nota').eq('jurulatih_id', id).order('tarikh_advance', { ascending: false }),
   ])
 
   if (error || !raw) notFound()
@@ -66,6 +68,15 @@ export default async function ProfilJurulatihPage({
     gambarUrl = signed?.signedUrl ?? null
   }
 
+  // QR TNG: signed URL (bucket sama)
+  let tngQrUrl: string | null = null
+  if (raw.tng_qr_path) {
+    const { data: signed } = await supabase.storage
+      .from('gambar-jurulatih')
+      .createSignedUrl(raw.tng_qr_path, 3600)
+    tngQrUrl = signed?.signedUrl ?? null
+  }
+
   return (
     <ProfilJurulatihKlient
       jurulatih={{
@@ -81,10 +92,13 @@ export default async function ProfilJurulatihPage({
         status: raw.status,
         cawangan_nama: (raw.cawangan_ids ?? []).map((cid: string) => petaCawangan[cid] ?? '').filter(Boolean).join(', '),
         gambar_url: gambarUrl,
+        no_tng: raw.no_tng,
+        tng_qr_url: tngQrUrl,
       }}
       statBulan={statBulan}
       kehadiran={(kehadiran ?? []) as any}
       bayaran={bayaran ?? []}
+      advance={advance ?? []}
       namaBulanSemasa={namaBulanSemasa}
       sudahBayarBulanIni={sudahBayarBulanIni}
     />

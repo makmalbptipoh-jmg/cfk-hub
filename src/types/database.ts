@@ -221,6 +221,8 @@ export interface Database {
           tarikh_mula: string | null
           pengalaman_ringkas: string | null
           kelayakan: string | null
+          no_tng: string | null
+          tng_qr_path: string | null
           status: 'Aktif' | 'Tidak Aktif'
           created_at: string
         }
@@ -237,6 +239,8 @@ export interface Database {
           tarikh_mula?: string | null
           pengalaman_ringkas?: string | null
           kelayakan?: string | null
+          no_tng?: string | null
+          tng_qr_path?: string | null
           status?: 'Aktif' | 'Tidak Aktif'
           created_at?: string
         }
@@ -253,6 +257,8 @@ export interface Database {
           tarikh_mula?: string | null
           pengalaman_ringkas?: string | null
           kelayakan?: string | null
+          no_tng?: string | null
+          tng_qr_path?: string | null
           status?: 'Aktif' | 'Tidak Aktif'
           created_at?: string
         }
@@ -300,6 +306,8 @@ export interface Database {
           bilangan_sesi: number
           kadar_per_sesi: number
           jumlah: number
+          potongan_advance: number
+          kaedah_bayaran: string | null
           tarikh_bayar: string | null
           status: 'Sudah Bayar' | 'Belum Bayar'
           nota: string | null
@@ -313,6 +321,8 @@ export interface Database {
           tahun_bayaran: number
           bilangan_sesi: number
           kadar_per_sesi: number
+          potongan_advance?: number
+          kaedah_bayaran?: string | null
           tarikh_bayar?: string | null
           status?: 'Sudah Bayar' | 'Belum Bayar'
           nota?: string | null
@@ -326,8 +336,52 @@ export interface Database {
           tahun_bayaran?: number
           bilangan_sesi?: number
           kadar_per_sesi?: number
+          potongan_advance?: number
+          kaedah_bayaran?: string | null
           tarikh_bayar?: string | null
           status?: 'Sudah Bayar' | 'Belum Bayar'
+          nota?: string | null
+          direkod_oleh?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      advance_jurulatih: {
+        Row: {
+          id: string
+          jurulatih_id: string
+          jumlah: number
+          baki: number
+          tarikh_advance: string
+          kaedah_bayaran: string | null
+          status: 'Belum Selesai' | 'Selesai'
+          bayaran_id: string | null
+          nota: string | null
+          direkod_oleh: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          jurulatih_id: string
+          jumlah: number
+          baki: number
+          tarikh_advance: string
+          kaedah_bayaran?: string | null
+          status?: 'Belum Selesai' | 'Selesai'
+          bayaran_id?: string | null
+          nota?: string | null
+          direkod_oleh?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          jurulatih_id?: string
+          jumlah?: number
+          baki?: number
+          tarikh_advance?: string
+          kaedah_bayaran?: string | null
+          status?: 'Belum Selesai' | 'Selesai'
+          bayaran_id?: string | null
           nota?: string | null
           direkod_oleh?: string | null
           created_at?: string

@@ -14,6 +14,8 @@ type Jurulatih = {
   nama_penuh: string
   no_ic: string | null
   kadar_bayaran: number
+  no_tng: string | null
+  tng_qr_url: string | null
 }
 
 type Bayaran = {
@@ -23,21 +25,30 @@ type Bayaran = {
   bilangan_sesi: number
   kadar_per_sesi: number
   jumlah: number
+  potongan_advance: number
+  kaedah_bayaran: string | null
   tarikh_bayar: string | null
   status: string
   nota: string | null
 }
 
+type AdvanceTertunggak = {
+  id: string
+  baki: number
+  tarikh_advance: string
+}
+
 interface Props {
   jurulatih: Jurulatih
   bayaran: Bayaran[]
+  advanceTertunggak: AdvanceTertunggak[]
   bulanSemasa: string
   tahunSemasa: number
   bilSesiHadirBulanIni: number
   sudahRekodBulanIni: boolean
 }
 
-export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunSemasa, bilSesiHadirBulanIni, sudahRekodBulanIni }: Props) {
+export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, bulanSemasa, tahunSemasa, bilSesiHadirBulanIni, sudahRekodBulanIni }: Props) {
   const router = useRouter()
   const [modal, setModal] = useState(false)
 
@@ -146,7 +157,7 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunS
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                {['Bulan', 'Sesi', 'Kadar', 'Jumlah', 'Tarikh Bayar', 'Status', 'Nota', ''].map((h) => (
+                {['Bulan', 'Sesi', 'Kadar', 'Kasar', 'Potongan', 'Bersih', 'Kaedah', 'Tarikh Bayar', 'Status', ''].map((h) => (
                   <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                 ))}
               </tr>
@@ -159,7 +170,14 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunS
                   <td style={{ padding: '10px 14px', fontSize: '13.5px', fontWeight: 700, color: 'var(--text)' }}>{b.bulan_bayaran} {b.tahun_bayaran}</td>
                   <td style={{ padding: '10px 14px', fontSize: '13px', color: 'var(--text)' }}>{b.bilangan_sesi}</td>
                   <td style={{ padding: '10px 14px', fontSize: '13px', color: 'var(--text-muted)' }}>{formatRinggit(b.kadar_per_sesi)}</td>
-                  <td style={{ padding: '10px 14px', fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>{formatRinggit(b.jumlah)}</td>
+                  <td style={{ padding: '10px 14px', fontSize: '13px', color: 'var(--text)' }}>{formatRinggit(b.jumlah)}</td>
+                  <td style={{ padding: '10px 14px', fontSize: '13px', color: (b.potongan_advance ?? 0) > 0 ? '#C2410C' : 'var(--text-muted)' }}>
+                    {(b.potongan_advance ?? 0) > 0 ? `- ${formatRinggit(b.potongan_advance)}` : '—'}
+                  </td>
+                  <td style={{ padding: '10px 14px', fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>
+                    {formatRinggit(b.jumlah - (b.potongan_advance ?? 0))}
+                  </td>
+                  <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>{b.kaedah_bayaran ?? '—'}</td>
                   <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>
                     {b.tarikh_bayar ? formatTarikh(b.tarikh_bayar) : '—'}
                   </td>
@@ -172,7 +190,6 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunS
                       {b.status}
                     </span>
                   </td>
-                  <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>{b.nota || '—'}</td>
                   <td style={{ padding: '10px 14px' }}>
                     <BtnSlipGaji
                       data={{
@@ -183,6 +200,8 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunS
                         bilangan_sesi: b.bilangan_sesi,
                         kadar_per_sesi: b.kadar_per_sesi,
                         jumlah: b.jumlah,
+                        potongan_advance: b.potongan_advance ?? 0,
+                        kaedah_bayaran: b.kaedah_bayaran,
                         tarikh_bayar: b.tarikh_bayar,
                         status: b.status,
                         nota: b.nota,
@@ -204,6 +223,9 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, bulanSemasa, tahunS
           tahun={tahunSemasa}
           bilSesiHadir={bilSesiHadirBulanIni}
           kadarPerSesi={jurulatih.kadar_bayaran}
+          advanceTertunggak={advanceTertunggak}
+          noTng={jurulatih.no_tng}
+          tngQrUrl={jurulatih.tng_qr_url}
           onTutup={() => setModal(false)}
           onBerjaya={() => {
             setModal(false)

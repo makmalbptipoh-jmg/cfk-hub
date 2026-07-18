@@ -176,6 +176,65 @@ export async function janaDanMuatNotifikasi(): Promise<{ senarai: Notifikasi[]; 
       .in('id', idLuput)
   }
 
+  // ---- Peringatan gaji jurulatih: hari gaji 30hb setiap bulan ----
+  // Dari 27hb hingga akhir bulan, satu notifikasi per jurulatih Aktif yang ada
+  // sesi Hadir bulan ini tetapi belum ada rekod gaji 'Sudah Bayar' bulan ini.
+  const hariBulanMyt = myt.getUTCDate()
+  const hariAkhirBulan = Number(akhirB.split('-')[2])
+  const hariGaji = Math.min(30, hariAkhirBulan) // Februari tiada 30hb — guna hari akhir bulan
+
+  const [{ data: jurulatihAktif }, { data: hadirJurulatih }, { data: gajiBulanIni }] = await Promise.all([
+    supabase.from('jurulatih').select('id, nama_penuh, kadar_bayaran').eq('status', 'Aktif'),
+    supabase.from('kehadiran_jurulatih').select('jurulatih_id').eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
+    supabase.from('bayaran_jurulatih').select('jurulatih_id').eq('bulan_bayaran', namaBulan).eq('tahun_bayaran', tahun).eq('status', 'Sudah Bayar'),
+  ])
+
+  const kiraSesiJurulatih: Record<string, number> = {}
+  for (const k of hadirJurulatih ?? []) {
+    kiraSesiJurulatih[k.jurulatih_id] = (kiraSesiJurulatih[k.jurulatih_id] ?? 0) + 1
+  }
+  const idSudahGaji = new Set((gajiBulanIni ?? []).map((b) => b.jurulatih_id))
+  const belumGaji = (jurulatihAktif ?? []).filter(
+    (j) => (kiraSesiJurulatih[j.id] ?? 0) > 0 && !idSudahGaji.has(j.id)
+  )
+  const idBelumGaji = new Set(belumGaji.map((j) => j.id))
+
+  if (hariBulanMyt >= 27 && belumGaji.length > 0) {
+    const barisGaji = belumGaji.map((j) => {
+      const sesi = kiraSesiJurulatih[j.id] ?? 0
+      const kadar = j.kadar_bayaran ?? 0
+      const anggaran = sesi * kadar
+      return {
+        jenis: 'gaji_jurulatih',
+        tajuk: 'Gaji jurulatih belum dibayar',
+        mesej: `${j.nama_penuh} — ${sesi} sesi × RM${kadar.toFixed(2)} = RM${anggaran.toFixed(2)} untuk ${namaBulan}. Bayar sebelum ${hariGaji}hb.`,
+        pautan: `/jurulatih/${j.id}/bayaran`,
+        kunci: `gaji_jurulatih:${j.id}:${bulanKunci}`,
+        rujukan_id: j.id,
+      }
+    })
+    await supabase.from('notifikasi').upsert(barisGaji, { onConflict: 'kunci', ignoreDuplicates: true })
+  }
+
+  // Auto-selesai: gaji sudah dibayar, jurulatih tiada lagi dalam senarai,
+  // atau notifikasi bulan lama.
+  const { data: notifGaji } = await supabase
+    .from('notifikasi')
+    .select('id, kunci, rujukan_id')
+    .eq('jenis', 'gaji_jurulatih')
+    .eq('dibaca', false)
+  const idGajiSelesai = (notifGaji ?? [])
+    .filter((n) =>
+      !n.kunci?.endsWith(`:${bulanKunci}`) || !n.rujukan_id || !idBelumGaji.has(n.rujukan_id)
+    )
+    .map((n) => n.id)
+  if (idGajiSelesai.length > 0) {
+    await supabase
+      .from('notifikasi')
+      .update({ dibaca: true, dibaca_pada: new Date().toISOString() })
+      .in('id', idGajiSelesai)
+  }
+
   const [{ data: senarai }, { count }] = await Promise.all([
     supabase
       .from('notifikasi')

@@ -38,6 +38,7 @@ export default function TambahJurulatihPage() {
     tarikh_mula: '',
     pengalaman_ringkas: '',
     kelayakan: '',
+    no_tng: '',
   })
 
   useEffect(() => {
@@ -74,6 +75,7 @@ export default function TambahJurulatihPage() {
       tarikh_mula: form.tarikh_mula || null,
       pengalaman_ringkas: form.pengalaman_ringkas || null,
       kelayakan: form.kelayakan || null,
+      no_tng: form.no_tng || null,
     })
     if (error) {
       setRalat('Gagal simpan. Sila cuba lagi.')
@@ -172,6 +174,13 @@ export default function TambahJurulatihPage() {
               <label style={labelInput}>Tarikh Mula</label>
               <input type="date" value={form.tarikh_mula} onChange={(e) => set('tarikh_mula', e.target.value)} style={gayaInput} />
             </div>
+          </div>
+          <div style={{ marginBottom: '14px' }}>
+            <label style={labelInput}>No. Telefon TNG eWallet</label>
+            <input value={form.no_tng} onChange={(e) => set('no_tng', e.target.value)} placeholder="01X-XXXXXXX" style={gayaInput} />
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Untuk transfer gaji. Gambar QR TNG boleh dimuat naik melalui Kemaskini selepas daftar.
+            </p>
           </div>
           <div>
             <label style={labelInput}>Pengalaman Ringkas</label>
