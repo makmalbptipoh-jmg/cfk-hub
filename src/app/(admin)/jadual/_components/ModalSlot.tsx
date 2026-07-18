@@ -33,7 +33,7 @@ export function ModalSlot({
   const [masaTamat, setMasaTamat] = useState(slotEdit ? ke5(slotEdit.masa_tamat) : '')
   const [cawanganId, setCawanganId] = useState(slotEdit?.cawangan_id ?? '')
   const [pelajarId, setPelajarId] = useState(slotEdit?.pelajar_id ?? '')
-  const [jurulatihId, setJurulatihId] = useState(slotEdit?.jurulatih_id ?? '')
+  const [jurulatihIds, setJurulatihIds] = useState<string[]>(slotEdit?.jurulatih_ids ?? [])
   const [lokasi, setLokasi] = useState(slotEdit?.lokasi ?? '')
   const [nota, setNota] = useState(slotEdit?.nota ?? '')
   const [loading, setLoading] = useState(false)
@@ -42,6 +42,9 @@ export function ModalSlot({
   const [sahPadam, setSahPadam] = useState(false)
   useTutupEscape(onTutup)
 
+  const togolJurulatih = (id: string) =>
+    setJurulatihIds((sedia) => (sedia.includes(id) ? sedia.filter((x) => x !== id) : [...sedia, id]))
+
   // Semak pertindihan lembut: hari sama + masa bertindih + (jurulatih ATAU cawangan sama)
   const cariTindih = () => {
     return semuaSlot.filter((s) => {
@@ -49,7 +52,7 @@ export function ModalSlot({
       if (s.hari_minggu !== hari) return false
       const bertindih = masaMula < ke5(s.masa_tamat) && masaTamat > ke5(s.masa_mula)
       if (!bertindih) return false
-      const samaJurulatih = jurulatihId && s.jurulatih_id === jurulatihId
+      const samaJurulatih = jurulatihIds.some((id) => s.jurulatih_ids.includes(id))
       const samaCawangan = cawanganId && s.cawangan_id === cawanganId
       return Boolean(samaJurulatih || samaCawangan)
     })
@@ -67,7 +70,8 @@ export function ModalSlot({
       if (tindih.length > 0) {
         const s = tindih[0]
         const namaS = s.jenis === 'Kumpulan' ? s.cawangan?.nama : s.pelajar?.nama_penuh
-        setAmaranTindih(`Bertindih dengan: ${namaS ?? 'slot lain'} (${HARI[s.hari_minggu]} ${formatMasa(s.masa_mula)}–${formatMasa(s.masa_tamat)})${s.jurulatih ? ` · jurulatih ${s.jurulatih.nama_penuh}` : ''}. Klik "Simpan Juga" jika memang disengajakan.`)
+        const namaJ = s.jurulatih_ids.map((id) => jurulatih.find((j) => j.id === id)?.nama_penuh).filter(Boolean).join(', ')
+        setAmaranTindih(`Bertindih dengan: ${namaS ?? 'slot lain'} (${HARI[s.hari_minggu]} ${formatMasa(s.masa_mula)}–${formatMasa(s.masa_tamat)})${namaJ ? ` · jurulatih ${namaJ}` : ''}. Klik "Simpan Juga" jika memang disengajakan.`)
         return
       }
     }
@@ -81,7 +85,7 @@ export function ModalSlot({
       masa_tamat: masaTamat,
       cawangan_id: cawanganId || null,
       pelajar_id: jenis === 'Personal' ? pelajarId : null,
-      jurulatih_id: jurulatihId || null,
+      jurulatih_ids: jurulatihIds,
       lokasi: lokasi.trim() || null,
       nota: nota.trim() || null,
     }
@@ -188,11 +192,27 @@ export function ModalSlot({
           </div>
 
           <div>
-            <label style={labelStyle}>Jurulatih (pilihan)</label>
-            <select value={jurulatihId} onChange={(e) => setJurulatihId(e.target.value)} style={{ ...modalInput, cursor: 'pointer' }}>
-              <option value="">— Belum ditetapkan —</option>
-              {jurulatih.map((j) => <option key={j.id} value={j.id}>{j.nama_penuh}</option>)}
-            </select>
+            <label style={labelStyle}>Jurulatih (pilihan — boleh pilih lebih dari satu)</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {jurulatih.map((j) => {
+                const dipilih = jurulatihIds.includes(j.id)
+                return (
+                  <button
+                    key={j.id}
+                    type="button"
+                    onClick={() => togolJurulatih(j.id)}
+                    style={{
+                      padding: '7px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                      background: dipilih ? 'var(--accent)' : 'var(--bg)',
+                      color: dipilih ? 'var(--accent-text)' : 'var(--text-muted)',
+                      border: dipilih ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
+                    }}
+                  >
+                    {dipilih ? '✓ ' : ''}{j.nama_penuh}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

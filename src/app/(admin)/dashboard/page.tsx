@@ -55,6 +55,7 @@ export default async function DashboardPage({
     { data: kehadiranTahun },
     { data: slotHariIni },
     { data: aktivitiHariIni },
+    { data: senaraiJurulatih },
   ] = await Promise.all([
     pelajarQuery,
     supabase.from('kehadiran').select('pelajar_id, status, cawangan_sesi_id').gte('tarikh', mulaB).lte('tarikh', akhirB),
@@ -64,8 +65,9 @@ export default async function DashboardPage({
     supabase.from('pengguna_profil').select('nama').eq('id', (await supabase.auth.getUser()).data.user?.id ?? '').single(),
     supabase.from('resit').select('jumlah, tarikh_bayar, pelajar:pelajar_id(cawangan_daftar_id)').eq('status', 'Aktif').gte('tarikh_bayar', `${tahun}-01-01`).lte('tarikh_bayar', `${tahun}-12-31`),
     supabase.from('kehadiran').select('tarikh, cawangan_sesi_id').eq('status', 'Hadir').gte('tarikh', `${tahun}-01-01`).lte('tarikh', `${tahun}-12-31`),
-    supabase.from('jadual_slot').select('id, jenis, masa_mula, lokasi, cawangan:cawangan_id(nama), pelajar:pelajar_id(nama_penuh), jurulatih:jurulatih_id(nama_penuh)').eq('status', 'Aktif').eq('hari_minggu', hariIni).order('masa_mula'),
+    supabase.from('jadual_slot').select('id, jenis, masa_mula, lokasi, jurulatih_ids, cawangan:cawangan_id(nama), pelajar:pelajar_id(nama_penuh)').eq('status', 'Aktif').eq('hari_minggu', hariIni).order('masa_mula'),
     supabase.from('aktiviti').select('id, nama, kategori, masa_mula, lokasi, pelajar:pelajar_id(nama_penuh)').eq('status', 'Aktif').eq('tarikh', tarikhHariIni).order('masa_mula'),
+    supabase.from('jurulatih').select('id, nama_penuh'),
   ])
 
   // Siri 12-bulan untuk carta trend (ikut cawangan dipilih)
@@ -128,6 +130,8 @@ export default async function DashboardPage({
   const statCawangan = Object.values(kehadiranPerCawangan).filter((c) => c.hadir + c.tidakHadir + c.cuti > 0)
 
   // === Widget: Jadual Hari Ini (slot mingguan + aktiviti bertarikh) ===
+  const namaJurulatihPeta = new Map((senaraiJurulatih ?? []).map((j) => [j.id, j.nama_penuh]))
+  const namaJ = (ids: string[] | null) => (ids ?? []).map((id) => namaJurulatihPeta.get(id)).filter(Boolean).join(', ')
   type BarisJadual = { id: string; masa: string | null; label: string; nama: string; info: string; warnaBg: string; warnaText: string }
   const barisJadual: BarisJadual[] = [
     ...(slotHariIni ?? []).map((s: any) => ({
@@ -135,7 +139,7 @@ export default async function DashboardPage({
       masa: s.masa_mula as string | null,
       label: s.jenis as string,
       nama: s.jenis === 'Kumpulan' ? (s.cawangan?.nama ?? '—') : (s.pelajar?.nama_penuh ?? '—'),
-      info: [s.jurulatih ? `J: ${s.jurulatih.nama_penuh}` : null, s.lokasi].filter(Boolean).join(' · '),
+      info: [s.jurulatih_ids?.length ? `J: ${namaJ(s.jurulatih_ids)}` : null, s.lokasi].filter(Boolean).join(' · '),
       warnaBg: s.jenis === 'Kumpulan' ? '#ECFCCB' : '#DBEAFE',
       warnaText: s.jenis === 'Kumpulan' ? '#3F6212' : '#1E40AF',
     })),

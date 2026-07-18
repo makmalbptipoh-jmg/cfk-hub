@@ -15,6 +15,12 @@ Keperluan user: satu tempat rujuk jadual supaya tak lupa — kelas kumpulan per 
 - **SQL sudah di-run user (18 Jul) + DIUJI PENUH dalam browser localhost (login Google chessforkids80)**: tambah slot Kumpulan (Klebang Ahad 10-12 + jurulatih) → kolum betul ✅; slot Personal via CariPelajar (CHUA, Sabtu 3-4ptg, lokasi) → kolum Sabtu ✅; amaran pertindihan kuning + "Simpan Juga" oren ✅; aktiviti esok (Pertandingan 19 Jul) → senarai ✅; loceng badge 2: "Aktiviti esok" + "Jadual hari ini: Sabtu ini 1 kelas personal" ✅; widget dashboard papar slot personal hari ini ✅; edit modal prapopulasi ✅; padam 2-klik "Sah Padam?" ✅; auto-selesai aktiviti_esok selepas aktiviti dipadam ✅; tiada console error. Semua data ujian dipadam selepas ujian (jadual kini kosong — user isi jadual sebenar).
 - Lint: +2 `any` dalam dashboard (ikut gaya sedia ada fail itu; CI tak semak lint).
 
+### Susulan: jurulatih RAMAI per slot/aktiviti (arahan user — "kelas ada ramai coach")
+- ⚠️ `scripts/sql/jadual-jurulatih-ramai.sql` **sudah di-run user (18 Jul)**: kolum `jurulatih_id` tunggal → `jurulatih_ids UUID[]` pada `jadual_slot` + `aktiviti` (data lama dipindah automatik, idempotent DO block).
+- UI: dropdown jurulatih diganti **butang toggle pil multi-pilih** (✓ hijau, corak sama `cawangan_ids` borang jurulatih) dalam ModalSlot + ModalAktiviti; paparan "J: NAMA1, NAMA2" di grid, senarai aktiviti & widget dashboard (peta id→nama, dashboard fetch senarai jurulatih).
+- Amaran pertindihan kira bertindih jika **mana-mana** jurulatih berkongsi (`.some/.includes`).
+- Diuji browser localhost: pilih 2 jurulatih → simpan → papar 2 nama ✅; edit prapopulasi 2 ✓ ✅; padam ✅. Typecheck+17 ujian+build LULUS.
+
 ### Log Masuk dengan Google (OAuth) — LIVE
 User minta cara login "moden" (asalnya tanya magic link; keputusan akhir Google OAuth macam SPDMI — pilih e-mel terus masuk, tiada e-mel dihantar, tiada Resend/SMTP diperlukan).
 - **Hibrid:** butang "Log Masuk dengan Google" jadi cara UTAMA di `/login`; borang kata laluan kekal sebagai sandaran (tersembunyi di sebalik toggle "Log masuk dengan kata laluan").

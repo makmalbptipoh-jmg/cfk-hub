@@ -34,12 +34,15 @@ export function ModalAktiviti({
   const [lokasi, setLokasi] = useState(aktivitiEdit?.lokasi ?? '')
   const [cawanganId, setCawanganId] = useState(aktivitiEdit?.cawangan_id ?? '')
   const [pelajarId, setPelajarId] = useState(aktivitiEdit?.pelajar_id ?? '')
-  const [jurulatihId, setJurulatihId] = useState(aktivitiEdit?.jurulatih_id ?? '')
+  const [jurulatihIds, setJurulatihIds] = useState<string[]>(aktivitiEdit?.jurulatih_ids ?? [])
   const [penerangan, setPenerangan] = useState(aktivitiEdit?.penerangan ?? '')
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
   const [sahPadam, setSahPadam] = useState(false)
   useTutupEscape(onTutup)
+
+  const togolJurulatih = (id: string) =>
+    setJurulatihIds((sedia) => (sedia.includes(id) ? sedia.filter((x) => x !== id) : [...sedia, id]))
 
   const simpan = async () => {
     if (!nama.trim()) { setRalat('Sila isi nama aktiviti.'); return }
@@ -59,7 +62,7 @@ export function ModalAktiviti({
       lokasi: lokasi.trim() || null,
       cawangan_id: cawanganId || null,
       pelajar_id: kategori === 'Kelas Personal' ? pelajarId : pelajarId || null,
-      jurulatih_id: jurulatihId || null,
+      jurulatih_ids: jurulatihIds,
       penerangan: penerangan.trim() || null,
     }
     const { error } = aktivitiEdit
@@ -162,20 +165,35 @@ export function ModalAktiviti({
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label style={labelStyle}>Cawangan (pilihan)</label>
-              <select value={cawanganId} onChange={(e) => setCawanganId(e.target.value)} style={{ ...modalInput, cursor: 'pointer' }}>
-                <option value="">— Tiada —</option>
-                {cawangan.map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Jurulatih (pilihan)</label>
-              <select value={jurulatihId} onChange={(e) => setJurulatihId(e.target.value)} style={{ ...modalInput, cursor: 'pointer' }}>
-                <option value="">— Tiada —</option>
-                {jurulatih.map((j) => <option key={j.id} value={j.id}>{j.nama_penuh}</option>)}
-              </select>
+          <div>
+            <label style={labelStyle}>Cawangan (pilihan)</label>
+            <select value={cawanganId} onChange={(e) => setCawanganId(e.target.value)} style={{ ...modalInput, cursor: 'pointer' }}>
+              <option value="">— Tiada —</option>
+              {cawangan.map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Jurulatih (pilihan — boleh pilih lebih dari satu)</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {jurulatih.map((j) => {
+                const dipilih = jurulatihIds.includes(j.id)
+                return (
+                  <button
+                    key={j.id}
+                    type="button"
+                    onClick={() => togolJurulatih(j.id)}
+                    style={{
+                      padding: '7px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                      background: dipilih ? 'var(--accent)' : 'var(--bg)',
+                      color: dipilih ? 'var(--accent-text)' : 'var(--text-muted)',
+                      border: dipilih ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
+                    }}
+                  >
+                    {dipilih ? '✓ ' : ''}{j.nama_penuh}
+                  </button>
+                )
+              })}
             </div>
           </div>
 

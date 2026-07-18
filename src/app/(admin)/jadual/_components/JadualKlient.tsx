@@ -19,13 +19,12 @@ export type Slot = {
   masa_tamat: string
   cawangan_id: string | null
   pelajar_id: string | null
-  jurulatih_id: string | null
+  jurulatih_ids: string[]
   lokasi: string | null
   nota: string | null
   status: 'Aktif' | 'Tidak Aktif'
   cawangan: { nama: string } | null
   pelajar: { nama_penuh: string } | null
-  jurulatih: { nama_penuh: string } | null
 }
 
 export type Aktiviti = {
@@ -38,12 +37,11 @@ export type Aktiviti = {
   lokasi: string | null
   cawangan_id: string | null
   pelajar_id: string | null
-  jurulatih_id: string | null
+  jurulatih_ids: string[]
   penerangan: string | null
   status: 'Aktif' | 'Dibatalkan'
   cawangan: { nama: string } | null
   pelajar: { nama_penuh: string } | null
-  jurulatih: { nama_penuh: string } | null
 }
 
 const WARNA_KATEGORI: Record<Aktiviti['kategori'], { bg: string; text: string }> = {
@@ -55,7 +53,7 @@ const WARNA_KATEGORI: Record<Aktiviti['kategori'], { bg: string; text: string }>
   'Lain-lain': { bg: '#F1F5F9', text: '#475569' },
 }
 
-const SELECT_SLOT = '*, cawangan:cawangan_id(nama), pelajar:pelajar_id(nama_penuh), jurulatih:jurulatih_id(nama_penuh)'
+const SELECT_SLOT = '*, cawangan:cawangan_id(nama), pelajar:pelajar_id(nama_penuh)'
 
 export function JadualKlient({
   cawanganAwal,
@@ -75,6 +73,12 @@ export function JadualKlient({
   const [modalAktiviti, setModalAktiviti] = useState<{ buka: boolean; edit: Aktiviti | null }>({ buka: false, edit: null })
 
   const hariIni = hariMinggu(tarikhTempatan())
+
+  const namaJurulatih = (ids: string[]) =>
+    ids
+      .map((id) => jurulatihAwal.find((j) => j.id === id)?.nama_penuh)
+      .filter(Boolean)
+      .join(', ')
 
   const muatData = useCallback(async () => {
     const supabase = createClient()
@@ -165,8 +169,8 @@ export function JadualKlient({
                       {(s.jenis === 'Personal' && s.cawangan) && (
                         <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>{s.cawangan.nama}</div>
                       )}
-                      {s.jurulatih && (
-                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>J: {s.jurulatih.nama_penuh}</div>
+                      {s.jurulatih_ids.length > 0 && (
+                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>J: {namaJurulatih(s.jurulatih_ids)}</div>
                       )}
                       {s.lokasi && (
                         <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>📍 {s.lokasi}</div>
@@ -226,7 +230,7 @@ export function JadualKlient({
                     <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
                       {[
                         a.pelajar?.nama_penuh,
-                        a.jurulatih ? `J: ${a.jurulatih.nama_penuh}` : null,
+                        a.jurulatih_ids.length > 0 ? `J: ${namaJurulatih(a.jurulatih_ids)}` : null,
                         a.cawangan?.nama,
                         a.lokasi ? `📍 ${a.lokasi}` : null,
                       ].filter(Boolean).join(' · ') || '—'}

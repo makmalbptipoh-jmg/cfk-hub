@@ -697,7 +697,7 @@ export interface Database {
           masa_tamat: string
           cawangan_id: string | null
           pelajar_id: string | null
-          jurulatih_id: string | null
+          jurulatih_ids: string[]
           lokasi: string | null
           nota: string | null
           status: 'Aktif' | 'Tidak Aktif'
@@ -711,7 +711,7 @@ export interface Database {
           masa_tamat: string
           cawangan_id?: string | null
           pelajar_id?: string | null
-          jurulatih_id?: string | null
+          jurulatih_ids?: string[]
           lokasi?: string | null
           nota?: string | null
           status?: 'Aktif' | 'Tidak Aktif'
@@ -725,7 +725,7 @@ export interface Database {
           masa_tamat?: string
           cawangan_id?: string | null
           pelajar_id?: string | null
-          jurulatih_id?: string | null
+          jurulatih_ids?: string[]
           lokasi?: string | null
           nota?: string | null
           status?: 'Aktif' | 'Tidak Aktif'
@@ -744,7 +744,7 @@ export interface Database {
           lokasi: string | null
           cawangan_id: string | null
           pelajar_id: string | null
-          jurulatih_id: string | null
+          jurulatih_ids: string[]
           penerangan: string | null
           status: 'Aktif' | 'Dibatalkan'
           created_at: string
@@ -759,7 +759,7 @@ export interface Database {
           lokasi?: string | null
           cawangan_id?: string | null
           pelajar_id?: string | null
-          jurulatih_id?: string | null
+          jurulatih_ids?: string[]
           penerangan?: string | null
           status?: 'Aktif' | 'Dibatalkan'
           created_at?: string
@@ -774,7 +774,7 @@ export interface Database {
           lokasi?: string | null
           cawangan_id?: string | null
           pelajar_id?: string | null
-          jurulatih_id?: string | null
+          jurulatih_ids?: string[]
           penerangan?: string | null
           status?: 'Aktif' | 'Dibatalkan'
           created_at?: string
