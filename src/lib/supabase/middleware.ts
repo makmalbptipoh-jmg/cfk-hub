@@ -32,6 +32,11 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
+  // Laluan callback OAuth — mesti awam (kod belum ditukar kepada sesi)
+  if (pathname.startsWith('/auth')) {
+    return supabaseResponse
+  }
+
   // Halaman awam — benarkan tanpa auth
   if (pathname.startsWith('/login')) {
     if (user) {

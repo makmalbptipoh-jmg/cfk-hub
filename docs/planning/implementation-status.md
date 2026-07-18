@@ -1,6 +1,19 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 14 Jul 2026 (Sesi 8)
+**Dikemaskini:** 18 Jul 2026 (Sesi 9)
+
+## ⚡ SESI 9 (18 Jul 2026)
+
+### Log Masuk dengan Google (OAuth) — LIVE
+User minta cara login "moden" (asalnya tanya magic link; keputusan akhir Google OAuth macam SPDMI — pilih e-mel terus masuk, tiada e-mel dihantar, tiada Resend/SMTP diperlukan).
+- **Hibrid:** butang "Log Masuk dengan Google" jadi cara UTAMA di `/login`; borang kata laluan kekal sebagai sandaran (tersembunyi di sebalik toggle "Log masuk dengan kata laluan").
+- Fail: `src/app/auth/callback/route.ts` (BAHARU — exchangeCodeForSession, semakan profil, audit log, redirect ikut peranan), `src/lib/supabase/middleware.ts` (whitelist `/auth` awam), `src/app/(auth)/login/page.tsx` (butang Google + Suspense/useSearchParams untuk mesej ralat callback).
+- **Keselamatan (PENTING):** Supabase "Allow new users to sign up" = **OFF** (di-set user 18 Jul). Tanpa ini sesiapa dengan akaun Google boleh jadi authenticated dan baca data (RLS baca terbuka). Pertahanan kedua dalam callback: tiada `pengguna_profil` → signOut + `/login?ralat=tiada_akaun`.
+- Setup manual siap (user, 18 Jul): Google Cloud Console projek "CFK HUB" (OAuth client, redirect URI Supabase, consent screen production, scope asas sahaja) + Supabase provider Google + URL Configuration (site URL + redirect production & localhost).
+- **Diuji localhost (18 Jul):** login Google chessforkids80 → auto-LINK pada user sedia ada (providers `email, google`, TIADA user pendua — gelagat GoTrue semasa betul walau signups OFF) → `/dashboard` ✅; audit "Log Masuk" direkod ✅; mesej BM `tiada_akaun` & `google_gagal` dipapar betul ✅; toggle borang kata laluan ✅; logout → `/dashboard` disekat ✅. Typecheck + 12 ujian + build LULUS.
+- Nota mesin: laptop ini perlu `npm install` + cipta semula `.env.local` (dibuat 18 Jul).
+- **Belum diuji (buat di production):** login Google akaun jurulatih sebenar → `/kehadiran`; PWA Android; penolakan akaun Google asing hujung-ke-hujung (di localhost hanya disimulasi via parameter ralat callback); sandaran kata laluan login sebenar.
+- E-mel akaun mesti = akaun Google sebenar pengguna. Berdaftar kini: khatib@jmg.gov.my, nurfar.2007, aisyahkhatib1234, syahmairah6, saniharussani54, maisarahkhatibcfk, chessforkids80.
 
 ## ⚡ SESI 8 (14 Jul 2026)
 
