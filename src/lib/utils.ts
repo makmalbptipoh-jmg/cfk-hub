@@ -83,6 +83,13 @@ export function hariMinggu(tarikh: string): number {
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
 }
 
+// Tambah/tolak n hari pada tarikh 'YYYY-MM-DD' — dikira dari nombor
+// (Date.UTC), bebas zon masa pelayan/browser.
+export function tambahHari(tarikh: string, n: number): string {
+  const [y, m, d] = tarikh.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().split('T')[0]
+}
+
 // Format masa Postgres TIME ('15:30:00' atau '15:30') → '3:30 PTG'.
 // 12-jam dengan penanda BM: PG (pagi), TGH (tengah hari), PTG (petang), MLM (malam).
 export function formatMasa(masa: string): string {

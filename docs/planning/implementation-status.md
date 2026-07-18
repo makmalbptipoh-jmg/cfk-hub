@@ -15,6 +15,14 @@ Keperluan user: satu tempat rujuk jadual supaya tak lupa — kelas kumpulan per 
 - **SQL sudah di-run user (18 Jul) + DIUJI PENUH dalam browser localhost (login Google chessforkids80)**: tambah slot Kumpulan (Klebang Ahad 10-12 + jurulatih) → kolum betul ✅; slot Personal via CariPelajar (CHUA, Sabtu 3-4ptg, lokasi) → kolum Sabtu ✅; amaran pertindihan kuning + "Simpan Juga" oren ✅; aktiviti esok (Pertandingan 19 Jul) → senarai ✅; loceng badge 2: "Aktiviti esok" + "Jadual hari ini: Sabtu ini 1 kelas personal" ✅; widget dashboard papar slot personal hari ini ✅; edit modal prapopulasi ✅; padam 2-klik "Sah Padam?" ✅; auto-selesai aktiviti_esok selepas aktiviti dipadam ✅; tiada console error. Semua data ujian dipadam selepas ujian (jadual kini kosong — user isi jadual sebenar).
 - Lint: +2 `any` dalam dashboard (ikut gaya sedia ada fail itu; CI tak semak lint).
 
+### Susulan 2: View Harian / Mingguan / Bulanan (arahan user)
+- Toggle `[Harian | Mingguan | Bulanan]` di page /jadual (default Mingguan). Tiada SQL baru.
+- **Harian** (`PandanganHarian.tsx`): pilih tarikh + Semalam/Esok/Hari Ini; senarai ikut masa (slot hari itu + aktiviti tarikh itu) dengan butiran penuh; klik → edit.
+- **Mingguan** (`PandanganMingguan.tsx`): grid 7 hari kini **ikut tarikh sebenar** (header hari + tarikh, navigasi Minggu Lepas/Depan/Ini); aktiviti minggu itu muncul dalam kolum hari (kad berwarna ikut kategori).
+- **Bulanan** (`PandanganBulanan.tsx`): kalendar penuh (offset 1hb betul), chip "N kelas" per hari + hingga 2 aktiviti per tarikh (+N lagi); klik tarikh → lompat view Harian.
+- `JadualKlient` refactor: state pandangan/tarikh/minggu/bulan; aktiviti di-fetch ikut julat view (useEffect pada julat+versi); butang Tambah Aktiviti naik ke header. Util baharu `tambahHari()` + 2 ujian (19 semua).
+- Diuji browser localhost: ketiga-tiga view + navigasi + klik kalendar→harian ✅ (data sebenar user: Klebang Ahad/Sabtu, Buntong Sabtu malam, personal HARRSHAN ONLINE). Typecheck+build LULUS.
+
 ### Susulan: jurulatih RAMAI per slot/aktiviti (arahan user — "kelas ada ramai coach")
 - ⚠️ `scripts/sql/jadual-jurulatih-ramai.sql` **sudah di-run user (18 Jul)**: kolum `jurulatih_id` tunggal → `jurulatih_ids UUID[]` pada `jadual_slot` + `aktiviti` (data lama dipindah automatik, idempotent DO block).
 - UI: dropdown jurulatih diganti **butang toggle pil multi-pilih** (✓ hijau, corak sama `cawangan_ids` borang jurulatih) dalam ModalSlot + ModalAktiviti; paparan "J: NAMA1, NAMA2" di grid, senarai aktiviti & widget dashboard (peta id→nama, dashboard fetch senarai jurulatih).

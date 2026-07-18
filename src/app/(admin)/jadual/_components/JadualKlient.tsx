@@ -1,12 +1,15 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CalendarDays, Plus, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { HARI, hariMinggu, formatMasa, formatTarikh, tarikhTempatan } from '@/lib/utils'
+import { HARI, hariMinggu, formatMasa, formatTarikh, tarikhTempatan, bulanTempatan, tambahHari, akhirBulan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
 import { ModalSlot } from './ModalSlot'
 import { ModalAktiviti } from './ModalAktiviti'
+import { PandanganHarian } from './PandanganHarian'
+import { PandanganMingguan } from './PandanganMingguan'
+import { PandanganBulanan } from './PandanganBulanan'
 
 export type Cawangan = { id: string; nama: string }
 export type JurulatihPilihan = { id: string; nama_penuh: string }
@@ -44,7 +47,7 @@ export type Aktiviti = {
   pelajar: { nama_penuh: string } | null
 }
 
-const WARNA_KATEGORI: Record<Aktiviti['kategori'], { bg: string; text: string }> = {
+export const WARNA_KATEGORI: Record<Aktiviti['kategori'], { bg: string; text: string }> = {
   Pertandingan: { bg: '#FEF3C7', text: '#92400E' },
   Kem: { bg: '#D1FAE5', text: '#065F46' },
   Mesyuarat: { bg: '#E0E7FF', text: '#3730A3' },
@@ -54,6 +57,8 @@ const WARNA_KATEGORI: Record<Aktiviti['kategori'], { bg: string; text: string }>
 }
 
 const SELECT_SLOT = '*, cawangan:cawangan_id(nama), pelajar:pelajar_id(nama_penuh)'
+
+type Pandangan = 'harian' | 'mingguan' | 'bulanan'
 
 export function JadualKlient({
   cawanganAwal,
@@ -66,19 +71,54 @@ export function JadualKlient({
   jurulatihAwal: JurulatihPilihan[]
   aktivitiAwal: Aktiviti[]
 }) {
+  const hariIni = tarikhTempatan()
+
   const [slot, setSlot] = useState<Slot[]>(slotAwal)
-  const [aktiviti, setAktiviti] = useState<Aktiviti[]>(aktivitiAwal)
+  const [aktiviti, setAktiviti] = useState<Aktiviti[]>(aktivitiAwal) // senarai akan datang (bawah)
+  const [aktivitiTempoh, setAktivitiTempoh] = useState<Aktiviti[]>([]) // aktiviti dalam julat view semasa
   const [cawanganTapis, setCawanganTapis] = useState('')
+  const [pandangan, setPandangan] = useState<Pandangan>('mingguan')
+  const [tarikhPilih, setTarikhPilih] = useState(hariIni)
+  const [mingguMula, setMingguMula] = useState(tambahHari(hariIni, -hariMinggu(hariIni)))
+  const [bulanPilih, setBulanPilih] = useState(bulanTempatan())
+  const [versi, setVersi] = useState(0) // naik selepas simpan/padam — trigger muat semula aktiviti tempoh
   const [modalSlot, setModalSlot] = useState<{ buka: boolean; edit: Slot | null }>({ buka: false, edit: null })
   const [modalAktiviti, setModalAktiviti] = useState<{ buka: boolean; edit: Aktiviti | null }>({ buka: false, edit: null })
 
-  const hariIni = hariMinggu(tarikhTempatan())
+  const namaJurulatih = useCallback(
+    (ids: string[]) =>
+      ids
+        .map((id) => jurulatihAwal.find((j) => j.id === id)?.nama_penuh)
+        .filter(Boolean)
+        .join(', '),
+    [jurulatihAwal]
+  )
 
-  const namaJurulatih = (ids: string[]) =>
-    ids
-      .map((id) => jurulatihAwal.find((j) => j.id === id)?.nama_penuh)
-      .filter(Boolean)
-      .join(', ')
+  // Julat tarikh aktiviti yang perlu dimuat untuk view semasa
+  const julat = useMemo(() => {
+    if (pandangan === 'harian') return { mula: tarikhPilih, tamat: tarikhPilih }
+    if (pandangan === 'mingguan') return { mula: mingguMula, tamat: tambahHari(mingguMula, 6) }
+    const [y, m] = bulanPilih.split('-').map(Number)
+    return { mula: `${bulanPilih}-01`, tamat: akhirBulan(y, m) }
+  }, [pandangan, tarikhPilih, mingguMula, bulanPilih])
+
+  useEffect(() => {
+    createClient()
+      .from('aktiviti')
+      .select(SELECT_SLOT)
+      .eq('status', 'Aktif')
+      .gte('tarikh', julat.mula)
+      .lte('tarikh', julat.tamat)
+      .order('tarikh')
+      .order('masa_mula')
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(error)
+          return
+        }
+        setAktivitiTempoh((data ?? []) as unknown as Aktiviti[])
+      })
+  }, [julat, versi])
 
   const muatData = useCallback(async () => {
     const supabase = createClient()
@@ -92,6 +132,7 @@ export function JadualKlient({
     }
     setSlot((dataSlot ?? []) as unknown as Slot[])
     setAktiviti((dataAktiviti ?? []) as unknown as Aktiviti[])
+    setVersi((v) => v + 1)
   }, [])
 
   // Penapis cawangan menapis slot Kumpulan sahaja — slot Personal sentiasa
@@ -102,12 +143,28 @@ export function JadualKlient({
 
   const aktivitiDipapar = aktiviti.filter((a) => a.status === 'Aktif')
 
-  const namaSlot = (s: Slot) => (s.jenis === 'Kumpulan' ? s.cawangan?.nama ?? '—' : s.pelajar?.nama_penuh ?? '—')
+  const bukaEditSlot = (s: Slot) => setModalSlot({ buka: true, edit: s })
+  const bukaEditAktiviti = (a: Aktiviti) => setModalAktiviti({ buka: true, edit: a })
+
+  const togolPandangan = (p: Pandangan, label: string) => (
+    <button
+      key={p}
+      onClick={() => setPandangan(p)}
+      style={{
+        padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+        background: pandangan === p ? 'var(--primary)' : 'transparent',
+        color: pandangan === p ? '#fff' : 'var(--text-muted)',
+        border: 'none',
+      }}
+    >
+      {label}
+    </button>
+  )
 
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px', marginBottom: '4px' }}>
             Jadual Kelas
@@ -131,61 +188,56 @@ export function JadualKlient({
           >
             <Plus size={15} /> Tambah Slot
           </button>
+          <button
+            onClick={() => setModalAktiviti({ buka: true, edit: null })}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: 'var(--primary)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            <Plus size={15} /> Tambah Aktiviti
+          </button>
         </div>
       </div>
 
-      {/* Grid mingguan */}
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '20px', marginBottom: '24px', overflowX: 'auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(120px, 1fr))', gap: '10px', minWidth: '880px' }}>
-          {HARI.map((nama, hari) => {
-            const slotHari = slotDipapar.filter((s) => s.hari_minggu === hari)
-            const ialahHariIni = hari === hariIni
-            return (
-              <div key={hari} style={{ borderRadius: '14px', padding: '10px', background: ialahHariIni ? '#F7FEE7' : 'var(--bg)', border: ialahHariIni ? '1.5px solid var(--accent)' : '1px solid var(--border)' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: ialahHariIni ? '#3F6212' : 'var(--text-muted)', marginBottom: '10px', textAlign: 'center' }}>
-                  {nama}{ialahHariIni ? ' · HARI INI' : ''}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {slotHari.length === 0 ? (
-                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>—</div>
-                  ) : slotHari.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => setModalSlot({ buka: true, edit: s })}
-                      title="Klik untuk edit"
-                      style={{ textAlign: 'left', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 10px', cursor: 'pointer', fontFamily: 'inherit', display: 'block', width: '100%' }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text)' }}>
-                          {formatMasa(s.masa_mula)}
-                        </span>
-                        <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: '20px', background: s.jenis === 'Kumpulan' ? '#ECFCCB' : '#DBEAFE', color: s.jenis === 'Kumpulan' ? '#3F6212' : '#1E40AF' }}>
-                          {s.jenis}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', lineHeight: 1.3 }}>
-                        {namaSlot(s)}
-                      </div>
-                      {(s.jenis === 'Personal' && s.cawangan) && (
-                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>{s.cawangan.nama}</div>
-                      )}
-                      {s.jurulatih_ids.length > 0 && (
-                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>J: {namaJurulatih(s.jurulatih_ids)}</div>
-                      )}
-                      {s.lokasi && (
-                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>📍 {s.lokasi}</div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-        <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '12px' }}>
-          Klik mana-mana slot untuk edit atau padam. Masa dipapar ialah masa mula kelas.
-        </p>
+      {/* Togol pandangan */}
+      <div style={{ display: 'inline-flex', gap: '4px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '4px', marginBottom: '16px' }}>
+        {togolPandangan('harian', 'Harian')}
+        {togolPandangan('mingguan', 'Mingguan')}
+        {togolPandangan('bulanan', 'Bulanan')}
       </div>
+
+      {pandangan === 'harian' && (
+        <PandanganHarian
+          tarikh={tarikhPilih}
+          onUbahTarikh={setTarikhPilih}
+          slot={slotDipapar}
+          aktiviti={aktivitiTempoh}
+          namaJurulatih={namaJurulatih}
+          onEditSlot={bukaEditSlot}
+          onEditAktiviti={bukaEditAktiviti}
+        />
+      )}
+      {pandangan === 'mingguan' && (
+        <PandanganMingguan
+          mingguMula={mingguMula}
+          onUbahMinggu={setMingguMula}
+          slot={slotDipapar}
+          aktiviti={aktivitiTempoh}
+          namaJurulatih={namaJurulatih}
+          onEditSlot={bukaEditSlot}
+          onEditAktiviti={bukaEditAktiviti}
+        />
+      )}
+      {pandangan === 'bulanan' && (
+        <PandanganBulanan
+          bulan={bulanPilih}
+          onUbahBulan={setBulanPilih}
+          slot={slotDipapar}
+          aktiviti={aktivitiTempoh}
+          onPilihTarikh={(t) => {
+            setTarikhPilih(t)
+            setPandangan('harian')
+          }}
+        />
+      )}
 
       {/* Aktiviti akan datang */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '24px' }}>
@@ -193,12 +245,6 @@ export function JadualKlient({
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <CalendarDays size={17} style={{ color: 'var(--text-muted)' }} /> Aktiviti Akan Datang
           </h2>
-          <button
-            onClick={() => setModalAktiviti({ buka: true, edit: null })}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', background: 'var(--primary)', border: 'none', borderRadius: '10px', fontSize: '12.5px', fontWeight: 700, color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            <Plus size={14} /> Tambah Aktiviti
-          </button>
         </div>
 
         {aktivitiDipapar.length === 0 ? (
@@ -237,7 +283,7 @@ export function JadualKlient({
                     </div>
                   </div>
                   <button
-                    onClick={() => setModalAktiviti({ buka: true, edit: a })}
+                    onClick={() => bukaEditAktiviti(a)}
                     aria-label={`Edit ${a.nama}`}
                     style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: '10px', fontSize: '12px', fontWeight: 600, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}
                   >

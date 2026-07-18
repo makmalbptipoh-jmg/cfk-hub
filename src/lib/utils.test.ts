@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { akhirBulan, tarikhTempatan, bulanTempatan, formatRinggit, kirYuranBulanan, hariMinggu, formatMasa, HARI } from './utils'
+import { akhirBulan, tarikhTempatan, bulanTempatan, formatRinggit, kirYuranBulanan, hariMinggu, formatMasa, HARI, tambahHari } from './utils'
 
 describe('akhirBulan', () => {
   it('memulangkan hari akhir bulan yang betul', () => {
@@ -51,6 +51,19 @@ describe('hariMinggu', () => {
   it('betul pada hari pertama & akhir bulan', () => {
     expect(hariMinggu('2026-07-01')).toBe(3) // Rabu
     expect(hariMinggu('2026-07-31')).toBe(5) // Jumaat
+  })
+})
+
+describe('tambahHari', () => {
+  it('tambah dan tolak hari dengan betul', () => {
+    expect(tambahHari('2026-07-18', 1)).toBe('2026-07-19')
+    expect(tambahHari('2026-07-18', -6)).toBe('2026-07-12')
+  })
+  it('melintasi sempadan bulan dan tahun', () => {
+    expect(tambahHari('2026-07-31', 1)).toBe('2026-08-01')
+    expect(tambahHari('2026-12-31', 1)).toBe('2027-01-01')
+    expect(tambahHari('2026-03-01', -1)).toBe('2026-02-28')
+    expect(tambahHari('2024-03-01', -1)).toBe('2024-02-29') // tahun lompat
   })
 })
 
