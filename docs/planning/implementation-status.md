@@ -4,6 +4,17 @@
 
 ## ⚡ SESI 9 (18 Jul 2026)
 
+### Page Jadual Kelas + Aktiviti + Notifikasi Jadual (BELUM commit — build+typecheck+17 ujian LULUS; DIUJI PENUH browser localhost)
+Keperluan user: satu tempat rujuk jadual supaya tak lupa — kelas kumpulan per cawangan, kelas personal (dikaitkan pelajar), aktiviti lain CFK. Keputusan user: loceng+widget (tiada push), akses admin sahaja, personal = slot mingguan DAN ad-hoc.
+- ⚠️ **WAJIB run `scripts/sql/jadual-kelas.sql` dalam Supabase SQL Editor SEBELUM deploy/uji** — 2 jadual baharu: `jadual_slot` (kelas berulang mingguan: jenis Kumpulan/Personal, hari_minggu 0-6, masa, cawangan/pelajar/jurulatih, CHECK Kumpulan wajib cawangan & Personal wajib pelajar) + `aktiviti` (acara bertarikh: kategori Pertandingan/Kem/Mesyuarat/Kelas Personal/Kelas Ganti/Lain-lain, status Aktif/Dibatalkan). RLS: baca semua authenticated (sedia utk jurulatih kelak), tulis admin. Kod merosot anggun jika jadual tiada (page/widget kosong, tiada crash).
+- **Page `/jadual`** (admin, sidebar "Jadual Kelas" ikon CalendarDays): grid mingguan Ahad–Sabtu (kolum hari ini highlight hijau) + senarai Aktiviti Akan Datang. Penapis cawangan (slot Personal sentiasa dipapar — pelajar personal boleh hadir mana-mana cawangan). Klik slot → edit.
+- `ModalSlot`: toggle Kumpulan/Personal, CariPelajar utk Personal, hari+masa, jurulatih/lokasi/nota pilihan; **amaran pertindihan lembut** (hari sama + masa bertindih + jurulatih/cawangan sama → amaran kuning + butang "Simpan Juga"); padam 2-klik ("Sah Padam?"). `ModalAktiviti`: nama/kategori/tarikh/masa/lokasi/penerangan; kategori Kelas Personal wajib pelajar; butang Batalkan (status) + Padam.
+- **Notifikasi loceng** (`notifikasi.ts`): jenis baharu `jadual_hari_ini` (1 agregat/hari, kunci `jadual_hari_ini:<tarikh>`) + `aktiviti_esok` (1 per aktiviti, kunci `aktiviti_esok:<id>`); auto-selesai bila hari berlalu / aktiviti dibatal. Tarikh esok dikira Date.UTC (bebas zon masa).
+- **Widget dashboard "Jadual Hari Ini"** (bawah carta trend): slot hari ini + aktiviti hari ini, susun ikut masa, pautan ke /jadual; SENTIASA hari semasa (tak ikut penapis bulan/cawangan dashboard).
+- Utils baharu dikongsi: `HARI`, `hariMinggu()` (dipromosi dari LaporanKelasKlient), `formatMasa()` ('15:30:00'→'3:30 PTG') + 5 ujian baharu (17 semua). HARI duplikat dibuang dari LaporanKelasKlient & laporan/page.
+- **SQL sudah di-run user (18 Jul) + DIUJI PENUH dalam browser localhost (login Google chessforkids80)**: tambah slot Kumpulan (Klebang Ahad 10-12 + jurulatih) → kolum betul ✅; slot Personal via CariPelajar (CHUA, Sabtu 3-4ptg, lokasi) → kolum Sabtu ✅; amaran pertindihan kuning + "Simpan Juga" oren ✅; aktiviti esok (Pertandingan 19 Jul) → senarai ✅; loceng badge 2: "Aktiviti esok" + "Jadual hari ini: Sabtu ini 1 kelas personal" ✅; widget dashboard papar slot personal hari ini ✅; edit modal prapopulasi ✅; padam 2-klik "Sah Padam?" ✅; auto-selesai aktiviti_esok selepas aktiviti dipadam ✅; tiada console error. Semua data ujian dipadam selepas ujian (jadual kini kosong — user isi jadual sebenar).
+- Lint: +2 `any` dalam dashboard (ikut gaya sedia ada fail itu; CI tak semak lint).
+
 ### Log Masuk dengan Google (OAuth) — LIVE
 User minta cara login "moden" (asalnya tanya magic link; keputusan akhir Google OAuth macam SPDMI — pilih e-mel terus masuk, tiada e-mel dihantar, tiada Resend/SMTP diperlukan).
 - **Hibrid:** butang "Log Masuk dengan Google" jadi cara UTAMA di `/login`; borang kata laluan kekal sebagai sandaran (tersembunyi di sebalik toggle "Log masuk dengan kata laluan").

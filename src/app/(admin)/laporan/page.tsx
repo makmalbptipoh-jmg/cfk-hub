@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { FileText, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { akhirBulan } from '@/lib/utils'
+import { akhirBulan, HARI } from '@/lib/utils'
 import { CariPelajar, type PelajarCarian } from '@/components/pelajar/CariPelajar'
 import { LaporanKelasKlient } from './_components/LaporanKelasKlient'
 import { toast } from '@/lib/stores/toast-store'
@@ -44,8 +44,6 @@ function bulanSemasa() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
-
-const HARI = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu']
 
 function formatTarikhPanjang(dateStr: string) {
   const d = new Date(dateStr)

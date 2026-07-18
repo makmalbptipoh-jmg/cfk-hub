@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { akhirBulan, tarikhTempatan, bulanTempatan, formatRinggit, kirYuranBulanan } from './utils'
+import { akhirBulan, tarikhTempatan, bulanTempatan, formatRinggit, kirYuranBulanan, hariMinggu, formatMasa, HARI } from './utils'
 
 describe('akhirBulan', () => {
   it('memulangkan hari akhir bulan yang betul', () => {
@@ -38,6 +38,35 @@ describe('formatRinggit', () => {
     const s = formatRinggit(70)
     expect(s).toContain('RM')
     expect(s).toContain('70.00')
+  })
+})
+
+describe('hariMinggu', () => {
+  it('memulangkan hari minggu yang betul, bebas zon masa', () => {
+    expect(hariMinggu('2026-07-05')).toBe(0) // Ahad
+    expect(hariMinggu('2026-07-18')).toBe(6) // Sabtu
+    expect(hariMinggu('2026-07-13')).toBe(1) // Isnin
+    expect(HARI[hariMinggu('2026-07-05')]).toBe('Ahad')
+  })
+  it('betul pada hari pertama & akhir bulan', () => {
+    expect(hariMinggu('2026-07-01')).toBe(3) // Rabu
+    expect(hariMinggu('2026-07-31')).toBe(5) // Jumaat
+  })
+})
+
+describe('formatMasa', () => {
+  it('menerima HH:MM:SS dari Postgres TIME', () => {
+    expect(formatMasa('15:30:00')).toBe('3:30 PTG')
+    expect(formatMasa('09:00:00')).toBe('9:00 PG')
+  })
+  it('menerima HH:MM dari input type=time', () => {
+    expect(formatMasa('20:15')).toBe('8:15 MLM')
+    expect(formatMasa('12:00')).toBe('12:00 TGH')
+  })
+  it('sempadan tengah malam dan tengah hari', () => {
+    expect(formatMasa('00:00:00')).toBe('12:00 PG')
+    expect(formatMasa('14:59')).toBe('2:59 TGH')
+    expect(formatMasa('19:00')).toBe('7:00 MLM')
   })
 })
 

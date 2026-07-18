@@ -74,6 +74,26 @@ export function formatNoTelefon(no: string): string {
   return no
 }
 
+// Nama hari minggu BM — indeks sama dengan getUTCDay() (0=Ahad ... 6=Sabtu).
+export const HARI = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu']
+
+// Hari minggu bagi tarikh 'YYYY-MM-DD' — dikira terus dari nombor, bebas zon masa.
+export function hariMinggu(tarikh: string): number {
+  const [y, m, d] = tarikh.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
+}
+
+// Format masa Postgres TIME ('15:30:00' atau '15:30') → '3:30 PTG'.
+// 12-jam dengan penanda BM: PG (pagi), TGH (tengah hari), PTG (petang), MLM (malam).
+export function formatMasa(masa: string): string {
+  const [jamStr, minitStr] = masa.split(':')
+  const jam = Number(jamStr)
+  const minit = minitStr ?? '00'
+  const penanda = jam < 12 ? 'PG' : jam < 15 ? 'TGH' : jam < 19 ? 'PTG' : 'MLM'
+  const jam12 = jam % 12 === 0 ? 12 : jam % 12
+  return `${jam12}:${minit} ${penanda}`
+}
+
 export function kirYuranBulanan(jenisKelas: string): number {
   switch (jenisKelas) {
     case 'Kumpulan':

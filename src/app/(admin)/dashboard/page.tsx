@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh } from '@/lib/utils'
+import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh, tarikhTempatan, hariMinggu, HARI, formatMasa } from '@/lib/utils'
 import Link from 'next/link'
-import { Users, CalendarCheck, Wallet, AlertCircle, MessageCircle } from 'lucide-react'
+import { Users, CalendarCheck, CalendarDays, Wallet, AlertCircle, MessageCircle } from 'lucide-react'
 import { DashboardFilter } from './_components/DashboardFilter'
 import { CartaTrend } from './_components/CartaTrend'
 
@@ -36,6 +36,10 @@ export default async function DashboardPage({
   const mulaB = `${tahun}-${String(bulanNum).padStart(2, '0')}-01`
   const akhirB = akhirBulanUtil(tahun, bulanNum)
 
+  // Jadual hari ini — SENTIASA hari semasa, tidak terjejas penapis bulan/cawangan
+  const tarikhHariIni = tarikhTempatan()
+  const hariIni = hariMinggu(tarikhHariIni)
+
   // Parallel fetch semua data
   let pelajarQuery = supabase.from('pelajar').select('id, nama_penuh, no_telefon, cawangan_daftar_id').eq('status', 'Aktif')
   if (cawId) pelajarQuery = pelajarQuery.eq('cawangan_daftar_id', cawId)
@@ -49,6 +53,8 @@ export default async function DashboardPage({
     { data: profil },
     { data: resitTahun },
     { data: kehadiranTahun },
+    { data: slotHariIni },
+    { data: aktivitiHariIni },
   ] = await Promise.all([
     pelajarQuery,
     supabase.from('kehadiran').select('pelajar_id, status, cawangan_sesi_id').gte('tarikh', mulaB).lte('tarikh', akhirB),
@@ -58,6 +64,8 @@ export default async function DashboardPage({
     supabase.from('pengguna_profil').select('nama').eq('id', (await supabase.auth.getUser()).data.user?.id ?? '').single(),
     supabase.from('resit').select('jumlah, tarikh_bayar, pelajar:pelajar_id(cawangan_daftar_id)').eq('status', 'Aktif').gte('tarikh_bayar', `${tahun}-01-01`).lte('tarikh_bayar', `${tahun}-12-31`),
     supabase.from('kehadiran').select('tarikh, cawangan_sesi_id').eq('status', 'Hadir').gte('tarikh', `${tahun}-01-01`).lte('tarikh', `${tahun}-12-31`),
+    supabase.from('jadual_slot').select('id, jenis, masa_mula, lokasi, cawangan:cawangan_id(nama), pelajar:pelajar_id(nama_penuh), jurulatih:jurulatih_id(nama_penuh)').eq('status', 'Aktif').eq('hari_minggu', hariIni).order('masa_mula'),
+    supabase.from('aktiviti').select('id, nama, kategori, masa_mula, lokasi, pelajar:pelajar_id(nama_penuh)').eq('status', 'Aktif').eq('tarikh', tarikhHariIni).order('masa_mula'),
   ])
 
   // Siri 12-bulan untuk carta trend (ikut cawangan dipilih)
@@ -118,6 +126,29 @@ export default async function DashboardPage({
     }
   }
   const statCawangan = Object.values(kehadiranPerCawangan).filter((c) => c.hadir + c.tidakHadir + c.cuti > 0)
+
+  // === Widget: Jadual Hari Ini (slot mingguan + aktiviti bertarikh) ===
+  type BarisJadual = { id: string; masa: string | null; label: string; nama: string; info: string; warnaBg: string; warnaText: string }
+  const barisJadual: BarisJadual[] = [
+    ...(slotHariIni ?? []).map((s: any) => ({
+      id: `slot-${s.id}`,
+      masa: s.masa_mula as string | null,
+      label: s.jenis as string,
+      nama: s.jenis === 'Kumpulan' ? (s.cawangan?.nama ?? '—') : (s.pelajar?.nama_penuh ?? '—'),
+      info: [s.jurulatih ? `J: ${s.jurulatih.nama_penuh}` : null, s.lokasi].filter(Boolean).join(' · '),
+      warnaBg: s.jenis === 'Kumpulan' ? '#ECFCCB' : '#DBEAFE',
+      warnaText: s.jenis === 'Kumpulan' ? '#3F6212' : '#1E40AF',
+    })),
+    ...(aktivitiHariIni ?? []).map((a: any) => ({
+      id: `akt-${a.id}`,
+      masa: a.masa_mula as string | null,
+      label: a.kategori as string,
+      nama: a.nama as string,
+      info: [a.pelajar?.nama_penuh, a.lokasi].filter(Boolean).join(' · '),
+      warnaBg: '#FEF3C7',
+      warnaText: '#92400E',
+    })),
+  ].sort((a, b) => (a.masa ?? '99').localeCompare(b.masa ?? '99'))
 
   const namaPengguna = (profil as any)?.nama ?? 'Admin'
   const waktu = new Date().getHours()
@@ -214,6 +245,39 @@ export default async function DashboardPage({
 
       {/* Carta Trend */}
       <CartaTrend pendapatan={pendapatanBulanan} kehadiran={kehadiranBulanan} tahun={tahun} />
+
+      {/* Jadual Hari Ini */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', marginBottom: '18px' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <CalendarDays size={15} style={{ color: 'var(--text-muted)' }} />
+            Jadual Hari Ini — {HARI[hariIni]}
+          </h2>
+          <Link href="/jadual" style={{ fontSize: '12px', color: 'var(--text-muted)', textDecoration: 'none' }}>
+            Lihat jadual penuh →
+          </Link>
+        </div>
+        {barisJadual.length === 0 ? (
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+            Tiada kelas atau aktiviti hari ini.
+          </div>
+        ) : (
+          <div>
+            {barisJadual.map((b, i) => (
+              <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 20px', borderTop: i > 0 ? '1px solid var(--border)' : 'none', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', minWidth: '76px' }}>
+                  {b.masa ? formatMasa(b.masa) : '—'}
+                </span>
+                <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: b.warnaBg, color: b.warnaText }}>
+                  {b.label}
+                </span>
+                <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>{b.nama}</span>
+                {b.info && <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{b.info}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* 2 Kolum Utama */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: '18px', marginBottom: '18px' }}>

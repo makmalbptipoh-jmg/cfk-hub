@@ -688,6 +688,99 @@ export interface Database {
         }
         Relationships: []
       }
+      jadual_slot: {
+        Row: {
+          id: string
+          jenis: 'Kumpulan' | 'Personal'
+          hari_minggu: number
+          masa_mula: string
+          masa_tamat: string
+          cawangan_id: string | null
+          pelajar_id: string | null
+          jurulatih_id: string | null
+          lokasi: string | null
+          nota: string | null
+          status: 'Aktif' | 'Tidak Aktif'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          jenis: 'Kumpulan' | 'Personal'
+          hari_minggu: number
+          masa_mula: string
+          masa_tamat: string
+          cawangan_id?: string | null
+          pelajar_id?: string | null
+          jurulatih_id?: string | null
+          lokasi?: string | null
+          nota?: string | null
+          status?: 'Aktif' | 'Tidak Aktif'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          jenis?: 'Kumpulan' | 'Personal'
+          hari_minggu?: number
+          masa_mula?: string
+          masa_tamat?: string
+          cawangan_id?: string | null
+          pelajar_id?: string | null
+          jurulatih_id?: string | null
+          lokasi?: string | null
+          nota?: string | null
+          status?: 'Aktif' | 'Tidak Aktif'
+          created_at?: string
+        }
+        Relationships: []
+      }
+      aktiviti: {
+        Row: {
+          id: string
+          nama: string
+          kategori: 'Pertandingan' | 'Kem' | 'Mesyuarat' | 'Kelas Personal' | 'Kelas Ganti' | 'Lain-lain'
+          tarikh: string
+          masa_mula: string | null
+          masa_tamat: string | null
+          lokasi: string | null
+          cawangan_id: string | null
+          pelajar_id: string | null
+          jurulatih_id: string | null
+          penerangan: string | null
+          status: 'Aktif' | 'Dibatalkan'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nama: string
+          kategori?: 'Pertandingan' | 'Kem' | 'Mesyuarat' | 'Kelas Personal' | 'Kelas Ganti' | 'Lain-lain'
+          tarikh: string
+          masa_mula?: string | null
+          masa_tamat?: string | null
+          lokasi?: string | null
+          cawangan_id?: string | null
+          pelajar_id?: string | null
+          jurulatih_id?: string | null
+          penerangan?: string | null
+          status?: 'Aktif' | 'Dibatalkan'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nama?: string
+          kategori?: 'Pertandingan' | 'Kem' | 'Mesyuarat' | 'Kelas Personal' | 'Kelas Ganti' | 'Lain-lain'
+          tarikh?: string
+          masa_mula?: string | null
+          masa_tamat?: string | null
+          lokasi?: string | null
+          cawangan_id?: string | null
+          pelajar_id?: string | null
+          jurulatih_id?: string | null
+          penerangan?: string | null
+          status?: 'Aktif' | 'Dibatalkan'
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

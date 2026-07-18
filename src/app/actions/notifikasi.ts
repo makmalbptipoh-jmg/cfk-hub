@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { akhirBulan } from '@/lib/utils'
+import { akhirBulan, tarikhTempatan, hariMinggu, HARI, formatMasa } from '@/lib/utils'
 
 export type Notifikasi = {
   id: string
@@ -92,6 +92,88 @@ export async function janaDanMuatNotifikasi(): Promise<{ senarai: Notifikasi[]; 
       .from('notifikasi')
       .update({ dibaca: true, dibaca_pada: new Date().toISOString() })
       .in('id', idSelesai)
+  }
+
+  // ---- Peringatan jadual: kelas/aktiviti hari ini + aktiviti esok ----
+  const tarikhHariIni = tarikhTempatan()
+  const hariIni = hariMinggu(tarikhHariIni)
+  // Tarikh esok dikira dari nombor tarikh (Date.UTC) — bebas zon masa pelayan.
+  const [ty, tm, td] = tarikhHariIni.split('-').map(Number)
+  const tarikhEsok = new Date(Date.UTC(ty, tm - 1, td + 1)).toISOString().split('T')[0]
+
+  const [{ data: slotHariIni }, { data: aktivitiDua }] = await Promise.all([
+    supabase
+      .from('jadual_slot')
+      .select('id, jenis')
+      .eq('status', 'Aktif')
+      .eq('hari_minggu', hariIni),
+    supabase
+      .from('aktiviti')
+      .select('id, nama, tarikh, masa_mula, lokasi')
+      .eq('status', 'Aktif')
+      .in('tarikh', [tarikhHariIni, tarikhEsok]),
+  ])
+
+  const aktivitiHariIni = (aktivitiDua ?? []).filter((a) => a.tarikh === tarikhHariIni)
+  const aktivitiEsok = (aktivitiDua ?? []).filter((a) => a.tarikh === tarikhEsok)
+
+  // SATU notifikasi agregat sehari jika ada apa-apa dalam jadual hari ini
+  const bilKumpulan = (slotHariIni ?? []).filter((s) => s.jenis === 'Kumpulan').length
+  const bilPersonal = (slotHariIni ?? []).filter((s) => s.jenis === 'Personal').length
+  if (bilKumpulan + bilPersonal + aktivitiHariIni.length > 0) {
+    const bahagian: string[] = []
+    if (bilKumpulan > 0) bahagian.push(`${bilKumpulan} kelas kumpulan`)
+    if (bilPersonal > 0) bahagian.push(`${bilPersonal} kelas personal`)
+    if (aktivitiHariIni.length > 0) {
+      bahagian.push(`${aktivitiHariIni.length} aktiviti (${aktivitiHariIni[0].nama}${aktivitiHariIni.length > 1 ? ', ...' : ''})`)
+    }
+    await supabase.from('notifikasi').upsert(
+      [{
+        jenis: 'jadual_hari_ini',
+        tajuk: 'Jadual hari ini',
+        mesej: `${HARI[hariIni]} ini: ${bahagian.join(', ')}.`,
+        pautan: '/jadual',
+        kunci: `jadual_hari_ini:${tarikhHariIni}`,
+        rujukan_id: null,
+      }],
+      { onConflict: 'kunci', ignoreDuplicates: true }
+    )
+  }
+
+  // SATU notifikasi per aktiviti esok — aktiviti bertarikh mudah dilupakan
+  if (aktivitiEsok.length > 0) {
+    const barisEsok = aktivitiEsok.map((a) => ({
+      jenis: 'aktiviti_esok',
+      tajuk: 'Aktiviti esok',
+      mesej: `${a.nama} pada ${tarikhEsok.split('-').reverse().join('/')}${a.masa_mula ? ` ${formatMasa(a.masa_mula)}` : ''}${a.lokasi ? ` di ${a.lokasi}` : ''}.`,
+      pautan: '/jadual',
+      kunci: `aktiviti_esok:${a.id}`,
+      rujukan_id: a.id,
+    }))
+    await supabase.from('notifikasi').upsert(barisEsok, { onConflict: 'kunci', ignoreDuplicates: true })
+  }
+
+  // Auto-selesai peringatan jadual yang sudah luput:
+  // - 'jadual_hari_ini' hari sebelumnya
+  // - 'aktiviti_esok' yang aktivitinya dibatal/dipadam atau tarikhnya berlalu
+  const { data: notifJadual } = await supabase
+    .from('notifikasi')
+    .select('id, jenis, kunci, rujukan_id')
+    .in('jenis', ['jadual_hari_ini', 'aktiviti_esok'])
+    .eq('dibaca', false)
+  const idAktivitiEsok = new Set(aktivitiEsok.map((a) => a.id))
+  const idLuput = (notifJadual ?? [])
+    .filter((n) =>
+      n.jenis === 'jadual_hari_ini'
+        ? n.kunci !== `jadual_hari_ini:${tarikhHariIni}`
+        : !n.rujukan_id || !idAktivitiEsok.has(n.rujukan_id)
+    )
+    .map((n) => n.id)
+  if (idLuput.length > 0) {
+    await supabase
+      .from('notifikasi')
+      .update({ dibaca: true, dibaca_pada: new Date().toISOString() })
+      .in('id', idLuput)
   }
 
   const [{ data: senarai }, { count }] = await Promise.all([

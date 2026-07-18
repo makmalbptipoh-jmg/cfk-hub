@@ -3,20 +3,13 @@
 import { useState, useEffect } from 'react'
 import { Users, Download, FileSpreadsheet } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { akhirBulan, tarikhTempatan, bulanTempatan } from '@/lib/utils'
+import { akhirBulan, tarikhTempatan, bulanTempatan, HARI, hariMinggu } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
 import type { BarisKelas } from '@/components/pdf/LaporanKelasPDF'
 
 type Cawangan = { id: string; nama: string }
 type Mod = 'harian' | 'bulanan'
 
-const HARI = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu']
-
-/** Hari minggu bagi tarikh 'YYYY-MM-DD' — dikira terus dari nombor, bebas zon masa. */
-function hariMinggu(tarikh: string) {
-  const [y, m, d] = tarikh.split('-').map(Number)
-  return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
-}
 function namaBulan(bulan1hingga12: number) {
   return new Date(2000, bulan1hingga12 - 1, 1).toLocaleString('ms-MY', { month: 'long' })
 }
