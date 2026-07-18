@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh, tarikhTempatan, hariMinggu, HARI, formatMasa, NAMA_BULAN } from '@/lib/utils'
 import { perluBayarBulan } from '@/lib/tunggakan'
+import { tapisSesiDibatalkan, SELECT_SESI_GAJI, SELECT_SLOT_GAJI, type SlotUntukGaji } from '@/lib/gajiSesi'
 import Link from 'next/link'
 import { Users, CalendarCheck, CalendarDays, Wallet, AlertCircle, MessageCircle } from 'lucide-react'
 import { DashboardFilter } from './_components/DashboardFilter'
@@ -55,6 +56,8 @@ export default async function DashboardPage({
     { data: hadirJurulatihBulan },
     { data: gajiJurulatihBulan },
     { data: batalHariIni },
+    { data: slotGaji },
+    { data: batalBulanGaji },
   ] = await Promise.all([
     pelajarQuery,
     supabase.from('kehadiran').select('pelajar_id, status, cawangan_sesi_id').gte('tarikh', mulaB).lte('tarikh', akhirB),
@@ -67,9 +70,11 @@ export default async function DashboardPage({
     supabase.from('jadual_slot').select('id, jenis, masa_mula, lokasi, jurulatih_ids, cawangan:cawangan_id(nama), pelajar:pelajar_id(nama_penuh)').eq('status', 'Aktif').eq('hari_minggu', hariIni).order('masa_mula'),
     supabase.from('aktiviti').select('id, nama, kategori, masa_mula, lokasi, pelajar:pelajar_id(nama_penuh)').eq('status', 'Aktif').eq('tarikh', tarikhHariIni).order('masa_mula'),
     supabase.from('jurulatih').select('id, nama_penuh, kadar_bayaran, status'),
-    supabase.from('kehadiran_jurulatih').select('jurulatih_id').eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
+    supabase.from('kehadiran_jurulatih').select(SELECT_SESI_GAJI).eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
     supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, status').eq('bulan_bayaran', bulan).eq('tahun_bayaran', tahun),
     supabase.from('jadual_slot_batal').select('slot_id').eq('tarikh', tarikhHariIni),
+    supabase.from('jadual_slot').select(SELECT_SLOT_GAJI),
+    supabase.from('jadual_slot_batal').select('slot_id, tarikh').gte('tarikh', mulaB).lte('tarikh', akhirB),
   ])
 
   // Siri 12-bulan untuk carta trend (ikut cawangan dipilih)
@@ -163,8 +168,14 @@ export default async function DashboardPage({
   ].sort((a, b) => (a.masa ?? '99').localeCompare(b.masa ?? '99'))
 
   // === Widget: Gaji Jurulatih (hari gaji 30hb) ===
+  // Sesi pada kelas DIBATALKAN tidak dikira dalam gaji
+  const { sah: hadirJurulatihSah } = tapisSesiDibatalkan(
+    (hadirJurulatihBulan ?? []) as { jurulatih_id: string; tarikh: string; cawangan_id: string | null; jenis_kelas: string | null }[],
+    (slotGaji ?? []) as SlotUntukGaji[],
+    batalBulanGaji ?? []
+  )
   const sesiJurulatihBulan: Record<string, number> = {}
-  for (const k of hadirJurulatihBulan ?? []) {
+  for (const k of hadirJurulatihSah) {
     sesiJurulatihBulan[k.jurulatih_id] = (sesiJurulatihBulan[k.jurulatih_id] ?? 0) + 1
   }
   // Jumlah dibayar per jurulatih bulan ini (boleh >1 rekod — bayaran separa)

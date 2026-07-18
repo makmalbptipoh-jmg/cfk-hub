@@ -5,12 +5,14 @@ import Link from 'next/link'
 import { ArrowLeft, Wallet, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { akhirBulan, bulanTempatan, formatRinggit, NAMA_BULAN } from '@/lib/utils'
+import { tapisSesiDibatalkan, SELECT_SESI_GAJI, SELECT_SLOT_GAJI, type SlotUntukGaji } from '@/lib/gajiSesi'
 
 type BarisGaji = {
   id: string
   nama_penuh: string
   sesiKumpulan: number
   sesiPersonal: number
+  sesiDibuang: number
   kadar: number
   patutDibayar: number
   bakiAdvance: number
@@ -58,24 +60,36 @@ export default function GajiBulananPage() {
     const mulaImbas = `${tahunImbas}-${String(bulanImbas).padStart(2, '0')}-01`
     const bulanSebelum = [1, 2, 3].map((n) => tolakBulan(tahun, bulanNum, n))
 
-    const [{ data: jurulatih }, { data: hadir }, { data: bayaran }, { data: advance }, { data: hadirImbas }, { data: bayaranImbas }] = await Promise.all([
+    const [{ data: jurulatih }, { data: hadir }, { data: bayaran }, { data: advance }, { data: hadirImbas }, { data: bayaranImbas }, { data: slotGaji }, { data: batalGaji }] = await Promise.all([
       supabase.from('jurulatih').select('id, nama_penuh, kadar_bayaran').eq('status', 'Aktif').order('nama_penuh'),
-      supabase.from('kehadiran_jurulatih').select('jurulatih_id, jenis_kelas').eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
+      supabase.from('kehadiran_jurulatih').select(SELECT_SESI_GAJI).eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
       supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, status').eq('bulan_bayaran', namaBulan).eq('tahun_bayaran', tahun),
       supabase.from('advance_jurulatih').select('jurulatih_id, baki').eq('status', 'Belum Selesai'),
-      supabase.from('kehadiran_jurulatih').select('jurulatih_id, tarikh').eq('status', 'Hadir').gte('tarikh', mulaImbas).lt('tarikh', mulaB),
+      supabase.from('kehadiran_jurulatih').select(SELECT_SESI_GAJI).eq('status', 'Hadir').gte('tarikh', mulaImbas).lt('tarikh', mulaB),
       supabase
         .from('bayaran_jurulatih')
         .select('jurulatih_id, bulan_bayaran, tahun_bayaran')
         .in('bulan_bayaran', bulanSebelum.map(([, m]) => NAMA_BULAN[m - 1]))
         .in('tahun_bayaran', [...new Set(bulanSebelum.map(([y]) => y))]),
+      supabase.from('jadual_slot').select(SELECT_SLOT_GAJI),
+      supabase.from('jadual_slot_batal').select('slot_id, tarikh').gte('tarikh', mulaImbas).lte('tarikh', akhirB),
     ])
+
+    // Sesi pada kelas DIBATALKAN tidak dikira dalam gaji
+    const slotSemua = (slotGaji ?? []) as SlotUntukGaji[]
+    const batalSemua = batalGaji ?? []
+    const { sah: hadirSah, dibuang: hadirDibuang } = tapisSesiDibatalkan(hadir ?? [], slotSemua, batalSemua)
+    const { sah: hadirImbasSah } = tapisSesiDibatalkan(hadirImbas ?? [], slotSemua, batalSemua)
 
     const sesiK: Record<string, number> = {}
     const sesiP: Record<string, number> = {}
-    for (const k of hadir ?? []) {
+    const sesiBuang: Record<string, number> = {}
+    for (const k of hadirSah) {
       if (k.jenis_kelas === 'Personal') sesiP[k.jurulatih_id] = (sesiP[k.jurulatih_id] ?? 0) + 1
       else sesiK[k.jurulatih_id] = (sesiK[k.jurulatih_id] ?? 0) + 1
+    }
+    for (const k of hadirDibuang) {
+      sesiBuang[k.jurulatih_id] = (sesiBuang[k.jurulatih_id] ?? 0) + 1
     }
     const dibayar: Record<string, number> = {}
     for (const b of bayaran ?? []) {
@@ -101,6 +115,7 @@ export default function GajiBulananPage() {
         nama_penuh: j.nama_penuh,
         sesiKumpulan: kump,
         sesiPersonal: pers,
+        sesiDibuang: sesiBuang[j.id] ?? 0,
         kadar,
         patutDibayar: patut,
         bakiAdvance: bakiAdv[j.id] ?? 0,
@@ -113,7 +128,7 @@ export default function GajiBulananPage() {
     // Tunggakan: bulan lepas dengan sesi Hadir tetapi tiada langsung rekod bayaran
     const namaJurulatih = new Map((jurulatih ?? []).map((j) => [j.id, j.nama_penuh]))
     const sesiPerBulan = new Map<string, number>() // `${jurulatih_id}:${tahun}-${bulan}`
-    for (const k of hadirImbas ?? []) {
+    for (const k of hadirImbasSah) {
       const kunci = `${k.jurulatih_id}:${String(k.tarikh).slice(0, 7)}`
       sesiPerBulan.set(kunci, (sesiPerBulan.get(kunci) ?? 0) + 1)
     }
@@ -256,6 +271,11 @@ export default function GajiBulananPage() {
                               (K:{b.sesiKumpulan} P:{b.sesiPersonal})
                             </span>
                           )}
+                          {b.sesiDibuang > 0 && (
+                            <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#DC2626', marginTop: '2px' }}>
+                              −{b.sesiDibuang} sesi kelas dibatalkan
+                            </div>
+                          )}
                         </td>
                         <td style={{ padding: '11px 14px', fontSize: '13px', color: 'var(--text)', whiteSpace: 'nowrap' }}>
                           {b.kadar > 0 ? formatRinggit(b.kadar) : '—'}
@@ -301,7 +321,8 @@ export default function GajiBulananPage() {
             )}
           </div>
           <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '12px' }}>
-            Sesi hadir direkod oleh jurulatih sendiri (check-in) atau admin. Baki Advance ditolak automatik semasa rekod bayaran gaji.
+            Sesi hadir direkod oleh jurulatih sendiri (check-in) atau admin. Sesi pada kelas yang DIBATALKAN tidak dikira dalam gaji.
+            Baki Advance ditolak automatik semasa rekod bayaran gaji.
           </p>
         </>
       )}

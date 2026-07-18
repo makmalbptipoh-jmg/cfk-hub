@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { akhirBulan, bulanTempatan, NAMA_BULAN } from '@/lib/utils'
+import { tapisSesiDibatalkan, SELECT_SLOT_GAJI, type SlotUntukGaji } from '@/lib/gajiSesi'
 import { TabelJurulatih } from './_components/TabelJurulatih'
 
 export const dynamic = 'force-dynamic'
@@ -13,14 +14,16 @@ export default async function JurulatihPage() {
   const mulaB = `${tahunIni}-${String(bulanNum).padStart(2, '0')}-01`
   const akhirB = akhirBulan(tahunIni, bulanNum)
 
-  const [{ data: raw }, { data: cawangan }, { data: bayaran }, { data: hadir }] = await Promise.all([
+  const [{ data: raw }, { data: cawangan }, { data: bayaran }, { data: hadir }, { data: slotGaji }, { data: batalBulan }] = await Promise.all([
     supabase
       .from('jurulatih')
       .select('id, nama_penuh, no_telefon, kadar_bayaran, tarikh_mula, status, cawangan_ids')
       .order('nama_penuh'),
     supabase.from('cawangan').select('id, nama'),
     supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, status, bulan_bayaran, tahun_bayaran, tarikh_bayar, created_at'),
-    supabase.from('kehadiran_jurulatih').select('jurulatih_id, tarikh').eq('status', 'Hadir'),
+    supabase.from('kehadiran_jurulatih').select('jurulatih_id, tarikh, cawangan_id, jenis_kelas').eq('status', 'Hadir'),
+    supabase.from('jadual_slot').select(SELECT_SLOT_GAJI),
+    supabase.from('jadual_slot_batal').select('slot_id, tarikh').gte('tarikh', mulaB).lte('tarikh', akhirB),
   ])
 
   const peta: Record<string, string> = {}
@@ -52,12 +55,15 @@ export default async function JurulatihPage() {
   }
 
   const pointPerJurulatih: Record<string, number> = {}
-  const sesiBulanIniPerJurulatih: Record<string, number> = {}
   for (const k of hadir ?? []) {
     pointPerJurulatih[k.jurulatih_id] = (pointPerJurulatih[k.jurulatih_id] ?? 0) + 1
-    if (k.tarikh >= mulaB && k.tarikh <= akhirB) {
-      sesiBulanIniPerJurulatih[k.jurulatih_id] = (sesiBulanIniPerJurulatih[k.jurulatih_id] ?? 0) + 1
-    }
+  }
+  // Sesi bulan ini untuk kiraan gaji — sesi pada kelas DIBATALKAN tidak dikira
+  const hadirBulanIni = (hadir ?? []).filter((k) => k.tarikh >= mulaB && k.tarikh <= akhirB)
+  const { sah: hadirBulanIniSah } = tapisSesiDibatalkan(hadirBulanIni, (slotGaji ?? []) as SlotUntukGaji[], batalBulan ?? [])
+  const sesiBulanIniPerJurulatih: Record<string, number> = {}
+  for (const k of hadirBulanIniSah) {
+    sesiBulanIniPerJurulatih[k.jurulatih_id] = (sesiBulanIniPerJurulatih[k.jurulatih_id] ?? 0) + 1
   }
 
   // Dibayar bulan ini per jurulatih (untuk kiraan gaji belum bayar)

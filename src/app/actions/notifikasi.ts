@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { akhirBulan, tarikhTempatan, hariMinggu, HARI, formatMasa, NAMA_BULAN } from '@/lib/utils'
 import { perluBayarBulan } from '@/lib/tunggakan'
+import { tapisSesiDibatalkan, SELECT_SESI_GAJI, SELECT_SLOT_GAJI, type SlotUntukGaji } from '@/lib/gajiSesi'
 
 export type Notifikasi = {
   id: string
@@ -187,14 +188,18 @@ export async function janaDanMuatNotifikasi(): Promise<{ senarai: Notifikasi[]; 
   const hariAkhirBulan = Number(akhirB.split('-')[2])
   const hariGaji = Math.min(30, hariAkhirBulan) // Februari tiada 30hb — guna hari akhir bulan
 
-  const [{ data: jurulatihAktif }, { data: hadirJurulatih }, { data: gajiBulanIni }] = await Promise.all([
+  const [{ data: jurulatihAktif }, { data: hadirJurulatih }, { data: gajiBulanIni }, { data: slotGaji }, { data: batalBulan }] = await Promise.all([
     supabase.from('jurulatih').select('id, nama_penuh, kadar_bayaran').eq('status', 'Aktif'),
-    supabase.from('kehadiran_jurulatih').select('jurulatih_id').eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
+    supabase.from('kehadiran_jurulatih').select(SELECT_SESI_GAJI).eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
     supabase.from('bayaran_jurulatih').select('jurulatih_id').eq('bulan_bayaran', namaBulan).eq('tahun_bayaran', tahun).eq('status', 'Sudah Bayar'),
+    supabase.from('jadual_slot').select(SELECT_SLOT_GAJI),
+    supabase.from('jadual_slot_batal').select('slot_id, tarikh').gte('tarikh', mulaB).lte('tarikh', akhirB),
   ])
 
+  // Sesi pada kelas DIBATALKAN tidak dikira dalam gaji
+  const { sah: hadirJurulatihSah } = tapisSesiDibatalkan(hadirJurulatih ?? [], (slotGaji ?? []) as SlotUntukGaji[], batalBulan ?? [])
   const kiraSesiJurulatih: Record<string, number> = {}
-  for (const k of hadirJurulatih ?? []) {
+  for (const k of hadirJurulatihSah) {
     kiraSesiJurulatih[k.jurulatih_id] = (kiraSesiJurulatih[k.jurulatih_id] ?? 0) + 1
   }
   const idSudahGaji = new Set((gajiBulanIni ?? []).map((b) => b.jurulatih_id))

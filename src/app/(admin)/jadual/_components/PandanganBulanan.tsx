@@ -128,8 +128,8 @@ export function PandanganBulanan({
                     </span>
                   )}
                   {bilBatal > 0 && (
-                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: '20px', background: '#FEE2E2', color: '#DC2626', textDecoration: 'line-through' }}>
-                      {bilBatal} batal
+                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: '20px', background: '#FEE2E2', color: '#DC2626' }}>
+                      −{bilBatal} dibatalkan
                     </span>
                   )}
                   {aktivitiHari.slice(0, 2).map((a) => {
@@ -152,7 +152,7 @@ export function PandanganBulanan({
         </div>
       </div>
       <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '12px' }}>
-        &quot;N kelas&quot; = kelas mingguan berulang pada hari itu. Klik mana-mana tarikh untuk lihat butiran harian.
+        &quot;N kelas&quot; = kelas mingguan pada hari itu (yang dibatalkan sudah ditolak). Klik mana-mana tarikh untuk lihat butiran harian.
       </p>
     </div>
   )

@@ -184,8 +184,17 @@ export default function LaporanBilKelasPage() {
                     <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', color: 'var(--text)' }}>{b.kumpulan}</td>
                     <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', color: 'var(--text)' }}>{b.personal}</td>
                     <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', color: 'var(--text)' }}>{b.ganti}</td>
-                    <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: b.dibatalkan > 0 ? 700 : 400, color: b.dibatalkan > 0 ? '#DC2626' : 'var(--text-muted)' }}>{b.dibatalkan}</td>
-                    <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>{b.jumlah}</td>
+                    <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: b.dibatalkan > 0 ? 700 : 400, color: b.dibatalkan > 0 ? '#DC2626' : 'var(--text-muted)' }}>
+                      {b.dibatalkan > 0 ? `−${b.dibatalkan}` : 0}
+                    </td>
+                    <td style={{ padding: '11px 16px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>{b.jumlah}</div>
+                      {b.dibatalkan > 0 && (
+                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                          {b.jumlah + b.dibatalkan} dijadual − {b.dibatalkan} batal
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 <tr style={{ borderTop: '2px solid var(--text)', background: '#F8FAFC' }}>
@@ -193,14 +202,23 @@ export default function LaporanBilKelasPage() {
                   <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: 800, color: 'var(--text)' }}>{jumlahBesar.kumpulan}</td>
                   <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: 800, color: 'var(--text)' }}>{jumlahBesar.personal}</td>
                   <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: 800, color: 'var(--text)' }}>{jumlahBesar.ganti}</td>
-                  <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: 800, color: jumlahBesar.dibatalkan > 0 ? '#DC2626' : 'var(--text-muted)' }}>{jumlahBesar.dibatalkan}</td>
-                  <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>{jumlahBesar.jumlah}</td>
+                  <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: 800, color: jumlahBesar.dibatalkan > 0 ? '#DC2626' : 'var(--text-muted)' }}>
+                    {jumlahBesar.dibatalkan > 0 ? `−${jumlahBesar.dibatalkan}` : 0}
+                  </td>
+                  <td style={{ padding: '11px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>{jumlahBesar.jumlah}</div>
+                    {jumlahBesar.dibatalkan > 0 && (
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                        {jumlahBesar.jumlah + jumlahBesar.dibatalkan} dijadual − {jumlahBesar.dibatalkan} batal
+                      </div>
+                    )}
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
           <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '12px' }}>
-            Jumlah = Kumpulan + Personal + Kelas Ganti (kelas dibatalkan tidak dikira). Kiraan berdasarkan jadual kelas semasa —
+            Jumlah = kelas dijadualkan TOLAK yang dibatalkan (+ Kelas Ganti). Kiraan berdasarkan jadual kelas semasa —
             slot yang dipadam atau dinyahaktifkan tidak dikira untuk bulan lampau.
           </p>
         </>

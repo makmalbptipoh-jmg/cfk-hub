@@ -28,7 +28,12 @@ Keperluan user: tiada total gaji yang perlu dibayar (bil kelas × rate). Penemua
 - **D2 Borang bayaran disatukan**: `/bayaran/baharu` kini hub dengan togol **"Yuran Bulanan" | "Sesi Kelas Personal"** (`BorangHub` + `BorangYuran` + `BorangSesiPersonal`, gaya kongsi `src/components/ui/borang.ts`); `/bayaran/personal/baharu` → redirect `/bayaran/baharu?jenis=personal` (link lama tak putus); link TabelResit dikemaskini.
 - **Cadangan CEO ditangguh** (pusingan depan): role granular (kewangan/pengurus cawangan), kemas naming 3 laluan kehadiran, admin UI responsive mobile, laporan berjadual/email, backup automatik.
 
-**Typecheck + build LULUS (42 route).** Ujian browser diperlukan selepas run SQL: batal kelas → 3 view + dashboard + PDF; laporan bil kelas + PDF; /jurulatih/gaji; borang bayaran togol dua-dua aliran.
+**Typecheck + build LULUS (42 route).** SQL `batal-kelas.sql` sudah di-run user; deploy production READY (7c7c6b0). User uji batal kelas ✅.
+
+### Susulan (maklum balas ujian user): kelas dibatalkan mesti DITOLAK dari jumlah
+- **Gaji jurulatih**: helper baharu `src/lib/gajiSesi.ts` (`tapisSesiDibatalkan`) — check-in `kehadiran_jurulatih` pada tarikh+cawangan+jenis yang SEMUA slot sepadannya dibatalkan → TIDAK dikira gaji (kelas ad-hoc tanpa slot dikekalkan). Diterapkan di 5 tempat: `/jurulatih/gaji` (+ nota merah "−N sesi kelas dibatalkan"), senarai jurulatih, dashboard, notifikasi gaji, page bayaran jurulatih (auto-isi bilSesi modal — cap bilSesi turut turun).
+- **Laporan Bil. Kelas**: penolakan memang sudah berlaku (disahkan dengan simulasi data production) tetapi tak kelihatan — kini kolum Dibatalkan papar "−N" dan kolum Jumlah papar subteks "X dijadual − N batal" (skrin + PDF); nota diperjelas.
+- **View Bulanan**: chip "−N dibatalkan" (sebelum ini "N batal"); nota kaki jelaskan kiraan sudah ditolak.
 
 ## ⚡ SESI 9 (18 Jul 2026)
 

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { akhirBulan } from '@/lib/utils'
+import { tapisSesiDibatalkan, SELECT_SESI_GAJI, SELECT_SLOT_GAJI, type SlotUntukGaji } from '@/lib/gajiSesi'
 import { BayaranJurulatihKlient } from './_components/BayaranJurulatihKlient'
 
 export default async function BayaranJurulatihPage({
@@ -22,12 +23,16 @@ export default async function BayaranJurulatihPage({
     { data: bayaran },
     { data: kehadiranBulanIni },
     { data: advanceTertunggak },
+    { data: slotGaji },
+    { data: batalBulan },
   ] = await Promise.all([
     supabase.from('jurulatih').select('id, nama_penuh, no_ic, kadar_bayaran, no_tng, tng_qr_path').eq('id', id).single(),
     supabase.from('bayaran_jurulatih').select('id, bulan_bayaran, tahun_bayaran, bilangan_sesi, kadar_per_sesi, jumlah, potongan_advance, kaedah_bayaran, tarikh_bayar, status, nota').eq('jurulatih_id', id).order('tahun_bayaran', { ascending: false }).order('bulan_bayaran', { ascending: false }),
-    supabase.from('kehadiran_jurulatih').select('status').eq('jurulatih_id', id).gte('tarikh', mulaB).lte('tarikh', akhirB).eq('status', 'Hadir'),
+    supabase.from('kehadiran_jurulatih').select(SELECT_SESI_GAJI).eq('jurulatih_id', id).gte('tarikh', mulaB).lte('tarikh', akhirB).eq('status', 'Hadir'),
     // FIFO: advance paling lama diselesaikan dahulu
     supabase.from('advance_jurulatih').select('id, baki, tarikh_advance').eq('jurulatih_id', id).eq('status', 'Belum Selesai').order('tarikh_advance', { ascending: true }),
+    supabase.from('jadual_slot').select(SELECT_SLOT_GAJI),
+    supabase.from('jadual_slot_batal').select('slot_id, tarikh').gte('tarikh', mulaB).lte('tarikh', akhirB),
   ])
 
   if (error || !jurulatih) notFound()
@@ -41,7 +46,13 @@ export default async function BayaranJurulatihPage({
     tngQrUrl = signed?.signedUrl ?? null
   }
 
-  const bilSesiHadirBulanIni = kehadiranBulanIni?.length ?? 0
+  // Sesi pada kelas DIBATALKAN tidak dikira dalam gaji
+  const { sah: sesiSah } = tapisSesiDibatalkan(
+    kehadiranBulanIni ?? [],
+    (slotGaji ?? []) as SlotUntukGaji[],
+    batalBulan ?? []
+  )
+  const bilSesiHadirBulanIni = sesiSah.length
   const sudahRekodBulanIni = (bayaran ?? []).some(
     (b: any) => b.bulan_bayaran === bulanSemasa && b.tahun_bayaran === tahunSemasa
   )

@@ -76,9 +76,16 @@ export function LaporanBilKelasPDF({ bulanLabel, baris, jumlahBesar, tarikhJana 
               <Text style={[s.sel, s.selNombor, { flex: L.nombor }]}>{b.personal}</Text>
               <Text style={[s.sel, s.selNombor, { flex: L.nombor }]}>{b.ganti}</Text>
               <Text style={b.dibatalkan > 0 ? [s.sel, s.selNombor, s.selBatal, { flex: L.nombor }] : [s.sel, s.selNombor, { flex: L.nombor }]}>
-                {b.dibatalkan}
+                {b.dibatalkan > 0 ? `-${b.dibatalkan}` : '0'}
               </Text>
-              <Text style={[s.sel, s.selNombor, { flex: L.nombor, fontFamily: 'Helvetica-Bold' }]}>{b.jumlah}</Text>
+              <View style={{ flex: L.nombor }}>
+                <Text style={[s.sel, s.selNombor, { fontFamily: 'Helvetica-Bold', paddingBottom: 0 }]}>{b.jumlah}</Text>
+                {b.dibatalkan > 0 ? (
+                  <Text style={{ fontSize: 6.5, color: '#94A3B8', textAlign: 'center', paddingBottom: 5 }}>
+                    ({b.jumlah + b.dibatalkan} - {b.dibatalkan})
+                  </Text>
+                ) : null}
+              </View>
             </View>
           ))}
           <View style={s.barisJumlah}>
@@ -87,14 +94,14 @@ export function LaporanBilKelasPDF({ bulanLabel, baris, jumlahBesar, tarikhJana 
             <Text style={[s.selJumlah, s.selNombor, { flex: L.nombor }]}>{jumlahBesar.personal}</Text>
             <Text style={[s.selJumlah, s.selNombor, { flex: L.nombor }]}>{jumlahBesar.ganti}</Text>
             <Text style={jumlahBesar.dibatalkan > 0 ? [s.selJumlah, s.selNombor, s.selBatal, { flex: L.nombor }] : [s.selJumlah, s.selNombor, { flex: L.nombor }]}>
-              {jumlahBesar.dibatalkan}
+              {jumlahBesar.dibatalkan > 0 ? `-${jumlahBesar.dibatalkan}` : '0'}
             </Text>
             <Text style={[s.selJumlah, s.selNombor, { flex: L.nombor }]}>{jumlahBesar.jumlah}</Text>
           </View>
         </View>
 
         <Text style={s.nota}>
-          Jumlah = Kumpulan + Personal + Kelas Ganti (kelas dibatalkan tidak dikira). Kiraan berdasarkan jadual kelas semasa.
+          Jumlah = kelas dijadualkan TOLAK yang dibatalkan (+ Kelas Ganti). Kiraan berdasarkan jadual kelas semasa.
         </Text>
 
         <View style={s.footer}>
