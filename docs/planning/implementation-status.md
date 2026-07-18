@@ -1,6 +1,34 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 18 Jul 2026 (Sesi 9)
+**Dikemaskini:** 18 Jul 2026 (Sesi 10)
+
+## ⚡ SESI 10 (18 Jul 2026)
+
+### A. Batal kelas untuk minggu tertentu (build LULUS; BELUM diuji browser)
+Keperluan user: kadang-kadang kelas minggu tertentu dibatalkan (cuti umum dll) — slot mingguan berulang tiada cara tanda batal per-tarikh. Keputusan user: papar strikethrough + label merah "Dibatalkan" (bukan hilang).
+- ⚠️ **WAJIB run `scripts/sql/batal-kelas.sql` dalam Supabase SQL Editor SEBELUM deploy** — jadual baharu `jadual_slot_batal` (slot_id CASCADE, tarikh, sebab, direkod_oleh, UNIQUE(slot_id,tarikh)) + RLS (baca authenticated, tulis admin).
+- **UI**: butang "Batal minggu ini" pada kad slot (view Mingguan & Harian) → `ModalBatalSlot` (butiran kelas + sebab pilihan → insert + notifikasi loceng `kelas_dibatalkan:{slot}:{tarikh}`); slot dibatal papar strikethrough + pill merah, klik → mod "Aktifkan Semula" (delete row + notifikasi ditanda dibaca). View Bulanan: kiraan "N kelas" tolak batal + chip "M batal". Kad slot ditukar `<button>` → `<div role="button">` (elak butang bersarang).
+- **Ripple**: widget dashboard "Jadual Hari Ini" papar batal (strikethrough); `notifikasi.ts` tolak slot batal dari kiraan `jadual_hari_ini` + auto-selesai `kelas_dibatalkan` bila tarikh berlalu; **PDF mingguan** kini khusus-minggu (tarikh pada header kolum, slot batal bergaris + "DIBATALKAN").
+
+### B. Laporan Bilangan Kelas per cawangan + PDF
+- Tab baharu **"Bil. Kelas"** bawah /laporan (`laporan/bilangan-kelas/page.tsx`): pilih bulan → jadual per cawangan: Kumpulan | Personal | Kelas Ganti | Dibatalkan | **Jumlah** + jumlah besar + baris "Personal (tiada cawangan)".
+- Kiraan BERJADUAL: loop tarikh bulan (util bebas zon masa), slot Aktif padan hari − `jadual_slot_batal` + aktiviti 'Kelas Ganti' Aktif. Nota pada UI: "kiraan berdasarkan jadual semasa" (slot dipadam/dinyahaktif tidak dikira utk bulan lampau — had diketahui).
+- PDF: `src/components/pdf/LaporanBilKelasPDF.tsx` (A4 portrait, logo CFK, jadual + jumlah besar), corak dynamic import sama.
+
+### C. Gaji jurulatih "macam syarikat sebenar" — angka TERHUTANG + payroll bulanan
+Keperluan user: tiada total gaji yang perlu dibayar (bil kelas × rate). Penemuan: check-in jurulatih & kadar dah wujud; yang hilang angka terhutang.
+- **Senarai jurulatih**: kolum baharu "Belum Bayar" (merah jika > 0, "RM0.00 ✓" hijau jika selesai) + kad stat "Gaji Belum Dibayar {bulan}" (formula: sesi Hadir bulan ini × kadar_bayaran − Σ dibayar bulan ini, clamp ≥ 0) + butang "Gaji Bulanan" → page baharu. Bulan kini ikut waktu Malaysia (bukan zon pelayan).
+- **Page payroll baharu `/jurulatih/gaji`**: pilih bulan → jadual semua jurulatih Aktif: Sesi (pecahan K/P) | Kadar | Patut Dibayar | Baki Advance | Sudah Dibayar | **Baki** | status (Selesai/Sebahagian/Belum Bayar/Tiada Sesi) | link Rekod Bayaran (guna ModalRekodBayaran sedia ada). 3 kad ringkasan + baris JUMLAH + **panel Tunggakan** (imbas 3 bulan sebelum: sesi hadir tapi tiada rekod bayaran).
+- **Dashboard**: kiraan gaji kini ambil kira **bayaran separa** (baki = anggaran − dibayar, bukan boolean ada-rekod).
+- Refactor: `NAMA_BULAN` dipromosi ke `src/lib/utils.ts` (duplikasi dibuang dari notifikasi.ts, dashboard, pelajar, laporan/tunggakan).
+
+### D. Penambahbaikan CEO (audit keseluruhan app — pilihan user: semua 3 bundle)
+- **D1 Quick wins**: `Topbar.tsx` mati DIPADAM; `loading.tsx` skeleton (komponen kongsi `SkeletonPage`) pada dashboard/pelajar/jurulatih/bayaran/jadual/laporan/kewangan; link **Notifikasi** ditambah dalam Sidebar; **`supabase/schema.sql` ditulis semula penuh** (21 jadual + RLS + trigger + bucket, selari dengan DB sebenar; nota: rujukan penuh, migrasi tambahan di scripts/sql/).
+- **D3 Logik tunggakan disatukan**: `src/lib/tunggakan.ts` (rule: ≥4 hadir tanpa resit aktif — `MIN_HADIR_TUNGGAKAN`, `perluBayarBulan`, `kiraHadirPerBulan`, `setResitDibayar`, `bulanTertunggak`); 5 pengguna direfactor (dashboard, pelajar, laporan/tunggakan, notifikasi, makluman) — kelakuan SAMA.
+- **D2 Borang bayaran disatukan**: `/bayaran/baharu` kini hub dengan togol **"Yuran Bulanan" | "Sesi Kelas Personal"** (`BorangHub` + `BorangYuran` + `BorangSesiPersonal`, gaya kongsi `src/components/ui/borang.ts`); `/bayaran/personal/baharu` → redirect `/bayaran/baharu?jenis=personal` (link lama tak putus); link TabelResit dikemaskini.
+- **Cadangan CEO ditangguh** (pusingan depan): role granular (kewangan/pengurus cawangan), kemas naming 3 laluan kehadiran, admin UI responsive mobile, laporan berjadual/email, backup automatik.
+
+**Typecheck + build LULUS (42 route).** Ujian browser diperlukan selepas run SQL: batal kelas → 3 view + dashboard + PDF; laporan bil kelas + PDF; /jurulatih/gaji; borang bayaran togol dua-dua aliran.
 
 ## ⚡ SESI 9 (18 Jul 2026)
 

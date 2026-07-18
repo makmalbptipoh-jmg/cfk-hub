@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { akhirBulan } from '@/lib/utils'
+import { akhirBulan, bulanTempatan, NAMA_BULAN } from '@/lib/utils'
 import { TabelJurulatih } from './_components/TabelJurulatih'
 
 export const dynamic = 'force-dynamic'
@@ -7,11 +7,11 @@ export const dynamic = 'force-dynamic'
 export default async function JurulatihPage() {
   const supabase = await createClient()
 
-  const sekarang = new Date()
-  const bulanIni = sekarang.toLocaleString('ms-MY', { month: 'long' })
-  const tahunIni = sekarang.getFullYear()
-  const mulaB = `${tahunIni}-${String(sekarang.getMonth() + 1).padStart(2, '0')}-01`
-  const akhirB = akhirBulan(tahunIni, sekarang.getMonth() + 1)
+  // Bulan semasa waktu Malaysia — bukan zon pelayan
+  const [tahunIni, bulanNum] = bulanTempatan().split('-').map(Number)
+  const bulanIni = NAMA_BULAN[bulanNum - 1]
+  const mulaB = `${tahunIni}-${String(bulanNum).padStart(2, '0')}-01`
+  const akhirB = akhirBulan(tahunIni, bulanNum)
 
   const [{ data: raw }, { data: cawangan }, { data: bayaran }, { data: hadir }] = await Promise.all([
     supabase
@@ -60,26 +60,39 @@ export default async function JurulatihPage() {
     }
   }
 
-  const jurulatih = (raw ?? []).map((j: any) => ({
-    id: j.id,
-    nama_penuh: j.nama_penuh,
-    no_telefon: j.no_telefon,
-    kadar_bayaran: j.kadar_bayaran,
-    tarikh_mula: j.tarikh_mula,
-    status: j.status,
-    cawangan_nama: (j.cawangan_ids ?? []).map((id: string) => peta[id] ?? '').filter(Boolean).join(', '),
-    gaji_dibayar: gajiPerJurulatih[j.id] ?? 0,
-    sesi_bulan_ini: sesiBulanIniPerJurulatih[j.id] ?? 0,
-    point: pointPerJurulatih[j.id] ?? 0,
-    bayaran_terkini: terkiniPerJurulatih[j.id]
-      ? {
-          bulan_bayaran: terkiniPerJurulatih[j.id].bulan_bayaran,
-          tahun_bayaran: terkiniPerJurulatih[j.id].tahun_bayaran,
-          jumlah: terkiniPerJurulatih[j.id].jumlah,
-          tarikh_bayar: terkiniPerJurulatih[j.id].tarikh_bayar,
-        }
-      : null,
-  }))
+  // Dibayar bulan ini per jurulatih (untuk kiraan gaji belum bayar)
+  const dibayarBulanIniPerJurulatih: Record<string, number> = {}
+  for (const b of bayaran ?? []) {
+    if (b.status === 'Sudah Bayar' && b.bulan_bayaran === bulanIni && b.tahun_bayaran === tahunIni) {
+      dibayarBulanIniPerJurulatih[b.jurulatih_id] = (dibayarBulanIniPerJurulatih[b.jurulatih_id] ?? 0) + b.jumlah
+    }
+  }
+
+  const jurulatih = (raw ?? []).map((j: any) => {
+    const sesiBulanIni = sesiBulanIniPerJurulatih[j.id] ?? 0
+    return {
+      id: j.id,
+      nama_penuh: j.nama_penuh,
+      no_telefon: j.no_telefon,
+      kadar_bayaran: j.kadar_bayaran,
+      tarikh_mula: j.tarikh_mula,
+      status: j.status,
+      cawangan_nama: (j.cawangan_ids ?? []).map((id: string) => peta[id] ?? '').filter(Boolean).join(', '),
+      gaji_dibayar: gajiPerJurulatih[j.id] ?? 0,
+      sesi_bulan_ini: sesiBulanIni,
+      // Gaji belum bayar bulan ini = sesi Hadir × kadar − sudah dibayar (clamp ≥ 0)
+      gaji_belum_bayar: Math.max(0, sesiBulanIni * (j.kadar_bayaran ?? 0) - (dibayarBulanIniPerJurulatih[j.id] ?? 0)),
+      point: pointPerJurulatih[j.id] ?? 0,
+      bayaran_terkini: terkiniPerJurulatih[j.id]
+        ? {
+            bulan_bayaran: terkiniPerJurulatih[j.id].bulan_bayaran,
+            tahun_bayaran: terkiniPerJurulatih[j.id].tahun_bayaran,
+            jumlah: terkiniPerJurulatih[j.id].jumlah,
+            tarikh_bayar: terkiniPerJurulatih[j.id].tarikh_bayar,
+          }
+        : null,
+    }
+  })
 
   // Statistik dashboard keseluruhan
   const totalGajiDibayar = Object.values(gajiPerJurulatih).reduce((s, n) => s + n, 0)
@@ -87,6 +100,9 @@ export default async function JurulatihPage() {
     .filter((b) => b.status === 'Sudah Bayar' && b.bulan_bayaran === bulanIni && b.tahun_bayaran === tahunIni)
     .reduce((s, b) => s + b.jumlah, 0)
   const sesiHadirBulanIni = Object.values(sesiBulanIniPerJurulatih).reduce((s, n) => s + n, 0)
+  const totalBelumBayar = jurulatih
+    .filter((j) => j.status === 'Aktif')
+    .reduce((s, j) => s + j.gaji_belum_bayar, 0)
 
   return (
     <TabelJurulatih
@@ -95,6 +111,7 @@ export default async function JurulatihPage() {
         totalGajiDibayar,
         gajiBulanIni,
         sesiHadirBulanIni,
+        totalBelumBayar,
         namaBulan: `${bulanIni} ${tahunIni}`,
       }}
     />

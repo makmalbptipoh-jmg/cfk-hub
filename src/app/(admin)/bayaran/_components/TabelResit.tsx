@@ -76,7 +76,7 @@ export function TabelResit({ resit, bulanTersedia }: Props) {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <Link href="/bayaran/personal/baharu"
+          <Link href="/bayaran/baharu?jenis=personal"
             style={{
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '9px 14px',

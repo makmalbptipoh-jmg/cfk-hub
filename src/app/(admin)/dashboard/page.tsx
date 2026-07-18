@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh, tarikhTempatan, hariMinggu, HARI, formatMasa } from '@/lib/utils'
+import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh, tarikhTempatan, hariMinggu, HARI, formatMasa, NAMA_BULAN } from '@/lib/utils'
+import { perluBayarBulan } from '@/lib/tunggakan'
 import Link from 'next/link'
 import { Users, CalendarCheck, CalendarDays, Wallet, AlertCircle, MessageCircle } from 'lucide-react'
 import { DashboardFilter } from './_components/DashboardFilter'
@@ -12,11 +13,6 @@ export const dynamic = 'force-dynamic'
 function mytNow() {
   return new Date(Date.now() + 8 * 60 * 60 * 1000)
 }
-
-const NAMA_BULAN = [
-  'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
-  'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember',
-]
 
 export default async function DashboardPage({
   searchParams,
@@ -58,6 +54,7 @@ export default async function DashboardPage({
     { data: senaraiJurulatih },
     { data: hadirJurulatihBulan },
     { data: gajiJurulatihBulan },
+    { data: batalHariIni },
   ] = await Promise.all([
     pelajarQuery,
     supabase.from('kehadiran').select('pelajar_id, status, cawangan_sesi_id').gte('tarikh', mulaB).lte('tarikh', akhirB),
@@ -72,6 +69,7 @@ export default async function DashboardPage({
     supabase.from('jurulatih').select('id, nama_penuh, kadar_bayaran, status'),
     supabase.from('kehadiran_jurulatih').select('jurulatih_id').eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
     supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, status').eq('bulan_bayaran', bulan).eq('tahun_bayaran', tahun),
+    supabase.from('jadual_slot_batal').select('slot_id').eq('tarikh', tarikhHariIni),
   ])
 
   // Siri 12-bulan untuk carta trend (ikut cawangan dipilih)
@@ -99,7 +97,7 @@ export default async function DashboardPage({
   }
 
   const pelajarBelumBayar = (pelajarAktif ?? [])
-    .filter((p: any) => (kiraHadirBulan[p.id] ?? 0) >= 4 && !pelajarIdDgnResit.has(p.id))
+    .filter((p: any) => perluBayarBulan(kiraHadirBulan[p.id] ?? 0, pelajarIdDgnResit.has(p.id)))
     .map((p: any) => ({
       id: p.id,
       nama_penuh: p.nama_penuh,
@@ -136,17 +134,22 @@ export default async function DashboardPage({
   // === Widget: Jadual Hari Ini (slot mingguan + aktiviti bertarikh) ===
   const namaJurulatihPeta = new Map((senaraiJurulatih ?? []).map((j) => [j.id, j.nama_penuh]))
   const namaJ = (ids: string[] | null) => (ids ?? []).map((id) => namaJurulatihPeta.get(id)).filter(Boolean).join(', ')
-  type BarisJadual = { id: string; masa: string | null; label: string; nama: string; info: string; warnaBg: string; warnaText: string }
+  const idSlotBatalHariIni = new Set((batalHariIni ?? []).map((b: any) => b.slot_id))
+  type BarisJadual = { id: string; masa: string | null; label: string; nama: string; info: string; warnaBg: string; warnaText: string; dibatalkan: boolean }
   const barisJadual: BarisJadual[] = [
-    ...(slotHariIni ?? []).map((s: any) => ({
-      id: `slot-${s.id}`,
-      masa: s.masa_mula as string | null,
-      label: s.jenis as string,
-      nama: s.jenis === 'Kumpulan' ? (s.cawangan?.nama ?? '—') : (s.pelajar?.nama_penuh ?? '—'),
-      info: [s.jurulatih_ids?.length ? `J: ${namaJ(s.jurulatih_ids)}` : null, s.lokasi].filter(Boolean).join(' · '),
-      warnaBg: s.jenis === 'Kumpulan' ? '#ECFCCB' : '#DBEAFE',
-      warnaText: s.jenis === 'Kumpulan' ? '#3F6212' : '#1E40AF',
-    })),
+    ...(slotHariIni ?? []).map((s: any) => {
+      const dibatalkan = idSlotBatalHariIni.has(s.id)
+      return {
+        id: `slot-${s.id}`,
+        masa: s.masa_mula as string | null,
+        label: dibatalkan ? 'Dibatalkan' : (s.jenis as string),
+        nama: s.jenis === 'Kumpulan' ? (s.cawangan?.nama ?? '—') : (s.pelajar?.nama_penuh ?? '—'),
+        info: [s.jurulatih_ids?.length ? `J: ${namaJ(s.jurulatih_ids)}` : null, s.lokasi].filter(Boolean).join(' · '),
+        warnaBg: dibatalkan ? '#FEE2E2' : s.jenis === 'Kumpulan' ? '#ECFCCB' : '#DBEAFE',
+        warnaText: dibatalkan ? '#DC2626' : s.jenis === 'Kumpulan' ? '#3F6212' : '#1E40AF',
+        dibatalkan,
+      }
+    }),
     ...(aktivitiHariIni ?? []).map((a: any) => ({
       id: `akt-${a.id}`,
       masa: a.masa_mula as string | null,
@@ -155,6 +158,7 @@ export default async function DashboardPage({
       info: [a.pelajar?.nama_penuh, a.lokasi].filter(Boolean).join(' · '),
       warnaBg: '#FEF3C7',
       warnaText: '#92400E',
+      dibatalkan: false,
     })),
   ].sort((a, b) => (a.masa ?? '99').localeCompare(b.masa ?? '99'))
 
@@ -163,20 +167,22 @@ export default async function DashboardPage({
   for (const k of hadirJurulatihBulan ?? []) {
     sesiJurulatihBulan[k.jurulatih_id] = (sesiJurulatihBulan[k.jurulatih_id] ?? 0) + 1
   }
-  const idJurulatihSudahBayar = new Set(
-    (gajiJurulatihBulan ?? []).filter((b: any) => b.status === 'Sudah Bayar').map((b: any) => b.jurulatih_id)
-  )
-  const totalGajiDibayarBulan = (gajiJurulatihBulan ?? [])
-    .filter((b: any) => b.status === 'Sudah Bayar')
-    .reduce((s: number, b: any) => s + (b.jumlah ?? 0), 0)
+  // Jumlah dibayar per jurulatih bulan ini (boleh >1 rekod — bayaran separa)
+  const dibayarPerJurulatih: Record<string, number> = {}
+  for (const b of (gajiJurulatihBulan ?? []).filter((b: any) => b.status === 'Sudah Bayar')) {
+    dibayarPerJurulatih[(b as any).jurulatih_id] = (dibayarPerJurulatih[(b as any).jurulatih_id] ?? 0) + ((b as any).jumlah ?? 0)
+  }
+  const idJurulatihSudahBayar = new Set(Object.keys(dibayarPerJurulatih))
+  const totalGajiDibayarBulan = Object.values(dibayarPerJurulatih).reduce((s, n) => s + n, 0)
+  // Baki terhutang = sesi Hadir × kadar − sudah dibayar (clamp ≥ 0)
   const jurulatihBelumGaji = (senaraiJurulatih ?? [])
-    .filter((j: any) => j.status === 'Aktif' && (sesiJurulatihBulan[j.id] ?? 0) > 0 && !idJurulatihSudahBayar.has(j.id))
-    .map((j: any) => ({
-      id: j.id,
-      nama_penuh: j.nama_penuh,
-      sesi: sesiJurulatihBulan[j.id] ?? 0,
-      anggaran: (sesiJurulatihBulan[j.id] ?? 0) * (j.kadar_bayaran ?? 0),
-    }))
+    .filter((j: any) => j.status === 'Aktif' && (sesiJurulatihBulan[j.id] ?? 0) > 0)
+    .map((j: any) => {
+      const sesi = sesiJurulatihBulan[j.id] ?? 0
+      const anggaran = Math.max(0, sesi * (j.kadar_bayaran ?? 0) - (dibayarPerJurulatih[j.id] ?? 0))
+      return { id: j.id, nama_penuh: j.nama_penuh, sesi, anggaran }
+    })
+    .filter((j) => j.anggaran > 0)
   const totalPerluBayarGaji = jurulatihBelumGaji.reduce((s, j) => s + j.anggaran, 0)
   const dekatHariGaji = now.getUTCDate() >= 27
 
@@ -295,13 +301,13 @@ export default async function DashboardPage({
           <div>
             {barisJadual.map((b, i) => (
               <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 20px', borderTop: i > 0 ? '1px solid var(--border)' : 'none', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', minWidth: '76px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: b.dibatalkan ? '#94A3B8' : 'var(--text)', minWidth: '76px', textDecoration: b.dibatalkan ? 'line-through' : 'none' }}>
                   {b.masa ? formatMasa(b.masa) : '—'}
                 </span>
                 <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: b.warnaBg, color: b.warnaText }}>
                   {b.label}
                 </span>
-                <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>{b.nama}</span>
+                <span style={{ fontSize: '13.5px', fontWeight: 600, color: b.dibatalkan ? '#94A3B8' : 'var(--text)', textDecoration: b.dibatalkan ? 'line-through' : 'none' }}>{b.nama}</span>
                 {b.info && <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{b.info}</span>}
               </div>
             ))}
@@ -465,7 +471,7 @@ export default async function DashboardPage({
                 <div>
                   <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>{j.nama_penuh}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>
-                    {j.sesi} sesi hadir · anggaran {formatRinggit(j.anggaran)}
+                    {j.sesi} sesi hadir · baki perlu dibayar {formatRinggit(j.anggaran)}
                   </div>
                 </div>
                 <Link href={`/jurulatih/${j.id}/bayaran`}

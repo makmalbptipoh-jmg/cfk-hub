@@ -1,7 +1,8 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { akhirBulan, tarikhTempatan, hariMinggu, HARI, formatMasa } from '@/lib/utils'
+import { akhirBulan, tarikhTempatan, hariMinggu, HARI, formatMasa, NAMA_BULAN } from '@/lib/utils'
+import { perluBayarBulan } from '@/lib/tunggakan'
 
 export type Notifikasi = {
   id: string
@@ -12,11 +13,6 @@ export type Notifikasi = {
   dibaca: boolean
   created_at: string
 }
-
-const NAMA_BULAN = [
-  'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
-  'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember',
-]
 
 async function sahAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -58,7 +54,7 @@ export async function janaDanMuatNotifikasi(): Promise<{ senarai: Notifikasi[]; 
   }
 
   const belumBayar = (pelajarAktif ?? []).filter(
-    (p) => (kiraHadir[p.id] ?? 0) >= 4 && !idDgnResit.has(p.id)
+    (p) => perluBayarBulan(kiraHadir[p.id] ?? 0, idDgnResit.has(p.id))
   )
   const idBelumBayar = new Set(belumBayar.map((p) => p.id))
 
@@ -101,7 +97,7 @@ export async function janaDanMuatNotifikasi(): Promise<{ senarai: Notifikasi[]; 
   const [ty, tm, td] = tarikhHariIni.split('-').map(Number)
   const tarikhEsok = new Date(Date.UTC(ty, tm - 1, td + 1)).toISOString().split('T')[0]
 
-  const [{ data: slotHariIni }, { data: aktivitiDua }] = await Promise.all([
+  const [{ data: slotHariIni }, { data: aktivitiDua }, { data: batalHariIni }] = await Promise.all([
     supabase
       .from('jadual_slot')
       .select('id, jenis')
@@ -112,14 +108,18 @@ export async function janaDanMuatNotifikasi(): Promise<{ senarai: Notifikasi[]; 
       .select('id, nama, tarikh, masa_mula, lokasi')
       .eq('status', 'Aktif')
       .in('tarikh', [tarikhHariIni, tarikhEsok]),
+    supabase.from('jadual_slot_batal').select('slot_id').eq('tarikh', tarikhHariIni),
   ])
 
   const aktivitiHariIni = (aktivitiDua ?? []).filter((a) => a.tarikh === tarikhHariIni)
   const aktivitiEsok = (aktivitiDua ?? []).filter((a) => a.tarikh === tarikhEsok)
 
   // SATU notifikasi agregat sehari jika ada apa-apa dalam jadual hari ini
-  const bilKumpulan = (slotHariIni ?? []).filter((s) => s.jenis === 'Kumpulan').length
-  const bilPersonal = (slotHariIni ?? []).filter((s) => s.jenis === 'Personal').length
+  // (slot yang dibatalkan untuk tarikh hari ini tidak dikira)
+  const idSlotBatal = new Set((batalHariIni ?? []).map((b) => b.slot_id))
+  const slotAktifHariIni = (slotHariIni ?? []).filter((s) => !idSlotBatal.has(s.id))
+  const bilKumpulan = slotAktifHariIni.filter((s) => s.jenis === 'Kumpulan').length
+  const bilPersonal = slotAktifHariIni.filter((s) => s.jenis === 'Personal').length
   if (bilKumpulan + bilPersonal + aktivitiHariIni.length > 0) {
     const bahagian: string[] = []
     if (bilKumpulan > 0) bahagian.push(`${bilKumpulan} kelas kumpulan`)
@@ -156,18 +156,22 @@ export async function janaDanMuatNotifikasi(): Promise<{ senarai: Notifikasi[]; 
   // Auto-selesai peringatan jadual yang sudah luput:
   // - 'jadual_hari_ini' hari sebelumnya
   // - 'aktiviti_esok' yang aktivitinya dibatal/dipadam atau tarikhnya berlalu
+  // - 'kelas_dibatalkan' yang tarikhnya (suffix kunci) sudah berlalu
   const { data: notifJadual } = await supabase
     .from('notifikasi')
     .select('id, jenis, kunci, rujukan_id')
-    .in('jenis', ['jadual_hari_ini', 'aktiviti_esok'])
+    .in('jenis', ['jadual_hari_ini', 'aktiviti_esok', 'kelas_dibatalkan'])
     .eq('dibaca', false)
   const idAktivitiEsok = new Set(aktivitiEsok.map((a) => a.id))
   const idLuput = (notifJadual ?? [])
-    .filter((n) =>
-      n.jenis === 'jadual_hari_ini'
-        ? n.kunci !== `jadual_hari_ini:${tarikhHariIni}`
-        : !n.rujukan_id || !idAktivitiEsok.has(n.rujukan_id)
-    )
+    .filter((n) => {
+      if (n.jenis === 'jadual_hari_ini') return n.kunci !== `jadual_hari_ini:${tarikhHariIni}`
+      if (n.jenis === 'kelas_dibatalkan') {
+        const tarikhBatal = n.kunci?.split(':')[2]
+        return !tarikhBatal || tarikhBatal < tarikhHariIni
+      }
+      return !n.rujukan_id || !idAktivitiEsok.has(n.rujukan_id)
+    })
     .map((n) => n.id)
   if (idLuput.length > 0) {
     await supabase

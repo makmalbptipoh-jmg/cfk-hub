@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { akhirBulan } from '@/lib/utils'
+import { perluBayarBulan } from '@/lib/tunggakan'
 import { MaklumanKlient } from './_components/MaklumanKlient'
 
 export const dynamic = 'force-dynamic'
@@ -49,7 +50,7 @@ export default async function MaklumanPage() {
     no_telefon: p.no_telefon ?? '',
     cawangan: (p.cawangan as any)?.nama ?? '—',
     bilHadir: kiraHadir[p.id] ?? 0,
-    perluBayar: (kiraHadir[p.id] ?? 0) >= 4 && !sudahBayar.has(p.id),
+    perluBayar: perluBayarBulan(kiraHadir[p.id] ?? 0, sudahBayar.has(p.id)),
   }))
 
   return (

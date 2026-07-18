@@ -22,6 +22,10 @@ const s = StyleSheet.create({
   slotJenis: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#3F6212', marginBottom: 2 },
   slotJenisPersonal: { color: '#1E40AF' },
   slotButiran: { fontSize: 7, color: '#64748B', lineHeight: 1.35 },
+  slotBoxBatal: { backgroundColor: '#FEF2F2', border: '1px solid #FECACA' },
+  slotBatalLabel: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#DC2626', marginBottom: 2 },
+  teksBatal: { color: '#94A3B8', textDecoration: 'line-through' },
+  kolumHeaderTarikh: { fontSize: 7, color: '#CBD5E1', textAlign: 'center', marginTop: 1 },
   kosong: { fontSize: 8, color: '#94A3B8', textAlign: 'center', padding: '10px 0' },
   footer: { marginTop: 10, paddingTop: 8, borderTop: '1px solid #E2E8F0', flexDirection: 'row', justifyContent: 'space-between' },
   footerText: { fontSize: 7.5, color: '#94A3B8' },
@@ -34,15 +38,17 @@ export type SlotPdf = {
   jenis: 'Kumpulan' | 'Personal'
   jurulatih: string // "" jika tiada
   lokasi: string // "" jika tiada
+  dibatalkan?: boolean // dibatalkan pada minggu yang dicetak
 }
 
 type Props = {
   cawangan: string // nama cawangan dipilih atau "Semua Cawangan"
   slot: SlotPdf[]
   tarikhJana: string // cth. "18/07/2026"
+  tarikhKolum?: string[] // 7 tarikh pendek (Ahad→Sabtu) minggu dicetak, cth "20/07"
 }
 
-export function JadualMingguPDF({ cawangan, slot, tarikhJana }: Props) {
+export function JadualMingguPDF({ cawangan, slot, tarikhJana, tarikhKolum }: Props) {
   return (
     <Document title={`Jadual Kelas Mingguan — ${cawangan}`} author="CFK HUB">
       <Page size="A4" orientation="landscape" style={s.page}>
@@ -67,20 +73,34 @@ export function JadualMingguPDF({ cawangan, slot, tarikhJana }: Props) {
               <View key={hari} style={s.kolum}>
                 <View style={s.kolumHeader}>
                   <Text style={s.kolumHeaderText}>{nama}</Text>
+                  {tarikhKolum?.[hari] ? <Text style={s.kolumHeaderTarikh}>{tarikhKolum[hari]}</Text> : null}
                 </View>
                 <View style={s.kolumBadan}>
                   {slotHari.length === 0 ? (
                     <Text style={s.kosong}>—</Text>
                   ) : (
                     slotHari.map((x, i) => (
-                      <View key={i} style={x.jenis === 'Personal' ? [s.slotBox, s.slotBoxPersonal] : s.slotBox}>
-                        <Text style={s.slotMasa}>{x.masa}</Text>
-                        <Text style={s.slotNama}>{x.nama}</Text>
-                        <Text style={x.jenis === 'Personal' ? [s.slotJenis, s.slotJenisPersonal] : s.slotJenis}>
-                          {x.jenis.toUpperCase()}
-                        </Text>
-                        {x.jurulatih ? <Text style={s.slotButiran}>Jurulatih: {x.jurulatih}</Text> : null}
-                        {x.lokasi ? <Text style={s.slotButiran}>Lokasi: {x.lokasi}</Text> : null}
+                      <View
+                        key={i}
+                        style={
+                          x.dibatalkan
+                            ? [s.slotBox, s.slotBoxBatal]
+                            : x.jenis === 'Personal'
+                              ? [s.slotBox, s.slotBoxPersonal]
+                              : s.slotBox
+                        }
+                      >
+                        <Text style={x.dibatalkan ? [s.slotMasa, s.teksBatal] : s.slotMasa}>{x.masa}</Text>
+                        <Text style={x.dibatalkan ? [s.slotNama, s.teksBatal] : s.slotNama}>{x.nama}</Text>
+                        {x.dibatalkan ? (
+                          <Text style={s.slotBatalLabel}>DIBATALKAN</Text>
+                        ) : (
+                          <Text style={x.jenis === 'Personal' ? [s.slotJenis, s.slotJenisPersonal] : s.slotJenis}>
+                            {x.jenis.toUpperCase()}
+                          </Text>
+                        )}
+                        {x.jurulatih && !x.dibatalkan ? <Text style={s.slotButiran}>Jurulatih: {x.jurulatih}</Text> : null}
+                        {x.lokasi && !x.dibatalkan ? <Text style={s.slotButiran}>Lokasi: {x.lokasi}</Text> : null}
                       </View>
                     ))
                   )}

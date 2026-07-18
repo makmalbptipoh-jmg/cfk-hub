@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Printer } from 'lucide-react'
+import { Ban, ChevronLeft, ChevronRight, Printer, RotateCcw } from 'lucide-react'
 import { HARI, formatMasa, formatTarikhPendek, tarikhTempatan, tambahHari, hariMinggu } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
-import type { Slot, Aktiviti } from './JadualKlient'
+import type { Slot, Aktiviti, Batal } from './JadualKlient'
 import { WARNA_KATEGORI } from './JadualKlient'
 
 const btnNav = {
@@ -18,19 +18,23 @@ export function PandanganMingguan({
   onUbahMinggu,
   slot,
   aktiviti,
+  batal,
   namaJurulatih,
   cawanganLabel,
   onEditSlot,
   onEditAktiviti,
+  onBatalSlot,
 }: {
   mingguMula: string // Ahad minggu dipilih (YYYY-MM-DD)
   onUbahMinggu: (mula: string) => void
   slot: Slot[]
   aktiviti: Aktiviti[]
+  batal: Batal[]
   namaJurulatih: (ids: string[]) => string
   cawanganLabel: string
   onEditSlot: (s: Slot) => void
   onEditAktiviti: (a: Aktiviti) => void
+  onBatalSlot: (s: Slot, tarikh: string) => void
 }) {
   const hariIni = tarikhTempatan()
   const mingguIni = tambahHari(hariIni, -hariMinggu(hariIni))
@@ -48,10 +52,12 @@ export function PandanganMingguan({
         jenis: x.jenis,
         jurulatih: namaJurulatih(x.jurulatih_ids),
         lokasi: x.lokasi ?? (x.jenis === 'Personal' && x.cawangan ? x.cawangan.nama : ''),
+        dibatalkan: batal.some((b) => b.slot_id === x.id && b.tarikh === tambahHari(mingguMula, x.hari_minggu)),
       }))
       const tarikhJana = hariIni.split('-').reverse().join('/')
+      const tarikhKolum = Array.from({ length: 7 }, (_, h) => formatTarikhPendek(tambahHari(mingguMula, h)).slice(0, 5))
       const blob = await pdf(
-        <JadualMingguPDF cawangan={cawanganLabel} slot={slotPdf} tarikhJana={tarikhJana} />
+        <JadualMingguPDF cawangan={cawanganLabel} slot={slotPdf} tarikhJana={tarikhJana} tarikhKolum={tarikhKolum} />
       ).toBlob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -119,35 +125,66 @@ export function PandanganMingguan({
                     <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>—</div>
                   ) : (
                     <>
-                      {slotHari.map((s) => (
-                        <button
-                          key={s.id}
-                          onClick={() => onEditSlot(s)}
-                          title="Klik untuk edit"
-                          style={{ textAlign: 'left', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 10px', cursor: 'pointer', fontFamily: 'inherit', display: 'block', width: '100%' }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text)' }}>
-                              {formatMasa(s.masa_mula)}
-                            </span>
-                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: '20px', background: s.jenis === 'Kumpulan' ? '#ECFCCB' : '#DBEAFE', color: s.jenis === 'Kumpulan' ? '#3F6212' : '#1E40AF' }}>
-                              {s.jenis}
-                            </span>
+                      {slotHari.map((s) => {
+                        const batalSlot = batal.find((b) => b.slot_id === s.id && b.tarikh === tarikhKolum)
+                        const dibatalkan = Boolean(batalSlot)
+                        const klikKad = () => (dibatalkan ? onBatalSlot(s, tarikhKolum) : onEditSlot(s))
+                        return (
+                          <div
+                            key={s.id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={klikKad}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); klikKad() } }}
+                            title={dibatalkan ? 'Dibatalkan — klik untuk aktifkan semula' : 'Klik untuk edit'}
+                            style={{
+                              textAlign: 'left', borderRadius: '10px', padding: '8px 10px', cursor: 'pointer', fontFamily: 'inherit', display: 'block', width: '100%', boxSizing: 'border-box',
+                              background: dibatalkan ? '#FEF2F2' : 'var(--card)',
+                              border: dibatalkan ? '1px solid #FECACA' : '1px solid var(--border)',
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                              <span style={{ fontSize: '11.5px', fontWeight: 700, color: dibatalkan ? '#94A3B8' : 'var(--text)', textDecoration: dibatalkan ? 'line-through' : 'none' }}>
+                                {formatMasa(s.masa_mula)}
+                              </span>
+                              {dibatalkan ? (
+                                <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: '20px', background: '#FEE2E2', color: '#DC2626' }}>
+                                  Dibatalkan
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: '20px', background: s.jenis === 'Kumpulan' ? '#ECFCCB' : '#DBEAFE', color: s.jenis === 'Kumpulan' ? '#3F6212' : '#1E40AF' }}>
+                                  {s.jenis}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '12px', fontWeight: 600, color: dibatalkan ? '#94A3B8' : 'var(--text)', lineHeight: 1.3, textDecoration: dibatalkan ? 'line-through' : 'none' }}>
+                              {s.jenis === 'Kumpulan' ? s.cawangan?.nama ?? '—' : s.pelajar?.nama_penuh ?? '—'}
+                            </div>
+                            {(s.jenis === 'Personal' && s.cawangan) && (
+                              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>{s.cawangan.nama}</div>
+                            )}
+                            {s.jurulatih_ids.length > 0 && (
+                              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>J: {namaJurulatih(s.jurulatih_ids)}</div>
+                            )}
+                            {s.lokasi && !dibatalkan && (
+                              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>📍 {s.lokasi}</div>
+                            )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onBatalSlot(s, tarikhKolum) }}
+                              title={dibatalkan ? 'Aktifkan semula kelas ini' : 'Batalkan kelas minggu ini sahaja'}
+                              aria-label={dibatalkan ? 'Aktifkan semula' : 'Batalkan minggu ini'}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px', padding: '3px 8px',
+                                background: dibatalkan ? '#ECFCCB' : 'var(--bg)', border: '1px solid ' + (dibatalkan ? '#BEF264' : 'var(--border)'),
+                                borderRadius: '8px', fontSize: '10px', fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+                                color: dibatalkan ? '#3F6212' : '#B91C1C',
+                              }}
+                            >
+                              {dibatalkan ? <><RotateCcw size={10} /> Aktifkan</> : <><Ban size={10} /> Batal minggu ini</>}
+                            </button>
                           </div>
-                          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', lineHeight: 1.3 }}>
-                            {s.jenis === 'Kumpulan' ? s.cawangan?.nama ?? '—' : s.pelajar?.nama_penuh ?? '—'}
-                          </div>
-                          {(s.jenis === 'Personal' && s.cawangan) && (
-                            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>{s.cawangan.nama}</div>
-                          )}
-                          {s.jurulatih_ids.length > 0 && (
-                            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>J: {namaJurulatih(s.jurulatih_ids)}</div>
-                          )}
-                          {s.lokasi && (
-                            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>📍 {s.lokasi}</div>
-                          )}
-                        </button>
-                      ))}
+                        )
+                      })}
                       {aktivitiHari.map((a) => {
                         const warna = WARNA_KATEGORI[a.kategori]
                         return (
@@ -179,6 +216,7 @@ export function PandanganMingguan({
       </div>
       <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '12px' }}>
         Klik mana-mana slot atau aktiviti untuk edit. Kelas mingguan berulang setiap minggu; aktiviti berwarna hanya pada tarikhnya.
+        Guna butang &quot;Batal minggu ini&quot; untuk batalkan kelas pada minggu dipapar sahaja — minggu lain tidak terjejas.
       </p>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { HARI, akhirBulan, hariMinggu, tarikhTempatan, bulanTempatan } from '@/lib/utils'
-import type { Slot, Aktiviti } from './JadualKlient'
+import type { Slot, Aktiviti, Batal } from './JadualKlient'
 import { WARNA_KATEGORI } from './JadualKlient'
 
 const btnNav = {
@@ -22,12 +22,14 @@ export function PandanganBulanan({
   onUbahBulan,
   slot,
   aktiviti,
+  batal,
   onPilihTarikh,
 }: {
   bulan: string // 'YYYY-MM'
   onUbahBulan: (b: string) => void
   slot: Slot[]
   aktiviti: Aktiviti[]
+  batal: Batal[]
   onPilihTarikh: (tarikh: string) => void
 }) {
   const hariIni = tarikhTempatan()
@@ -100,7 +102,9 @@ export function PandanganBulanan({
               }
               const tarikh = `${bulan}-${String(hariBulan).padStart(2, '0')}`
               const hariM = i % 7
-              const bilKelas = kiraSlotHari[hariM]
+              const idSlotHari = new Set(slot.filter((s) => s.hari_minggu === hariM).map((s) => s.id))
+              const bilBatal = batal.filter((b) => b.tarikh === tarikh && idSlotHari.has(b.slot_id)).length
+              const bilKelas = kiraSlotHari[hariM] - bilBatal
               const aktivitiHari = aktivitiPerTarikh.get(tarikh) ?? []
               const ialahHariIni = tarikh === hariIni
               return (
@@ -121,6 +125,11 @@ export function PandanganBulanan({
                   {bilKelas > 0 && (
                     <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: '20px', background: '#ECFCCB', color: '#3F6212' }}>
                       {bilKelas} kelas
+                    </span>
+                  )}
+                  {bilBatal > 0 && (
+                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: '20px', background: '#FEE2E2', color: '#DC2626', textDecoration: 'line-through' }}>
+                      {bilBatal} batal
                     </span>
                   )}
                   {aktivitiHari.slice(0, 2).map((a) => {

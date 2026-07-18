@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Plus, Eye, Wallet, CalendarCheck, Star } from 'lucide-react'
+import { Plus, Eye, Wallet, CalendarCheck, Star, AlertCircle } from 'lucide-react'
 import { formatRinggit, formatTarikh } from '@/lib/utils'
 
 type Jurulatih = {
@@ -14,6 +14,7 @@ type Jurulatih = {
   cawangan_nama: string
   gaji_dibayar: number
   sesi_bulan_ini: number
+  gaji_belum_bayar: number
   point: number
   bayaran_terkini: {
     bulan_bayaran: string
@@ -27,6 +28,7 @@ type Stat = {
   totalGajiDibayar: number
   gajiBulanIni: number
   sesiHadirBulanIni: number
+  totalBelumBayar: number
   namaBulan: string
 }
 
@@ -48,23 +50,45 @@ export function TabelJurulatih({ jurulatih, stat }: Props) {
             {jurulatih.length} jurulatih berdaftar
           </p>
         </div>
-        <Link href="/jurulatih/baharu"
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '9px 16px',
-            background: 'var(--accent)', border: 'none',
-            borderRadius: '10px', fontSize: '13px', fontWeight: 700,
-            color: 'var(--accent-text)', textDecoration: 'none',
-          }}
-        >
-          <Plus size={14} />
-          Tambah Jurulatih
-        </Link>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <Link href="/jurulatih/gaji"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '9px 16px',
+              background: 'var(--card)', border: '1.5px solid var(--border)',
+              borderRadius: '10px', fontSize: '13px', fontWeight: 700,
+              color: 'var(--text)', textDecoration: 'none',
+            }}
+          >
+            <Wallet size={14} />
+            Gaji Bulanan
+          </Link>
+          <Link href="/jurulatih/baharu"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '9px 16px',
+              background: 'var(--accent)', border: 'none',
+              borderRadius: '10px', fontSize: '13px', fontWeight: 700,
+              color: 'var(--accent-text)', textDecoration: 'none',
+            }}
+          >
+            <Plus size={14} />
+            Tambah Jurulatih
+          </Link>
+        </div>
       </div>
 
       {/* Dashboard ringkas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
         {[
+          {
+            label: `Gaji Belum Dibayar ${stat.namaBulan}`,
+            nilai: formatRinggit(stat.totalBelumBayar),
+            icon: AlertCircle,
+            bg: stat.totalBelumBayar > 0 ? '#FEF2F2' : 'var(--card)',
+            border: stat.totalBelumBayar > 0 ? '#FECACA' : 'var(--border)',
+            warna: stat.totalBelumBayar > 0 ? '#DC2626' : 'var(--text)',
+          },
           { label: `Gaji Dibayar ${stat.namaBulan}`, nilai: formatRinggit(stat.gajiBulanIni), icon: Wallet, bg: '#F7FEE7', border: '#D9F99D', warna: 'var(--accent-dark)' },
           { label: 'Jumlah Gaji Keseluruhan', nilai: formatRinggit(stat.totalGajiDibayar), icon: Wallet, bg: 'var(--card)', border: 'var(--border)', warna: 'var(--text)' },
           { label: `Sesi Hadir ${stat.namaBulan}`, nilai: `${stat.sesiHadirBulanIni} sesi`, icon: CalendarCheck, bg: 'var(--card)', border: 'var(--border)', warna: 'var(--text)' },
@@ -103,7 +127,7 @@ export function TabelJurulatih({ jurulatih, stat }: Props) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                {['Nama', 'Cawangan', 'Kadar/Sesi', 'Sesi Bln Ini', 'Point', 'Gaji Dibayar', 'Bayaran Terkini', 'Status', ''].map((h) => (
+                {['Nama', 'Cawangan', 'Kadar/Sesi', 'Sesi Bln Ini', 'Belum Bayar', 'Point', 'Gaji Dibayar', 'Bayaran Terkini', 'Status', ''].map((h) => (
                   <th key={h} style={{
                     padding: '11px 16px', textAlign: 'left',
                     fontSize: '11px', fontWeight: 700,
@@ -131,6 +155,19 @@ export function TabelJurulatih({ jurulatih, stat }: Props) {
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>
                     {j.sesi_bulan_ini}
+                  </td>
+                  <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                    {j.gaji_belum_bayar > 0 ? (
+                      <span style={{ fontSize: '13px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: '#FEE2E2', color: '#DC2626' }}>
+                        {formatRinggit(j.gaji_belum_bayar)}
+                      </span>
+                    ) : j.sesi_bulan_ini > 0 ? (
+                      <span style={{ fontSize: '13px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: 'var(--hadir-bg)', color: 'var(--hadir-text)' }}>
+                        RM0.00 ✓
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>—</span>
+                    )}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{

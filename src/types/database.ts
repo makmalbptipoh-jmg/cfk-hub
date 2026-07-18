@@ -787,6 +787,33 @@ export interface Database {
         }
         Relationships: []
       }
+      jadual_slot_batal: {
+        Row: {
+          id: string
+          slot_id: string
+          tarikh: string
+          sebab: string | null
+          direkod_oleh: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          slot_id: string
+          tarikh: string
+          sebab?: string | null
+          direkod_oleh?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          slot_id?: string
+          tarikh?: string
+          sebab?: string | null
+          direkod_oleh?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       aktiviti: {
         Row: {
           id: string

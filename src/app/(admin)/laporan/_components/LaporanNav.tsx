@@ -7,6 +7,7 @@ const tabs = [
   { href: '/laporan', label: 'Kehadiran', exact: true },
   { href: '/laporan/kewangan', label: 'Kewangan' },
   { href: '/laporan/tunggakan', label: 'Tunggakan' },
+  { href: '/laporan/bilangan-kelas', label: 'Bil. Kelas' },
 ]
 
 export function LaporanNav() {

@@ -77,6 +77,13 @@ export function formatNoTelefon(no: string): string {
 // Nama hari minggu BM — indeks sama dengan getUTCDay() (0=Ahad ... 6=Sabtu).
 export const HARI = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu']
 
+// Nama bulan BM — indeks 0 = Januari. Nilai sama dengan yang disimpan dalam
+// kolum bulan_bayaran (resit & bayaran_jurulatih).
+export const NAMA_BULAN = [
+  'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
+  'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember',
+]
+
 // Hari minggu bagi tarikh 'YYYY-MM-DD' — dikira terus dari nombor, bebas zon masa.
 export function hariMinggu(tarikh: string): number {
   const [y, m, d] = tarikh.split('-').map(Number)

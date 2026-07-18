@@ -1,11 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { akhirBulan } from '@/lib/utils'
+import { kiraHadirPerBulan, setResitDibayar, bulanTertunggak } from '@/lib/tunggakan'
 import { TunggakanKlient } from './_components/TunggakanKlient'
-
-const NAMA_BULAN = [
-  'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
-  'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember',
-]
 
 export const dynamic = 'force-dynamic'
 
@@ -37,22 +33,13 @@ export default async function TunggakanPage() {
     supabase.from('resit').select('pelajar_id, bulan_bayaran').eq('tahun_bayaran', tahun).eq('status', 'Aktif'),
   ])
 
-  // hadir[pelajar][bulan] = kiraan
-  const hadir: Record<string, Record<number, number>> = {}
-  for (const k of kehadiran ?? []) {
-    const m = +(k.tarikh as string).slice(5, 7)
-    ;(hadir[k.pelajar_id] ??= {})[m] = ((hadir[k.pelajar_id] ??= {})[m] ?? 0) + 1
-  }
-  // set pelajar|bulanNama yang sudah bayar
-  const dibayar = new Set((resit ?? []).map((r: any) => `${r.pelajar_id}|${r.bulan_bayaran}`))
+  // Rule tunggakan kongsi — src/lib/tunggakan.ts
+  const hadir = kiraHadirPerBulan((kehadiran ?? []) as { pelajar_id: string; tarikh: string }[])
+  const dibayar = setResitDibayar((resit ?? []) as { pelajar_id: string; bulan_bayaran: string }[])
 
   const baris: BarisTunggakan[] = []
   for (const p of pelajarAktif ?? []) {
-    const bulanTunggak: number[] = []
-    for (let m = 1; m <= bulanSemasa; m++) {
-      const bilHadir = hadir[p.id]?.[m] ?? 0
-      if (bilHadir >= 4 && !dibayar.has(`${p.id}|${NAMA_BULAN[m - 1]}`)) bulanTunggak.push(m)
-    }
+    const bulanTunggak = bulanTertunggak(p.id, hadir, dibayar, bulanSemasa)
     if (bulanTunggak.length > 0) {
       baris.push({
         id: p.id,

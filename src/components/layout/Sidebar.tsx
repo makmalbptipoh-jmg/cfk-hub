@@ -13,6 +13,7 @@ import {
   Wallet,
   Archive,
   Megaphone,
+  Bell,
   Settings,
   LogOut,
   ChevronRight,
@@ -30,6 +31,7 @@ const navUtama = [
   { href: '/kewangan', label: 'Kewangan', icon: Wallet },
   { href: '/aset', label: 'Aset', icon: Archive },
   { href: '/makluman', label: 'Makluman', icon: Megaphone },
+  { href: '/notifikasi', label: 'Notifikasi', icon: Bell },
 ]
 
 const navSistem = [

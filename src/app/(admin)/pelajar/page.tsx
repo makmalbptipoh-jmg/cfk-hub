@@ -1,11 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { akhirBulan } from '@/lib/utils'
+import { kiraHadirPerBulan, setResitDibayar, bulanTertunggak } from '@/lib/tunggakan'
 import { TabelPelajar } from './_components/TabelPelajar'
-
-const NAMA_BULAN = [
-  'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
-  'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember',
-]
 
 export default async function PelajarPage() {
   const supabase = await createClient()
@@ -31,20 +27,13 @@ export default async function PelajarPage() {
     supabase.from('resit').select('pelajar_id, bulan_bayaran').eq('tahun_bayaran', tahun).eq('status', 'Aktif'),
   ])
 
-  // Aging: bilangan bulan tertunggak per pelajar sepanjang tahun
-  // (bulan dengan ≥4 hadir TETAPI tiada resit aktif) — sama logik Laporan Tunggakan.
-  const hadir: Record<string, Record<number, number>> = {}
-  for (const k of kehadiran ?? []) {
-    const m = +(k.tarikh as string).slice(5, 7)
-    ;(hadir[k.pelajar_id] ??= {})[m] = ((hadir[k.pelajar_id] ??= {})[m] ?? 0) + 1
-  }
-  const dibayar = new Set((resit ?? []).map((r: any) => `${r.pelajar_id}|${r.bulan_bayaran}`))
+  // Aging: bilangan bulan tertunggak per pelajar sepanjang tahun —
+  // rule kongsi dalam src/lib/tunggakan.ts (sama dengan Laporan Tunggakan).
+  const hadir = kiraHadirPerBulan((kehadiran ?? []) as { pelajar_id: string; tarikh: string }[])
+  const dibayar = setResitDibayar((resit ?? []) as { pelajar_id: string; bulan_bayaran: string }[])
   const tunggakanCount: Record<string, number> = {}
   for (const pid of Object.keys(hadir)) {
-    let n = 0
-    for (let m = 1; m <= bulanSemasa; m++) {
-      if ((hadir[pid][m] ?? 0) >= 4 && !dibayar.has(`${pid}|${NAMA_BULAN[m - 1]}`)) n++
-    }
+    const n = bulanTertunggak(pid, hadir, dibayar, bulanSemasa).length
     if (n > 0) tunggakanCount[pid] = n
   }
 

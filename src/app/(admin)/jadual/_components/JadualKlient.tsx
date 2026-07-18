@@ -7,6 +7,7 @@ import { HARI, hariMinggu, formatMasa, formatTarikh, tarikhTempatan, bulanTempat
 import { toast } from '@/lib/stores/toast-store'
 import { ModalSlot } from './ModalSlot'
 import { ModalAktiviti } from './ModalAktiviti'
+import { ModalBatalSlot } from './ModalBatalSlot'
 import { PandanganHarian } from './PandanganHarian'
 import { PandanganMingguan } from './PandanganMingguan'
 import { PandanganBulanan } from './PandanganBulanan'
@@ -28,6 +29,13 @@ export type Slot = {
   status: 'Aktif' | 'Tidak Aktif'
   cawangan: { nama: string } | null
   pelajar: { nama_penuh: string } | null
+}
+
+export type Batal = {
+  id: string
+  slot_id: string
+  tarikh: string
+  sebab: string | null
 }
 
 export type Aktiviti = {
@@ -84,6 +92,8 @@ export function JadualKlient({
   const [versi, setVersi] = useState(0) // naik selepas simpan/padam — trigger muat semula aktiviti tempoh
   const [modalSlot, setModalSlot] = useState<{ buka: boolean; edit: Slot | null }>({ buka: false, edit: null })
   const [modalAktiviti, setModalAktiviti] = useState<{ buka: boolean; edit: Aktiviti | null }>({ buka: false, edit: null })
+  const [batalTempoh, setBatalTempoh] = useState<Batal[]>([])
+  const [modalBatal, setModalBatal] = useState<{ buka: boolean; slot: Slot | null; tarikh: string }>({ buka: false, slot: null, tarikh: '' })
 
   const namaJurulatih = useCallback(
     (ids: string[]) =>
@@ -103,21 +113,27 @@ export function JadualKlient({
   }, [pandangan, tarikhPilih, mingguMula, bulanPilih])
 
   useEffect(() => {
-    createClient()
-      .from('aktiviti')
-      .select(SELECT_SLOT)
-      .eq('status', 'Aktif')
-      .gte('tarikh', julat.mula)
-      .lte('tarikh', julat.tamat)
-      .order('tarikh')
-      .order('masa_mula')
-      .then(({ data, error }) => {
-        if (error) {
-          console.error(error)
-          return
-        }
-        setAktivitiTempoh((data ?? []) as unknown as Aktiviti[])
-      })
+    const supabase = createClient()
+    Promise.all([
+      supabase
+        .from('aktiviti')
+        .select(SELECT_SLOT)
+        .eq('status', 'Aktif')
+        .gte('tarikh', julat.mula)
+        .lte('tarikh', julat.tamat)
+        .order('tarikh')
+        .order('masa_mula'),
+      supabase
+        .from('jadual_slot_batal')
+        .select('id, slot_id, tarikh, sebab')
+        .gte('tarikh', julat.mula)
+        .lte('tarikh', julat.tamat),
+    ]).then(([{ data: dataAktiviti, error: e1 }, { data: dataBatal, error: e2 }]) => {
+      if (e1) console.error(e1)
+      else setAktivitiTempoh((dataAktiviti ?? []) as unknown as Aktiviti[])
+      if (e2) console.error(e2)
+      else setBatalTempoh((dataBatal ?? []) as Batal[])
+    })
   }, [julat, versi])
 
   const muatData = useCallback(async () => {
@@ -145,6 +161,7 @@ export function JadualKlient({
 
   const bukaEditSlot = (s: Slot) => setModalSlot({ buka: true, edit: s })
   const bukaEditAktiviti = (a: Aktiviti) => setModalAktiviti({ buka: true, edit: a })
+  const bukaBatalSlot = (s: Slot, tarikh: string) => setModalBatal({ buka: true, slot: s, tarikh })
 
   const togolPandangan = (p: Pandangan, label: string) => (
     <button
@@ -210,9 +227,11 @@ export function JadualKlient({
           onUbahTarikh={setTarikhPilih}
           slot={slotDipapar}
           aktiviti={aktivitiTempoh}
+          batal={batalTempoh}
           namaJurulatih={namaJurulatih}
           onEditSlot={bukaEditSlot}
           onEditAktiviti={bukaEditAktiviti}
+          onBatalSlot={bukaBatalSlot}
         />
       )}
       {pandangan === 'mingguan' && (
@@ -221,10 +240,12 @@ export function JadualKlient({
           onUbahMinggu={setMingguMula}
           slot={slotDipapar}
           aktiviti={aktivitiTempoh}
+          batal={batalTempoh}
           namaJurulatih={namaJurulatih}
           cawanganLabel={cawanganAwal.find((c) => c.id === cawanganTapis)?.nama ?? 'Semua Cawangan'}
           onEditSlot={bukaEditSlot}
           onEditAktiviti={bukaEditAktiviti}
+          onBatalSlot={bukaBatalSlot}
         />
       )}
       {pandangan === 'bulanan' && (
@@ -233,6 +254,7 @@ export function JadualKlient({
           onUbahBulan={setBulanPilih}
           slot={slotDipapar}
           aktiviti={aktivitiTempoh}
+          batal={batalTempoh}
           onPilihTarikh={(t) => {
             setTarikhPilih(t)
             setPandangan('harian')
@@ -314,6 +336,16 @@ export function JadualKlient({
           jurulatih={jurulatihAwal}
           onTutup={() => setModalAktiviti({ buka: false, edit: null })}
           onBerjaya={() => { setModalAktiviti({ buka: false, edit: null }); muatData() }}
+        />
+      )}
+      {modalBatal.buka && modalBatal.slot && (
+        <ModalBatalSlot
+          slot={modalBatal.slot}
+          tarikh={modalBatal.tarikh}
+          batalSediaAda={batalTempoh.find((b) => b.slot_id === modalBatal.slot!.id && b.tarikh === modalBatal.tarikh) ?? null}
+          namaJurulatih={namaJurulatih}
+          onTutup={() => setModalBatal({ buka: false, slot: null, tarikh: '' })}
+          onBerjaya={() => { setModalBatal({ buka: false, slot: null, tarikh: '' }); setVersi((v) => v + 1) }}
         />
       )}
     </div>
