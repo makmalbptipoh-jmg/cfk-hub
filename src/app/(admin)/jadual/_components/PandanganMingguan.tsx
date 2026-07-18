@@ -1,7 +1,9 @@
 'use client'
 
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronLeft, ChevronRight, Printer } from 'lucide-react'
 import { HARI, formatMasa, formatTarikhPendek, tarikhTempatan, tambahHari, hariMinggu } from '@/lib/utils'
+import { toast } from '@/lib/stores/toast-store'
 import type { Slot, Aktiviti } from './JadualKlient'
 import { WARNA_KATEGORI } from './JadualKlient'
 
@@ -17,6 +19,7 @@ export function PandanganMingguan({
   slot,
   aktiviti,
   namaJurulatih,
+  cawanganLabel,
   onEditSlot,
   onEditAktiviti,
 }: {
@@ -25,11 +28,45 @@ export function PandanganMingguan({
   slot: Slot[]
   aktiviti: Aktiviti[]
   namaJurulatih: (ids: string[]) => string
+  cawanganLabel: string
   onEditSlot: (s: Slot) => void
   onEditAktiviti: (a: Aktiviti) => void
 }) {
   const hariIni = tarikhTempatan()
   const mingguIni = tambahHari(hariIni, -hariMinggu(hariIni))
+  const [pdfLoading, setPdfLoading] = useState(false)
+
+  const unduhPDF = async () => {
+    setPdfLoading(true)
+    try {
+      const { pdf } = await import('@react-pdf/renderer')
+      const { JadualMingguPDF } = await import('@/components/pdf/JadualMingguPDF')
+      const slotPdf = slot.map((x) => ({
+        hari_minggu: x.hari_minggu,
+        masa: `${formatMasa(x.masa_mula)} - ${formatMasa(x.masa_tamat)}`,
+        nama: x.jenis === 'Kumpulan' ? x.cawangan?.nama ?? '—' : x.pelajar?.nama_penuh ?? '—',
+        jenis: x.jenis,
+        jurulatih: namaJurulatih(x.jurulatih_ids),
+        lokasi: x.lokasi ?? (x.jenis === 'Personal' && x.cawangan ? x.cawangan.nama : ''),
+      }))
+      const tarikhJana = hariIni.split('-').reverse().join('/')
+      const blob = await pdf(
+        <JadualMingguPDF cawangan={cawanganLabel} slot={slotPdf} tarikhJana={tarikhJana} />
+      ).toBlob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Jadual_Mingguan_${cawanganLabel.replace(/[^\w]+/g, '_')}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('PDF jadual mingguan dimuat turun.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Gagal jana PDF. Refresh (Ctrl+Shift+R) dan cuba lagi.')
+    } finally {
+      setPdfLoading(false)
+    }
+  }
 
   return (
     <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '20px', marginBottom: '24px' }}>
@@ -48,9 +85,18 @@ export function PandanganMingguan({
             </button>
           )}
         </div>
-        <button onClick={() => onUbahMinggu(tambahHari(mingguMula, 7))} style={btnNav}>
-          Minggu Depan <ChevronRight size={14} />
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => onUbahMinggu(tambahHari(mingguMula, 7))} style={btnNav}>
+            Minggu Depan <ChevronRight size={14} />
+          </button>
+          <button
+            onClick={unduhPDF}
+            disabled={pdfLoading}
+            style={{ ...btnNav, background: pdfLoading ? '#94A3B8' : 'var(--primary)', border: 'none', color: '#fff' }}
+          >
+            <Printer size={14} /> {pdfLoading ? 'Menjana...' : 'Cetak PDF'}
+          </button>
+        </div>
       </div>
 
       <div style={{ overflowX: 'auto' }}>

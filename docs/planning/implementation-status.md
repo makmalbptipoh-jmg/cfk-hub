@@ -15,6 +15,11 @@ Keperluan user: satu tempat rujuk jadual supaya tak lupa — kelas kumpulan per 
 - **SQL sudah di-run user (18 Jul) + DIUJI PENUH dalam browser localhost (login Google chessforkids80)**: tambah slot Kumpulan (Klebang Ahad 10-12 + jurulatih) → kolum betul ✅; slot Personal via CariPelajar (CHUA, Sabtu 3-4ptg, lokasi) → kolum Sabtu ✅; amaran pertindihan kuning + "Simpan Juga" oren ✅; aktiviti esok (Pertandingan 19 Jul) → senarai ✅; loceng badge 2: "Aktiviti esok" + "Jadual hari ini: Sabtu ini 1 kelas personal" ✅; widget dashboard papar slot personal hari ini ✅; edit modal prapopulasi ✅; padam 2-klik "Sah Padam?" ✅; auto-selesai aktiviti_esok selepas aktiviti dipadam ✅; tiada console error. Semua data ujian dipadam selepas ujian (jadual kini kosong — user isi jadual sebenar).
 - Lint: +2 `any` dalam dashboard (ikut gaya sedia ada fail itu; CI tak semak lint).
 
+### Susulan 3: PDF Jadual Mingguan — cetak & tampal di cawangan (arahan user)
+- `src/components/pdf/JadualMingguPDF.tsx` (BARU): poster A4 **landscape** — header logo CFK + "JADUAL KELAS MINGGUAN" + nama cawangan; 7 kolum Ahad–Sabtu, kotak slot (masa mula-tamat, nama cawangan/pelajar, jenis, jurulatih, lokasi; Personal berlatar biru); footer nota "jadual berulang setiap minggu" + tarikh jana. Jadual evergreen — TIADA aktiviti bertarikh (poster kekal relevan).
+- Butang **"Cetak PDF"** dalam view Mingguan (sebelah Minggu Depan) — corak dynamic import `@react-pdf/renderer` sama LaporanKelasKlient; ikut penapis cawangan semasa (nama fail `Jadual_Mingguan_<CAWANGAN>.pdf`); slot Personal ikut peraturan penapis sedia ada (sentiasa dipapar).
+- Typecheck + build LULUS. **Ujian klik butang dalam browser TIDAK sempat** (sesi login tab automasi tamat; user arah "DEPLOY SEMUA") — sahkan sekali di production: view Mingguan → Cetak PDF → fail turun & buka.
+
 ### Susulan 2: View Harian / Mingguan / Bulanan (arahan user)
 - Toggle `[Harian | Mingguan | Bulanan]` di page /jadual (default Mingguan). Tiada SQL baru.
 - **Harian** (`PandanganHarian.tsx`): pilih tarikh + Semalam/Esok/Hari Ini; senarai ikut masa (slot hari itu + aktiviti tarikh itu) dengan butiran penuh; klik → edit.

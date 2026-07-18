@@ -222,6 +222,7 @@ export function JadualKlient({
           slot={slotDipapar}
           aktiviti={aktivitiTempoh}
           namaJurulatih={namaJurulatih}
+          cawanganLabel={cawanganAwal.find((c) => c.id === cawanganTapis)?.nama ?? 'Semua Cawangan'}
           onEditSlot={bukaEditSlot}
           onEditAktiviti={bukaEditAktiviti}
         />
