@@ -60,6 +60,7 @@ export function BorangYuran() {
   const [jenis, setJenis] = useState<'Kumpulan' | 'Personal' | 'Pendaftaran'>('Kumpulan')
   const [bulanInput, setBulanInput] = useState(bulanSemasa())
   const [jumlahCustom, setJumlahCustom] = useState('')
+  const [bilKelasPakej, setBilKelasPakej] = useState('4') // pakej personal: bilangan kelas dibeli
   const [kaedah, setKaedah] = useState<'Tunai' | 'Transfer'>('Tunai')
   const [tarikhBayar, setTarikhBayar] = useState(tarikhTempatan())
 
@@ -163,6 +164,7 @@ export function BorangYuran() {
           bulan_bayaran: bulanObj.nama,
           tahun_bayaran: bulanObj.tahun,
           jumlah: jumlahAkhir,
+          bil_kelas: jenis === 'Personal' && +bilKelasPakej > 0 ? +bilKelasPakej : null,
           kaedah_bayaran: kaedah,
           tarikh_bayar: tarikhBayar,
           direkod_oleh: user?.id ?? null,
@@ -352,6 +354,21 @@ export function BorangYuran() {
                 )}
               </div>
             </div>
+
+            {jenis === 'Personal' && (
+              <div style={{ marginTop: '14px' }}>
+                <label style={gayaLabel}>Bilangan Kelas (pakej prabayar)</label>
+                <input
+                  type="number" min="1" step="1"
+                  value={bilKelasPakej}
+                  onChange={(e) => setBilKelasPakej(e.target.value)}
+                  style={{ ...gayaInput, maxWidth: '160px' }}
+                />
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Bayaran ini untuk berapa kelas? Baki pakej dipantau di page Pantauan Personal — setiap kehadiran tolak 1.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Kaedah & Tarikh */}
@@ -571,7 +588,7 @@ export function BorangYuran() {
             ))}
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={() => { setLangkah(1); setPelajar(null); setJumlahCustom(''); setResitDijana([]); setPakej(false); setAhliDipilih([]); setAdikBeradik([]) }}
+            <button onClick={() => { setLangkah(1); setPelajar(null); setJumlahCustom(''); setResitDijana([]); setPakej(false); setAhliDipilih([]); setAdikBeradik([]); setBilKelasPakej('4') }}
               style={{
                 padding: '9px 18px',
                 background: 'var(--bg)', border: '1.5px solid var(--border)',

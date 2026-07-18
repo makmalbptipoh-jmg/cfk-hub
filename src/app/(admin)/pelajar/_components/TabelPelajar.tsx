@@ -90,6 +90,17 @@ export function TabelPelajar({ pelajar, cawangan, tunggakanCount = {}, tahun }: 
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
+          <Link href="/pelajar/personal"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '9px 16px',
+              background: 'var(--card)', border: '1.5px solid var(--border)',
+              borderRadius: '10px', fontSize: '13px', fontWeight: 600,
+              color: 'var(--text)', textDecoration: 'none',
+            }}
+          >
+            Pantauan Personal
+          </Link>
           <Link href="/pelajar/import"
             style={{
               display: 'flex', alignItems: 'center', gap: '6px',

@@ -30,6 +30,14 @@ Keperluan user: tiada total gaji yang perlu dibayar (bil kelas × rate). Penemua
 
 **Typecheck + build LULUS (42 route).** SQL `batal-kelas.sql` sudah di-run user; deploy production READY (7c7c6b0). User uji batal kelas ✅.
 
+### Pantauan Pakej Kelas Personal (prabayar 4 kelas) — permintaan user
+Masalah: pelajar personal bayar TERUS untuk 4 kelas, tiada cara tahu bila dah cukup 4 (masa kutip bayaran baru). Keputusan user: pakej default 4 (boleh ubah), kiraan dari kehadiran direkod, pantau di page khas + widget dashboard + notifikasi.
+- ⚠️ **WAJIB run `scripts/sql/pakej-personal.sql`** — kolum `resit.bil_kelas SMALLINT` (bilangan kelas dibeli, resit Personal sahaja; NULL = resit lama).
+- **Model**: kredit = Σ bil_kelas resit Personal Aktif; digunakan = kehadiran Hadir sesi personal SEJAK resit berpakej pertama (anchor — sejarah lama tak dikira); baki = kredit − digunakan. Pelajar 'Kumpulan+Personal': hanya kehadiran bernota "Kelas Personal..." ditolak. Helper kongsi `src/lib/pakejPersonal.ts`.
+- **Borang**: BorangYuran jenis Personal ada input "Bilangan Kelas (pakej)" default 4 → simpan bil_kelas; BorangSesiPersonal (bayar-per-sesi) auto bil_kelas=1 (kredit 1 + guna 1 = seimbang).
+- **Page baharu `/pelajar/personal`** (butang "Pantauan Personal" di page Pelajar): senarai pelajar personal — Dibeli | Digunakan | Baki (progress bar) | Sesi Terakhir | Status (CUKUP merah / Tinggal 1 kuning / OK hijau / Belum ada pakej kelabu), susunan Cukup dahulu, butang WA peringatan + Rekod Bayaran.
+- **Widget dashboard** "Pakej Kelas Personal Habis" (hanya bila ada) + **notifikasi loceng** jenis `pakej_personal` (kunci `pakej_personal:{id}:{kredit}` — topup ubah kredit → notifikasi lama auto-selesai).
+
 ### Susulan (maklum balas ujian user): kelas dibatalkan mesti DITOLAK dari jumlah
 - **Gaji jurulatih**: helper baharu `src/lib/gajiSesi.ts` (`tapisSesiDibatalkan`) — check-in `kehadiran_jurulatih` pada tarikh+cawangan+jenis yang SEMUA slot sepadannya dibatalkan → TIDAK dikira gaji (kelas ad-hoc tanpa slot dikekalkan). Diterapkan di 5 tempat: `/jurulatih/gaji` (+ nota merah "−N sesi kelas dibatalkan"), senarai jurulatih, dashboard, notifikasi gaji, page bayaran jurulatih (auto-isi bilSesi modal — cap bilSesi turut turun).
 - **Laporan Bil. Kelas**: penolakan memang sudah berlaku (disahkan dengan simulasi data production) tetapi tak kelihatan — kini kolum Dibatalkan papar "−N" dan kolum Jumlah papar subteks "X dijadual − N batal" (skrin + PDF); nota diperjelas.

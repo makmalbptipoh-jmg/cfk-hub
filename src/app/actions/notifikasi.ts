@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { akhirBulan, tarikhTempatan, hariMinggu, HARI, formatMasa, NAMA_BULAN } from '@/lib/utils'
 import { perluBayarBulan } from '@/lib/tunggakan'
 import { tapisSesiDibatalkan, SELECT_SESI_GAJI, SELECT_SLOT_GAJI, type SlotUntukGaji } from '@/lib/gajiSesi'
+import { kiraPakejPersonal } from '@/lib/pakejPersonal'
 
 export type Notifikasi = {
   id: string
@@ -242,6 +243,53 @@ export async function janaDanMuatNotifikasi(): Promise<{ senarai: Notifikasi[]; 
       .from('notifikasi')
       .update({ dibaca: true, dibaca_pada: new Date().toISOString() })
       .in('id', idGajiSelesai)
+  }
+
+  // ---- Pakej kelas personal habis: kutip bayaran baru ----
+  const { data: pelajarPersonal } = await supabase
+    .from('pelajar')
+    .select('id, nama_penuh, jenis_kelas')
+    .in('jenis_kelas', ['Personal', 'Kumpulan+Personal'])
+    .eq('status', 'Aktif')
+  const idsPersonal = (pelajarPersonal ?? []).map((p) => p.id)
+  if (idsPersonal.length > 0) {
+    const [{ data: resitPakej }, { data: kehadiranPersonal }] = await Promise.all([
+      supabase.from('resit').select('pelajar_id, bil_kelas, tarikh_bayar').in('pelajar_id', idsPersonal).eq('jenis', 'Personal').eq('status', 'Aktif').not('bil_kelas', 'is', null),
+      supabase.from('kehadiran').select('pelajar_id, tarikh, nota').in('pelajar_id', idsPersonal).eq('status', 'Hadir'),
+    ])
+    const pakej = kiraPakejPersonal(pelajarPersonal ?? [], resitPakej ?? [], kehadiranPersonal ?? [])
+    const habis = (pelajarPersonal ?? [])
+      .map((p) => ({ ...p, s: pakej.get(p.id) }))
+      .filter((p) => p.s && p.s.kredit > 0 && p.s.baki <= 0)
+
+    if (habis.length > 0) {
+      const barisPakej = habis.map((p) => ({
+        jenis: 'pakej_personal',
+        tajuk: 'Pakej kelas personal habis',
+        mesej: `${p.nama_penuh} sudah guna ${p.s!.digunakan}/${p.s!.kredit} kelas personal — kutip bayaran pakej baru.`,
+        pautan: '/pelajar/personal',
+        // kredit dalam kunci: selepas topup (kredit berubah) notifikasi lama diselesai,
+        // notifikasi baharu hanya keluar jika pakej baharu pun habis.
+        kunci: `pakej_personal:${p.id}:${p.s!.kredit}`,
+        rujukan_id: p.id,
+      }))
+      await supabase.from('notifikasi').upsert(barisPakej, { onConflict: 'kunci', ignoreDuplicates: true })
+    }
+
+    // Auto-selesai: pelajar tiada lagi dalam senarai habis, atau kunci lama (kredit berubah)
+    const kunciSemasa = new Set(habis.map((p) => `pakej_personal:${p.id}:${p.s!.kredit}`))
+    const { data: notifPakej } = await supabase
+      .from('notifikasi')
+      .select('id, kunci')
+      .eq('jenis', 'pakej_personal')
+      .eq('dibaca', false)
+    const idPakejSelesai = (notifPakej ?? []).filter((n) => !n.kunci || !kunciSemasa.has(n.kunci)).map((n) => n.id)
+    if (idPakejSelesai.length > 0) {
+      await supabase
+        .from('notifikasi')
+        .update({ dibaca: true, dibaca_pada: new Date().toISOString() })
+        .in('id', idPakejSelesai)
+    }
   }
 
   const [{ data: senarai }, { count }] = await Promise.all([

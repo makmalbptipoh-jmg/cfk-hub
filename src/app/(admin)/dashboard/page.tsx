@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh, tarikhTempatan, hariMinggu, HARI, formatMasa, NAMA_BULAN } from '@/lib/utils'
 import { perluBayarBulan } from '@/lib/tunggakan'
 import { tapisSesiDibatalkan, SELECT_SESI_GAJI, SELECT_SLOT_GAJI, type SlotUntukGaji } from '@/lib/gajiSesi'
+import { kiraPakejPersonal } from '@/lib/pakejPersonal'
 import Link from 'next/link'
 import { Users, CalendarCheck, CalendarDays, Wallet, AlertCircle, MessageCircle } from 'lucide-react'
 import { DashboardFilter } from './_components/DashboardFilter'
@@ -196,6 +197,26 @@ export default async function DashboardPage({
     .filter((j) => j.anggaran > 0)
   const totalPerluBayarGaji = jurulatihBelumGaji.reduce((s, j) => s + j.anggaran, 0)
   const dekatHariGaji = now.getUTCDate() >= 27
+
+  // === Widget: Pakej Kelas Personal habis (perlu kutip bayaran) ===
+  const { data: pelajarPersonalRaw } = await supabase
+    .from('pelajar')
+    .select('id, nama_penuh, jenis_kelas')
+    .in('jenis_kelas', ['Personal', 'Kumpulan+Personal'])
+    .eq('status', 'Aktif')
+  const idsPersonal = (pelajarPersonalRaw ?? []).map((p) => p.id)
+  let pelajarPakejHabis: { id: string; nama_penuh: string; digunakan: number; kredit: number }[] = []
+  if (idsPersonal.length > 0) {
+    const [{ data: resitPakej }, { data: kehadiranPersonal }] = await Promise.all([
+      supabase.from('resit').select('pelajar_id, bil_kelas, tarikh_bayar').in('pelajar_id', idsPersonal).eq('jenis', 'Personal').eq('status', 'Aktif').not('bil_kelas', 'is', null),
+      supabase.from('kehadiran').select('pelajar_id, tarikh, nota').in('pelajar_id', idsPersonal).eq('status', 'Hadir'),
+    ])
+    const pakej = kiraPakejPersonal(pelajarPersonalRaw ?? [], resitPakej ?? [], kehadiranPersonal ?? [])
+    pelajarPakejHabis = (pelajarPersonalRaw ?? [])
+      .map((p) => ({ id: p.id, nama_penuh: p.nama_penuh, ...(pakej.get(p.id) ?? { kredit: 0, digunakan: 0, baki: 0 }) }))
+      .filter((p) => p.kredit > 0 && p.baki <= 0)
+      .map((p) => ({ id: p.id, nama_penuh: p.nama_penuh, digunakan: p.digunakan, kredit: p.kredit }))
+  }
 
   const namaPengguna = (profil as any)?.nama ?? 'Admin'
   const waktu = new Date().getHours()
@@ -500,6 +521,36 @@ export default async function DashboardPage({
           </div>
         )}
       </div>
+
+      {/* Pakej Kelas Personal habis */}
+      {pelajarPakejHabis.length > 0 && (
+        <div style={{ background: 'var(--card)', border: '1px solid #FECACA', borderRadius: '16px', overflow: 'hidden', marginBottom: '18px' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#DC2626', display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <AlertCircle size={15} />
+              Pakej Kelas Personal Habis — kutip bayaran baru
+            </h2>
+            <Link href="/pelajar/personal" style={{ fontSize: '12px', color: 'var(--text-muted)', textDecoration: 'none' }}>
+              Lihat pantauan penuh →
+            </Link>
+          </div>
+          {pelajarPakejHabis.map((p, i) => (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 20px', borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}>
+              <div>
+                <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>{p.nama_penuh}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                  {p.digunakan}/{p.kredit} kelas digunakan
+                </div>
+              </div>
+              <Link href="/bayaran/baharu"
+                style={{ padding: '6px 12px', background: 'var(--accent)', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, color: 'var(--accent-text)', textDecoration: 'none' }}
+              >
+                Rekod Bayaran
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Resit Terkini */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden' }}>

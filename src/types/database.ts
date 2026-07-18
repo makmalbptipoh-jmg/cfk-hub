@@ -162,6 +162,7 @@ export interface Database {
           tahun_bayaran: number
           jenis: 'Kumpulan' | 'Personal' | 'Pendaftaran'
           jumlah: number
+          bil_kelas: number | null
           kaedah_bayaran: 'Tunai' | 'Transfer' | null
           tarikh_bayar: string
           status: 'Aktif' | 'Dibatalkan'
@@ -179,6 +180,7 @@ export interface Database {
           tahun_bayaran: number
           jenis: 'Kumpulan' | 'Personal' | 'Pendaftaran'
           jumlah: number
+          bil_kelas?: number | null
           kaedah_bayaran?: 'Tunai' | 'Transfer' | null
           tarikh_bayar: string
           status?: 'Aktif' | 'Dibatalkan'

@@ -109,6 +109,7 @@ export function BorangSesiPersonal() {
         bulan_bayaran,
         tahun_bayaran,
         jumlah: +jumlah,
+        bil_kelas: 1, // bayar-per-sesi: kredit 1 kelas, sesi ini guna 1 — baki pakej seimbang
         kaedah_bayaran: kaedahBayaran,
         tarikh_bayar: tarikhSesi,
         status: 'Aktif',
