@@ -23,13 +23,12 @@ const s = StyleSheet.create({
   footerText: { fontSize: 7.5, color: '#94A3B8' },
 })
 
-// Lebar kolum: Cawangan lebar, 5 kolum nombor sama lebar
+// Lebar kolum: Cawangan lebar, 4 kolum nombor sama lebar
 const L = { cawangan: 2.4, nombor: 1 }
 
 export type BarisBilKelas = {
   cawangan: string
   kumpulan: number
-  personal: number
   ganti: number
   dibatalkan: number
   jumlah: number
@@ -64,7 +63,6 @@ export function LaporanBilKelasPDF({ bulanLabel, baris, jumlahBesar, tarikhJana 
           <View style={s.barisHeader}>
             <Text style={[s.selHeader, { flex: L.cawangan }]}>CAWANGAN</Text>
             <Text style={[s.selHeader, s.selNombor, { flex: L.nombor }]}>KUMPULAN</Text>
-            <Text style={[s.selHeader, s.selNombor, { flex: L.nombor }]}>PERSONAL</Text>
             <Text style={[s.selHeader, s.selNombor, { flex: L.nombor }]}>KELAS GANTI</Text>
             <Text style={[s.selHeader, s.selNombor, { flex: L.nombor }]}>DIBATALKAN</Text>
             <Text style={[s.selHeader, s.selNombor, { flex: L.nombor }]}>JUMLAH</Text>
@@ -73,7 +71,6 @@ export function LaporanBilKelasPDF({ bulanLabel, baris, jumlahBesar, tarikhJana 
             <View key={i} style={i % 2 === 1 ? [s.baris, s.barisGenap] : s.baris}>
               <Text style={[s.sel, { flex: L.cawangan, fontFamily: 'Helvetica-Bold' }]}>{b.cawangan}</Text>
               <Text style={[s.sel, s.selNombor, { flex: L.nombor }]}>{b.kumpulan}</Text>
-              <Text style={[s.sel, s.selNombor, { flex: L.nombor }]}>{b.personal}</Text>
               <Text style={[s.sel, s.selNombor, { flex: L.nombor }]}>{b.ganti}</Text>
               <Text style={b.dibatalkan > 0 ? [s.sel, s.selNombor, s.selBatal, { flex: L.nombor }] : [s.sel, s.selNombor, { flex: L.nombor }]}>
                 {b.dibatalkan > 0 ? `-${b.dibatalkan}` : '0'}
@@ -91,7 +88,6 @@ export function LaporanBilKelasPDF({ bulanLabel, baris, jumlahBesar, tarikhJana 
           <View style={s.barisJumlah}>
             <Text style={[s.selJumlah, { flex: L.cawangan }]}>JUMLAH BESAR</Text>
             <Text style={[s.selJumlah, s.selNombor, { flex: L.nombor }]}>{jumlahBesar.kumpulan}</Text>
-            <Text style={[s.selJumlah, s.selNombor, { flex: L.nombor }]}>{jumlahBesar.personal}</Text>
             <Text style={[s.selJumlah, s.selNombor, { flex: L.nombor }]}>{jumlahBesar.ganti}</Text>
             <Text style={jumlahBesar.dibatalkan > 0 ? [s.selJumlah, s.selNombor, s.selBatal, { flex: L.nombor }] : [s.selJumlah, s.selNombor, { flex: L.nombor }]}>
               {jumlahBesar.dibatalkan > 0 ? `-${jumlahBesar.dibatalkan}` : '0'}

@@ -7,7 +7,7 @@ import { akhirBulan, bulanTempatan, hariMinggu, tambahHari, tarikhTempatan } fro
 import { toast } from '@/lib/stores/toast-store'
 import type { BarisBilKelas } from '@/components/pdf/LaporanBilKelasPDF'
 
-const TIADA_CAWANGAN = 'Personal (tiada cawangan)'
+const TIADA_CAWANGAN = 'Tanpa cawangan'
 
 function labelBulan(bm: string) {
   const [y, m] = bm.split('-').map(Number)
@@ -44,25 +44,26 @@ export default function LaporanBilKelasPage() {
       slotPerHari.set(s.hari_minggu, senarai)
     }
 
-    type Kira = { kumpulan: number; personal: number; ganti: number; dibatalkan: number }
+    type Kira = { kumpulan: number; ganti: number; dibatalkan: number }
     const kira = new Map<string, Kira>()
     const ambil = (kunci: string) => {
       const sedia = kira.get(kunci)
       if (sedia) return sedia
-      const baharu = { kumpulan: 0, personal: 0, ganti: 0, dibatalkan: 0 }
+      const baharu = { kumpulan: 0, ganti: 0, dibatalkan: 0 }
       kira.set(kunci, baharu)
       return baharu
     }
 
+    // Laporan pantauan cawangan: HANYA kelas Kumpulan dikira (+ Kelas Ganti).
+    // Kelas personal (prabayar / tiada cawangan) diabaikan sepenuhnya.
     for (let t = mulaB; t <= akhirB; t = tambahHari(t, 1)) {
       for (const s of slotPerHari.get(hariMinggu(t)) ?? []) {
+        if (s.jenis !== 'Kumpulan') continue
         const kunci = s.cawangan_id ?? 'TIADA'
         if (setBatal.has(`${s.id}:${t}`)) {
           ambil(kunci).dibatalkan++
-        } else if (s.jenis === 'Kumpulan') {
-          ambil(kunci).kumpulan++
         } else {
-          ambil(kunci).personal++
+          ambil(kunci).kumpulan++
         }
       }
     }
@@ -72,12 +73,12 @@ export default function LaporanBilKelasPage() {
 
     const barisBaru: BarisBilKelas[] = []
     for (const c of cawangan ?? []) {
-      const k = kira.get(c.id) ?? { kumpulan: 0, personal: 0, ganti: 0, dibatalkan: 0 }
-      barisBaru.push({ cawangan: c.nama, ...k, jumlah: k.kumpulan + k.personal + k.ganti })
+      const k = kira.get(c.id) ?? { kumpulan: 0, ganti: 0, dibatalkan: 0 }
+      barisBaru.push({ cawangan: c.nama, ...k, jumlah: k.kumpulan + k.ganti })
     }
     const tiada = kira.get('TIADA')
-    if (tiada && tiada.kumpulan + tiada.personal + tiada.ganti + tiada.dibatalkan > 0) {
-      barisBaru.push({ cawangan: TIADA_CAWANGAN, ...tiada, jumlah: tiada.kumpulan + tiada.personal + tiada.ganti })
+    if (tiada && tiada.kumpulan + tiada.ganti + tiada.dibatalkan > 0) {
+      barisBaru.push({ cawangan: TIADA_CAWANGAN, ...tiada, jumlah: tiada.kumpulan + tiada.ganti })
     }
 
     setBaris(barisBaru)
@@ -91,12 +92,11 @@ export default function LaporanBilKelasPage() {
   const jumlahBesar = baris.reduce(
     (j, b) => ({
       kumpulan: j.kumpulan + b.kumpulan,
-      personal: j.personal + b.personal,
       ganti: j.ganti + b.ganti,
       dibatalkan: j.dibatalkan + b.dibatalkan,
       jumlah: j.jumlah + b.jumlah,
     }),
-    { kumpulan: 0, personal: 0, ganti: 0, dibatalkan: 0, jumlah: 0 }
+    { kumpulan: 0, ganti: 0, dibatalkan: 0, jumlah: 0 }
   )
 
   const unduhPDF = async () => {
@@ -131,7 +131,7 @@ export default function LaporanBilKelasPage() {
             Laporan Bilangan Kelas
           </h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Bilangan kelas dijadualkan setiap cawangan — {labelBulan(bulan)}
+            Bilangan kelas kumpulan dijadualkan setiap cawangan — {labelBulan(bulan)}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
@@ -170,7 +170,7 @@ export default function LaporanBilKelasPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                  {['Cawangan', 'Kumpulan', 'Personal', 'Kelas Ganti', 'Dibatalkan', 'Jumlah'].map((h, i) => (
+                  {['Cawangan', 'Kumpulan', 'Kelas Ganti', 'Dibatalkan', 'Jumlah'].map((h, i) => (
                     <th key={h} style={{ padding: '10px 16px', textAlign: i === 0 ? 'left' : 'center', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       {h}
                     </th>
@@ -182,7 +182,6 @@ export default function LaporanBilKelasPage() {
                   <tr key={b.cawangan} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}>
                     <td style={{ padding: '11px 16px', fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>{b.cawangan}</td>
                     <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', color: 'var(--text)' }}>{b.kumpulan}</td>
-                    <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', color: 'var(--text)' }}>{b.personal}</td>
                     <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', color: 'var(--text)' }}>{b.ganti}</td>
                     <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: b.dibatalkan > 0 ? 700 : 400, color: b.dibatalkan > 0 ? '#DC2626' : 'var(--text-muted)' }}>
                       {b.dibatalkan > 0 ? `−${b.dibatalkan}` : 0}
@@ -200,7 +199,6 @@ export default function LaporanBilKelasPage() {
                 <tr style={{ borderTop: '2px solid var(--text)', background: '#F8FAFC' }}>
                   <td style={{ padding: '11px 16px', fontSize: '13.5px', fontWeight: 800, color: 'var(--text)' }}>JUMLAH BESAR</td>
                   <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: 800, color: 'var(--text)' }}>{jumlahBesar.kumpulan}</td>
-                  <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: 800, color: 'var(--text)' }}>{jumlahBesar.personal}</td>
                   <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: 800, color: 'var(--text)' }}>{jumlahBesar.ganti}</td>
                   <td style={{ padding: '11px 16px', textAlign: 'center', fontSize: '13.5px', fontWeight: 800, color: jumlahBesar.dibatalkan > 0 ? '#DC2626' : 'var(--text-muted)' }}>
                     {jumlahBesar.dibatalkan > 0 ? `−${jumlahBesar.dibatalkan}` : 0}
@@ -218,7 +216,8 @@ export default function LaporanBilKelasPage() {
             </table>
           </div>
           <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '12px' }}>
-            Jumlah = kelas dijadualkan TOLAK yang dibatalkan (+ Kelas Ganti). Kiraan berdasarkan jadual kelas semasa —
+            Kelas personal TIDAK dikira — laporan ini pantau kelas kumpulan di cawangan sahaja.
+            Jumlah = kelas kumpulan dijadualkan TOLAK yang dibatalkan (+ Kelas Ganti). Kiraan berdasarkan jadual kelas semasa —
             slot yang dipadam atau dinyahaktifkan tidak dikira untuk bulan lampau.
           </p>
         </>
