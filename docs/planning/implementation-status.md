@@ -1,6 +1,18 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 19 Jul 2026 (Sesi 11)
+**Dikemaskini:** 19 Jul 2026 (Sesi 12)
+
+## ⚡ SESI 12 (19 Jul 2026)
+
+### Bayaran Online (ToyyibPay) — admin jana link → resit auto (build+typecheck LULUS; BELUM diuji ToyyibPay sebenar)
+Keperluan user: kurangkan kerja key-in resit manual. Research: e-Invois LHDN CFK DIKECUALIKAN (bawah RM1j — pengecualian kekal 6 Dis 2025). Gateway pilihan user: **ToyyibPay** (FPX RM1, ada sandbox). Aliran pilihan user: **admin hantar link** (bukan ibu bapa self-serve — tak perlu Pautan Ibu Bapa dulu).
+- ⚠️ **WAJIB run `scripts/sql/bayaran-online.sql` SEBELUM deploy** — jadual `permintaan_bayaran` (bill_code UNIQUE, pelajar, jenis/bulan/tahun, jumlah, bil_kelas, status Menunggu/Selesai/Gagal, resit_id, payment_ref, dibuat_oleh) + RLS (baca authenticated, tulis admin) + tukar constraint `resit_kaedah_bayaran_check` tambah `'Online'`. Ada blok ROLLBACK.
+- **Aliran:** admin buka Rekod Bayaran → pilih kaedah **Online** → "Jana Link Bayaran" (server action `ciptaPermintaanBayaran`) → ToyyibPay bill dijana → panel link + Salin + butang WhatsApp (pra-isi mesej). Ibu bapa bayar FPX/DuitNow → callback server-ke-server → **resit auto-jana** (kaedah 'Online').
+- **Fail baharu:** `src/lib/toyyibpay.ts` (ciptaBil/statusBil/rujukanTransaksi, sandbox↔prod ikut `TOYYIBPAY_MODE`), `src/lib/bayaran-online-server.ts` (selesaikanPermintaanBayaran — service-role, sahkan semula dgn ToyyibPay, **claim atomik elak resit pendua**, cipta resit + log), `src/app/actions/bayaran-online.ts` (`ciptaPermintaanBayaran` + `semakStatusPermintaan` manual + `statusRingkas`; URL asas dari `headers()` betul di Vercel), route `src/app/api/bayaran/toyyibpay/callback/route.ts` (POST+GET, sentiasa balas OK), page awam `src/app/bayaran-selesai/page.tsx` (ibu bapa mendarat selepas bayar — juga cetus reconcile backup), page `/bayaran/permintaan` + `PermintaanKlient` (senarai + penapis + Semak Status manual + resend WA/Salin).
+- **Diubah:** `BorangYuran.tsx` (kaedah 'Online' + divert jana + panel link step-3; pakej adik-beradik dimatikan bila Online — 1 bil/seorang), `proxy.ts`→middleware whitelist `/api/bayaran` + `/bayaran-selesai` (awam), `database.ts` (jenis `permintaan_bayaran` + 'Online' pada resit.kaedah_bayaran), TabelResit header butang "Permintaan Online", `.env.local.example` (+3 env).
+- **NOTA Next 16:** middleware = **`src/proxy.ts`** (bukan middleware.ts); matcher TIDAK exclude /api jadi whitelist perlu dalam `updateSession`.
+- **TERTUNGGAK user (setup ToyyibPay):** (1) daftar ToyyibPay ✅ SUDAH; (2) ambil **Secret Key** (User Profile) + cipta **Category** "Yuran CFK" → salin Category Code; (3) isi `.env.local` (TOYYIBPAY_SECRET_KEY/CATEGORY_CODE/MODE=sandbox) + set sama di **Vercel** env; (4) run SQL migration; (5) deploy → uji di production (callback perlu URL awam, bukan localhost): jana link → bayar guna bank simulator sandbox → sahkan resit auto-jana + status jadi Selesai. Bila ok → daftar akaun **production** toyyibpay.com + tukar keys + MODE=production.
+- **BELUM diuji:** end-to-end dengan ToyyibPay sebenar (perlu keys user + deploy). Kod build+typecheck LULUS sahaja.
 
 ## ⚡ SESI 11 (19 Jul 2026)
 

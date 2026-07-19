@@ -37,6 +37,12 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
+  // Bayaran online: callback ToyyibPay (server-ke-server) + page "terima
+  // kasih" untuk ibu bapa — kedua-dua mesti awam (tiada sesi login).
+  if (pathname.startsWith('/api/bayaran') || pathname.startsWith('/bayaran-selesai')) {
+    return supabaseResponse
+  }
+
   // Halaman awam — benarkan tanpa auth
   if (pathname.startsWith('/login')) {
     if (user) {

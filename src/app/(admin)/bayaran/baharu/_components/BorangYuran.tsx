@@ -8,6 +8,7 @@ import { CariPelajar } from '@/components/pelajar/CariPelajar'
 import { BtnUnduhResit } from '@/components/pdf/BtnUnduhResit'
 import { kirYuranBulanan, tarikhTempatan } from '@/lib/utils'
 import { gayaInput, gayaLabel } from '@/components/ui/borang'
+import { ciptaPermintaanBayaran } from '@/app/actions/bayaran-online'
 
 type PelajarDipilih = {
   id: string
@@ -61,8 +62,12 @@ export function BorangYuran() {
   const [bulanInput, setBulanInput] = useState(bulanSemasa())
   const [jumlahCustom, setJumlahCustom] = useState('')
   const [bilKelasPakej, setBilKelasPakej] = useState('4') // pakej personal: bilangan kelas dibeli
-  const [kaedah, setKaedah] = useState<'Tunai' | 'Transfer'>('Tunai')
+  const [kaedah, setKaedah] = useState<'Tunai' | 'Transfer' | 'Online'>('Tunai')
   const [tarikhBayar, setTarikhBayar] = useState(tarikhTempatan())
+
+  // Bayaran online (ToyyibPay) — link dijana untuk dihantar ke ibu bapa
+  const [linkOnline, setLinkOnline] = useState<{ url: string; billCode: string } | null>(null)
+  const [disalin, setDisalin] = useState(false)
 
   // Pakej adik-beradik (PD-008)
   const [adikBeradik, setAdikBeradik] = useState<AhliKeluarga[]>([])
@@ -190,6 +195,39 @@ export function BorangYuran() {
     setLangkah(3)
     setLoading(false)
   }
+
+  // Jana link bayaran online (ToyyibPay) untuk pelajar utama sahaja
+  const janaLinkOnline = async () => {
+    if (!pelajar) return
+    setLoading(true)
+    setRalat(null)
+    const res = await ciptaPermintaanBayaran({
+      pelajarId: pelajar.id,
+      namaPelajar: pelajar.nama_penuh,
+      noTelefon: pelajar.no_telefon,
+      jenis,
+      bulan: bulanObj.nama,
+      tahun: bulanObj.tahun,
+      jumlah: jumlahAkhir,
+      bilKelas: jenis === 'Personal' && +bilKelasPakej > 0 ? +bilKelasPakej : null,
+    })
+    if (res.ralat || !res.url) {
+      setRalat(res.ralat ?? 'Gagal jana link bayaran.')
+      setLoading(false)
+      return
+    }
+    setLinkOnline({ url: res.url, billCode: res.billCode! })
+    setLangkah(3)
+    setLoading(false)
+  }
+
+  // Mesej WhatsApp untuk hantar link bayaran
+  const waTel = (pelajar?.no_telefon ?? '').replace(/\D/g, '').replace(/^0/, '60')
+  const waMsgOnline = linkOnline
+    ? encodeURIComponent(
+        `Assalamualaikum. Ini pautan untuk bayar yuran catur CFK bagi ${pelajar?.nama_penuh} (${bulanObj.label}) berjumlah RM${jumlahAkhir.toFixed(2)}.\n\nSila klik untuk bayar (FPX / DuitNow):\n${linkOnline.url}\n\nResit rasmi akan dihantar selepas bayaran selesai. Terima kasih. 🙏`
+      )
+    : ''
 
   return (
     <div>
@@ -377,18 +415,22 @@ export function BorangYuran() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={gayaLabel}>Kaedah Bayaran</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {(['Tunai', 'Transfer'] as const).map((k) => {
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {(['Tunai', 'Transfer', 'Online'] as const).map((k) => {
                     const aktif = kaedah === k
                     return (
-                      <button key={k} type="button" onClick={() => setKaedah(k)}
+                      <button key={k} type="button" onClick={() => {
+                        setKaedah(k)
+                        // Online = satu bil untuk seorang pelajar; matikan pakej adik-beradik
+                        if (k === 'Online') { setPakej(false); setAhliDipilih([]) }
+                      }}
                         style={{
-                          flex: 1, padding: '9px',
+                          flex: 1, padding: '9px 6px',
                           border: `2px solid ${aktif ? 'var(--accent)' : 'var(--border)'}`,
                           borderRadius: '10px',
                           background: aktif ? '#F7FEE7' : 'transparent',
                           color: aktif ? 'var(--accent-dark)' : 'var(--text-muted)',
-                          fontSize: '13px', fontWeight: aktif ? 700 : 500,
+                          fontSize: '12.5px', fontWeight: aktif ? 700 : 500,
                           cursor: 'pointer', fontFamily: 'inherit',
                         }}>
                         {k}
@@ -396,6 +438,11 @@ export function BorangYuran() {
                     )
                   })}
                 </div>
+                {kaedah === 'Online' && (
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                    Link ToyyibPay dijana untuk dihantar ke ibu bapa. Resit auto-jana bila bayaran selesai.
+                  </p>
+                )}
               </div>
               <div>
                 <label style={gayaLabel}>Tarikh Bayar</label>
@@ -524,7 +571,7 @@ export function BorangYuran() {
             }}>
               ← Kembali Edit
             </button>
-            <button onClick={jana} disabled={loading} style={{
+            <button onClick={kaedah === 'Online' ? janaLinkOnline : jana} disabled={loading} style={{
               flex: 2, padding: '12px',
               background: loading ? '#94A3B8' : 'var(--accent)',
               border: 'none', borderRadius: '12px',
@@ -532,14 +579,97 @@ export function BorangYuran() {
               color: 'var(--accent-text)', cursor: loading ? 'not-allowed' : 'pointer',
               fontFamily: 'inherit',
             }}>
-              {loading ? 'Jana resit...' : '✓ Jana Resit'}
+              {loading
+                ? (kaedah === 'Online' ? 'Jana link...' : 'Jana resit...')
+                : (kaedah === 'Online' ? 'Jana Link Bayaran' : '✓ Jana Resit')}
             </button>
           </div>
         </div>
       )}
 
+      {/* ── Langkah 3 (Online): Link Bayaran Dijana ── */}
+      {langkah === 3 && pelajar && kaedah === 'Online' && linkOnline && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ background: 'var(--card)', border: '2px solid #BFDBFE', borderRadius: '20px', padding: '28px', textAlign: 'center' }}>
+            <div style={{
+              width: '60px', height: '60px', borderRadius: '50%',
+              background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 16px', fontSize: '26px',
+            }}>
+              🔗
+            </div>
+            <h2 style={{ fontSize: '19px', fontWeight: 700, color: 'var(--text)', marginBottom: '6px' }}>
+              Link Bayaran Dijana
+            </h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+              {pelajar.nama_penuh} · {bulanObj.label} · <strong>RM {jumlahAkhir.toFixed(2)}</strong>
+            </p>
+
+            {/* Kotak link + salin */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <input
+                readOnly
+                value={linkOnline.url}
+                onFocus={(e) => e.currentTarget.select()}
+                style={{ ...gayaInput, flex: 1, fontSize: '12.5px', textTransform: 'none' }}
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  try { await navigator.clipboard.writeText(linkOnline.url); setDisalin(true); setTimeout(() => setDisalin(false), 2000) } catch {}
+                }}
+                style={{
+                  padding: '0 16px', borderRadius: '10px', border: '1.5px solid var(--border)',
+                  background: disalin ? '#DCFCE7' : 'var(--bg)', color: disalin ? '#166534' : 'var(--text)',
+                  fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                }}
+              >
+                {disalin ? '✓ Disalin' : 'Salin'}
+              </button>
+            </div>
+
+            {/* Hantar WhatsApp */}
+            {waTel && (
+              <a
+                href={`https://wa.me/${waTel}?text=${waMsgOnline}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  padding: '12px', borderRadius: '12px', background: '#22C55E', color: '#FFFFFF',
+                  fontSize: '14px', fontWeight: 700, textDecoration: 'none',
+                }}
+              >
+                Hantar Link ke WhatsApp Ibu Bapa
+              </a>
+            )}
+
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '16px', lineHeight: 1.6 }}>
+              Resit rasmi akan <strong>auto-dijana</strong> sebaik ibu bapa selesai bayar.
+              Pantau status di <Link href="/bayaran/permintaan" style={{ color: 'var(--primary)', fontWeight: 600 }}>Permintaan Bayaran</Link>.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => { setLangkah(1); setPelajar(null); setJumlahCustom(''); setLinkOnline(null); setKaedah('Tunai'); setBilKelasPakej('4') }}
+              style={{
+                padding: '9px 18px', background: 'var(--bg)', border: '1.5px solid var(--border)',
+                borderRadius: '10px', fontSize: '13px', fontWeight: 600, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit',
+              }}>
+              Rekod Lagi
+            </button>
+            <Link href="/bayaran/permintaan" style={{
+              padding: '9px 18px', background: 'var(--accent)', border: 'none',
+              borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-text)', textDecoration: 'none',
+            }}>
+              Lihat Permintaan Bayaran
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* ── Langkah 3: Berjaya ── */}
-      {langkah === 3 && pelajar && (
+      {langkah === 3 && pelajar && kaedah !== 'Online' && (
         <div style={{ background: 'var(--card)', border: '2px solid #BBF7D0', borderRadius: '20px', padding: '40px', textAlign: 'center' }}>
           <div style={{
             width: '64px', height: '64px', borderRadius: '50%',

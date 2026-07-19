@@ -163,7 +163,7 @@ export interface Database {
           jenis: 'Kumpulan' | 'Personal' | 'Pendaftaran'
           jumlah: number
           bil_kelas: number | null
-          kaedah_bayaran: 'Tunai' | 'Transfer' | null
+          kaedah_bayaran: 'Tunai' | 'Transfer' | 'Online' | null
           tarikh_bayar: string
           status: 'Aktif' | 'Dibatalkan'
           sebab_batal: string | null
@@ -181,7 +181,7 @@ export interface Database {
           jenis: 'Kumpulan' | 'Personal' | 'Pendaftaran'
           jumlah: number
           bil_kelas?: number | null
-          kaedah_bayaran?: 'Tunai' | 'Transfer' | null
+          kaedah_bayaran?: 'Tunai' | 'Transfer' | 'Online' | null
           tarikh_bayar: string
           status?: 'Aktif' | 'Dibatalkan'
           sebab_batal?: string | null
@@ -198,7 +198,7 @@ export interface Database {
           tahun_bayaran?: number
           jenis?: 'Kumpulan' | 'Personal' | 'Pendaftaran'
           jumlah?: number
-          kaedah_bayaran?: 'Tunai' | 'Transfer' | null
+          kaedah_bayaran?: 'Tunai' | 'Transfer' | 'Online' | null
           tarikh_bayar?: string
           status?: 'Aktif' | 'Dibatalkan'
           sebab_batal?: string | null
@@ -206,6 +206,63 @@ export interface Database {
           dibatal_oleh?: string | null
           direkod_oleh?: string | null
           created_at?: string
+        }
+        Relationships: []
+      }
+      permintaan_bayaran: {
+        Row: {
+          id: string
+          bill_code: string
+          pelajar_id: string
+          nama_pelajar: string
+          no_telefon: string | null
+          jenis: 'Kumpulan' | 'Personal' | 'Pendaftaran'
+          bulan_bayaran: string
+          tahun_bayaran: number
+          bil_kelas: number | null
+          jumlah: number
+          status: 'Menunggu' | 'Selesai' | 'Gagal'
+          resit_id: string | null
+          payment_ref: string | null
+          dibuat_oleh: string | null
+          created_at: string
+          dibayar_pada: string | null
+        }
+        Insert: {
+          id?: string
+          bill_code: string
+          pelajar_id: string
+          nama_pelajar: string
+          no_telefon?: string | null
+          jenis: 'Kumpulan' | 'Personal' | 'Pendaftaran'
+          bulan_bayaran: string
+          tahun_bayaran: number
+          bil_kelas?: number | null
+          jumlah: number
+          status?: 'Menunggu' | 'Selesai' | 'Gagal'
+          resit_id?: string | null
+          payment_ref?: string | null
+          dibuat_oleh?: string | null
+          created_at?: string
+          dibayar_pada?: string | null
+        }
+        Update: {
+          id?: string
+          bill_code?: string
+          pelajar_id?: string
+          nama_pelajar?: string
+          no_telefon?: string | null
+          jenis?: 'Kumpulan' | 'Personal' | 'Pendaftaran'
+          bulan_bayaran?: string
+          tahun_bayaran?: number
+          bil_kelas?: number | null
+          jumlah?: number
+          status?: 'Menunggu' | 'Selesai' | 'Gagal'
+          resit_id?: string | null
+          payment_ref?: string | null
+          dibuat_oleh?: string | null
+          created_at?: string
+          dibayar_pada?: string | null
         }
         Relationships: []
       }
