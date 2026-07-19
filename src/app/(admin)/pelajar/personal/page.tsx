@@ -93,11 +93,11 @@ export default async function PantauanPersonalPage() {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '780px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '760px' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                  {['Pelajar', 'Cawangan', 'Dibeli', 'Digunakan', 'Baki', 'Sesi Terakhir', 'Status', ''].map((h) => (
-                    <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {['Pelajar', 'Cawangan', 'Pakej', 'Sesi Terakhir', 'Status', 'Tindakan'].map((h, hi) => (
+                    <th key={h} style={{ padding: '10px 14px', textAlign: hi === 5 ? 'right' : 'left', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       {h}
                     </th>
                   ))}
@@ -119,19 +119,13 @@ export default async function PantauanPersonalPage() {
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>{b.jenis_kelas}</div>
                       </td>
                       <td style={{ padding: '11px 14px', fontSize: '13px', color: 'var(--text-muted)' }}>{b.cawangan_nama}</td>
-                      <td style={{ padding: '11px 14px', fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>
-                        {b.pakej.kredit > 0 ? `${b.pakej.kredit} kelas` : '—'}
-                      </td>
-                      <td style={{ padding: '11px 14px', fontSize: '13.5px', color: 'var(--text)' }}>
-                        {b.pakej.kredit > 0 ? b.pakej.digunakan : '—'}
-                      </td>
-                      <td style={{ padding: '11px 14px', minWidth: '130px' }}>
+                      <td style={{ padding: '11px 14px', minWidth: '150px' }}>
                         {b.pakej.kredit > 0 ? (
                           <div>
                             <div style={{ fontSize: '13.5px', fontWeight: 800, color: b.pakej.baki <= 0 ? '#DC2626' : b.pakej.baki === 1 ? '#92400E' : 'var(--hadir-text)' }}>
                               {b.pakej.digunakan}/{b.pakej.kredit} digunakan
                             </div>
-                            <div style={{ background: '#F1F5F9', borderRadius: '4px', height: '6px', overflow: 'hidden', marginTop: '4px', maxWidth: '110px' }}>
+                            <div style={{ background: '#F1F5F9', borderRadius: '4px', height: '6px', overflow: 'hidden', marginTop: '5px', maxWidth: '130px' }}>
                               <div style={{
                                 width: `${Math.min(100, (b.pakej.digunakan / b.pakej.kredit) * 100)}%`,
                                 height: '100%',
@@ -139,9 +133,12 @@ export default async function PantauanPersonalPage() {
                                 borderRadius: '4px',
                               }} />
                             </div>
+                            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '5px' }}>
+                              {b.pakej.kredit} dibeli · baki {Math.max(0, b.pakej.baki)} kelas
+                            </div>
                           </div>
                         ) : (
-                          <span style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>—</span>
+                          <span style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>Belum ada pakej</span>
                         )}
                       </td>
                       <td style={{ padding: '11px 14px', fontSize: '12.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
@@ -152,8 +149,8 @@ export default async function PantauanPersonalPage() {
                           {w.label}
                         </span>
                       </td>
-                      <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', gap: '6px' }}>
+                      <td style={{ padding: '11px 14px', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                           {b.status === 'Cukup' && noTel && (
                             <a
                               href={`https://wa.me/${noTel}?text=${msgWA}`}
