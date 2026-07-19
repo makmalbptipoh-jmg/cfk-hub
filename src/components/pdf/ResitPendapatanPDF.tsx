@@ -45,7 +45,8 @@ export function ResitPendapatanPDF({ no_resit, sumber, kategori, nota, jumlah, k
             <Image src={LOGO_CFK} style={{ height: 42, width: 52 }} />
             <View>
               <Text style={s.logoText}>CHESS FOR KIDS (CFK)</Text>
-              <Text style={s.logoSub}>5B, Laluan Klebang 21, Klebang Perdana, 31200 Chemor, Perak</Text>
+              <Text style={s.logoSub}>5B, Laluan Klebang 21, Klebang Perdana</Text>
+              <Text style={s.logoSub}>31200 Chemor, Perak</Text>
             </View>
           </View>
           <Text style={s.resitBadge}>RESIT RASMI</Text>

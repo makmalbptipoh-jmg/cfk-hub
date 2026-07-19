@@ -4,7 +4,8 @@ import { LOGO_CFK } from './logoCfk'
 // Maklumat syarikat (tetap)
 const CFK = {
   nama: 'CHESS FOR KIDS (CFK)',
-  alamat: '5B, Laluan Klebang 21, Klebang Perdana, 31200 Chemor, Perak',
+  alamat1: '5B, Laluan Klebang 21, Klebang Perdana',
+  alamat2: '31200 Chemor, Perak',
 }
 
 type Jenis = 'Sebut Harga' | 'Invois' | 'Resit'
@@ -19,7 +20,7 @@ const s = StyleSheet.create({
   page: { fontFamily: 'Helvetica', fontSize: 10, padding: '40px 48px', color: '#0F172A', backgroundColor: '#FFFFFF' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingBottom: 14, borderBottom: '2px solid #1E293B' },
   logoText: { fontSize: 15, fontFamily: 'Helvetica-Bold', color: '#1E293B' },
-  logoSub: { fontSize: 8, color: '#64748B', marginTop: 3, maxWidth: 220, lineHeight: 1.4 },
+  logoSub: { fontSize: 8, color: '#64748B', marginTop: 3, lineHeight: 1.4 },
   badge: { backgroundColor: '#1E293B', color: '#FFFFFF', padding: '7px 14px', borderRadius: 6, fontSize: 12, fontFamily: 'Helvetica-Bold', letterSpacing: 0.5 },
 
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 18 },
@@ -97,7 +98,8 @@ export function DokumenJualanPDF({
             <Image src={LOGO_CFK} style={{ height: 42, width: 52 }} />
             <View>
               <Text style={s.logoText}>{CFK.nama}</Text>
-              <Text style={s.logoSub}>{CFK.alamat}</Text>
+              <Text style={s.logoSub}>{CFK.alamat1}</Text>
+              <Text style={s.logoSub}>{CFK.alamat2}</Text>
             </View>
           </View>
           <Text style={s.badge}>{meta.tajuk}</Text>
