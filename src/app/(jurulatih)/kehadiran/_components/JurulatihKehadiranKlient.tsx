@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { CheckCircle2, UserMinus, Search, X } from 'lucide-react'
+import { CheckCircle2, UserMinus, Search, X, UserPlus } from 'lucide-react'
 import { toast } from '@/lib/stores/toast-store'
 
 type Pelajar = {
@@ -87,14 +88,25 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
     toast.success(`${p.nama_penuh} ditandai tidak aktif.`)
   }
 
-  const senaraiFiltred = useMemo(
-    () => [...senaraiKumpulan, ...senaraiPersonal],
-    [senaraiKumpulan, senaraiPersonal]
-  )
-
   // Carian hanya menapis PAPARAN — pelajar yang sudah ditanda tetap disimpan
   const kataCari = carian.trim().toUpperCase()
   const sepadanCarian = (p: Pelajar) => !kataCari || p.nama_penuh.toUpperCase().includes(kataCari)
+
+  // Pelajar melawat: pelajar dari cawangan LAIN yang hadir di cawangan ini.
+  // Muncul HANYA bila cawangan spesifik dipilih + ada carian — elak papar
+  // ratusan pelajar sekaligus, dan pastikan cawangan_sesi_id = cawangan hos.
+  const cawanganSpesifik = !!cawanganChip && cawanganChip !== CHIP_PERSONAL
+  const senaraiMelawat = useMemo(() => {
+    if (!cawanganSpesifik || !kataCari) return [] as Pelajar[]
+    const sudahAda = new Set([...senaraiKumpulan, ...senaraiPersonal].map((p) => p.id))
+    return senarai.filter((p) => !sudahAda.has(p.id) && p.nama_penuh.toUpperCase().includes(kataCari))
+  }, [senarai, cawanganSpesifik, kataCari, senaraiKumpulan, senaraiPersonal])
+
+  const senaraiFiltred = useMemo(
+    () => [...senaraiKumpulan, ...senaraiPersonal, ...senaraiMelawat],
+    [senaraiKumpulan, senaraiPersonal, senaraiMelawat]
+  )
+
   const kumpulanPapar = senaraiKumpulan.filter(sepadanCarian)
   const personalPapar = senaraiPersonal.filter(sepadanCarian)
 
@@ -226,11 +238,25 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
   return (
     <div style={{ padding: '16px', paddingBottom: '100px' }}>
       {/* Header */}
-      <div style={{ marginBottom: '16px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', marginBottom: '2px' }}>
-          Rekod Kehadiran
-        </h1>
-        <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>{tarikhPapar}</p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', marginBottom: '2px' }}>
+            Rekod Kehadiran
+          </h1>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>{tarikhPapar}</p>
+        </div>
+        <Link
+          href="/pelajar-baharu"
+          style={{
+            flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '5px',
+            padding: '8px 12px', borderRadius: '10px',
+            border: '1.5px solid var(--accent)', background: 'var(--card)',
+            color: 'var(--accent)', fontSize: '12px', fontWeight: 700,
+            textDecoration: 'none', whiteSpace: 'nowrap', marginTop: '2px',
+          }}
+        >
+          <UserPlus size={14} /> Daftar Pelajar
+        </Link>
       </div>
 
       {/* Chip Cawangan */}
@@ -294,6 +320,13 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
         )}
       </div>
 
+      {/* Hint pelajar melawat */}
+      {cawanganSpesifik && !kataCari && (
+        <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '12px', padding: '0 2px', lineHeight: 1.4 }}>
+          Pelajar dari cawangan lain hadir di sini? Taip nama mereka di atas untuk cari &amp; tanda kehadiran.
+        </div>
+      )}
+
       {/* Ringkasan */}
       <div style={{
         background: 'var(--card)', border: '1px solid var(--border)',
@@ -307,7 +340,7 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
       </div>
 
       {/* Senarai Pelajar */}
-      {kumpulanPapar.length + personalPapar.length === 0 ? (
+      {kumpulanPapar.length + personalPapar.length + senaraiMelawat.length === 0 ? (
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '40px 20px', textAlign: 'center' }}>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
             {kataCari
@@ -331,6 +364,21 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
                 </p>
               </div>
               {personalPapar.map(kadPelajar)}
+            </>
+          )}
+
+          {/* Section Pelajar Dari Cawangan Lain — pelajar melawat (silang-cawangan) */}
+          {senaraiMelawat.length > 0 && (
+            <>
+              <div style={{ marginTop: (kumpulanPapar.length > 0 || personalPapar.length > 0) ? '12px' : 0 }}>
+                <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>
+                  Pelajar Dari Cawangan Lain
+                </h2>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                  Cari &amp; tanda pelajar yang melawat cawangan ini
+                </p>
+              </div>
+              {senaraiMelawat.map(kadPelajar)}
             </>
           )}
         </div>

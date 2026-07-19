@@ -1,6 +1,19 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 18 Jul 2026 (Sesi 10)
+**Dikemaskini:** 19 Jul 2026 (Sesi 11)
+
+## ⚡ SESI 11 (19 Jul 2026)
+
+### Kehadiran silang-cawangan (semua pelajar) + jurulatih daftar pelajar dari telefon (build+typecheck+19 ujian LULUS; BELUM diuji browser)
+Keperluan user: polisi semua pelajar CFK (bukan hanya Personal) boleh hadir di cawangan lain — cadang cara ambil kedatangan; + jurulatih boleh daftar pelajar baru dari telefon. Keputusan user: (A) cara **cari nama → tambah** pelajar melawat; (B) pelajar baru **terus masuk** (tiada sahkan admin) + notifikasi loceng admin.
+
+- **Ciri A (tiada SQL — guna `cawangan_sesi_id` sedia ada):** `JurulatihKehadiranKlient.tsx` — tambah `senaraiMelawat` (useMemo): muncul HANYA bila chip cawangan spesifik dipilih + ada carian, isi = pelajar Aktif sepadan nama yang BUKAN dalam senarai kumpulan/personal cawangan itu. Section baru **"Pelajar Dari Cawangan Lain"** (guna semula `kadPelajar`, papar cawangan asal) + hint di bawah kotak carian. Dimasukkan dalam `senaraiFiltred` → save tulis `cawangan_daftar_id`=asal, `cawangan_sesi_id`=cawangan hos (chip). Laporan Per Kelas (guna `cawangan_sesi_id`) auto tunjuk pelajar melawat dalam kelas hos.
+- **Ciri B:**
+  - ⚠️ **WAJIB run `scripts/sql/jurulatih-daftar-pelajar.sql` SEBELUM deploy** — RLS INSERT `pelajar` ganti `tambah_admin` → `tambah_admin_atau_jurulatih` (`is_admin OR jurulatih_id_semasa() IS NOT NULL`) + tambah enum `sumber_daftar 'Jurulatih'` (drop/add constraint `pelajar_sumber_daftar_check`). Ada blok ROLLBACK.
+  - `src/types/database.ts`: union `sumber_daftar` + `'Jurulatih'` (Row/Insert/Update).
+  - Route mobile baru **`/pelajar-baharu`** (`(jurulatih)/pelajar-baharu/page.tsx` + `_components/BorangPelajarKlient.tsx`): borang 1-skrin gaya rumah jurulatih, pra-isi cawangan dari `jurulatih.cawangan_ids[0]`, amaran pendua nama (debounce ilike), insert `sumber_daftar:'Jurulatih'` + nama HURUF BESAR + `yuran_bulanan:kirYuranBulanan()`. Empty state jika akaun tak dipaut. Butang **"Daftar Pelajar"** (UserPlus) di header page /kehadiran.
+  - `notifikasi.ts`: jenis baru `pelajar_baharu_jurulatih` (kunci `pelajar_jurulatih:{id}`) — imbas pelajar sumber Jurulatih 30 hari lepas, upsert makluman (admin tandai dibaca sendiri; tiada auto-selesai).
+- **Ujian klik-lalu diperlukan (selepas run SQL):** (A) login jurulatih → /kehadiran → pilih cawangan spesifik + taip nama pelajar cawangan lain → section "Pelajar Dari Cawangan Lain" → Hadir → Simpan → sahkan Laporan Kehadiran Harian cawangan hos + DB (`cawangan_sesi_id`=hos, `cawangan_daftar_id`=asal). (B) butang Daftar Pelajar → borang → hantar → toast + muncul senarai + amaran pendua ("CHUA") + loceng admin. Uji akaun jurulatih TAK berpaut → empty state / RLS tolak. Padam data ujian selepas.
 
 ## ⚡ SESI 10 (18 Jul 2026)
 

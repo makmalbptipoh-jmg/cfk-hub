@@ -292,6 +292,28 @@ export async function janaDanMuatNotifikasi(): Promise<{ senarai: Notifikasi[]; 
     }
   }
 
+  // ---- Makluman: pelajar baru didaftar oleh jurulatih (dari telefon) ----
+  // Satu notifikasi per pelajar sumber 'Jurulatih' didaftar dalam 30 hari lepas.
+  // Bersifat makluman — admin tandai dibaca sendiri (tiada auto-selesai).
+  const [py, pm, pd] = tarikhHariIni.split('-').map(Number)
+  const cutoff30 = new Date(Date.UTC(py, pm - 1, pd - 30)).toISOString()
+  const { data: pelajarJurulatih } = await supabase
+    .from('pelajar')
+    .select('id, nama_penuh, cawangan:cawangan_daftar_id(nama)')
+    .eq('sumber_daftar', 'Jurulatih')
+    .gte('created_at', cutoff30)
+  if ((pelajarJurulatih ?? []).length > 0) {
+    const barisPelajar = (pelajarJurulatih as any[]).map((p) => ({
+      jenis: 'pelajar_baharu_jurulatih',
+      tajuk: 'Pelajar baru didaftar jurulatih',
+      mesej: `${p.nama_penuh} didaftar oleh jurulatih${p.cawangan?.nama ? ` di ${p.cawangan.nama}` : ''}. Sila semak profil.`,
+      pautan: `/pelajar/${p.id}`,
+      kunci: `pelajar_jurulatih:${p.id}`,
+      rujukan_id: p.id,
+    }))
+    await supabase.from('notifikasi').upsert(barisPelajar, { onConflict: 'kunci', ignoreDuplicates: true })
+  }
+
   const [{ data: senarai }, { count }] = await Promise.all([
     supabase
       .from('notifikasi')

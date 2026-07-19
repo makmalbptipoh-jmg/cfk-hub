@@ -75,7 +75,7 @@ export interface Database {
           yuran_bulanan: number
           status: 'Aktif' | 'Tidak Aktif'
           tarikh_daftar: string
-          sumber_daftar: 'GoogleForms' | 'Manual'
+          sumber_daftar: 'GoogleForms' | 'Manual' | 'Jurulatih'
           created_at: string
         }
         Insert: {
@@ -92,7 +92,7 @@ export interface Database {
           yuran_bulanan: number
           status?: 'Aktif' | 'Tidak Aktif'
           tarikh_daftar?: string
-          sumber_daftar?: 'GoogleForms' | 'Manual'
+          sumber_daftar?: 'GoogleForms' | 'Manual' | 'Jurulatih'
           created_at?: string
         }
         Update: {
@@ -109,7 +109,7 @@ export interface Database {
           yuran_bulanan?: number
           status?: 'Aktif' | 'Tidak Aktif'
           tarikh_daftar?: string
-          sumber_daftar?: 'GoogleForms' | 'Manual'
+          sumber_daftar?: 'GoogleForms' | 'Manual' | 'Jurulatih'
           created_at?: string
         }
         Relationships: []
