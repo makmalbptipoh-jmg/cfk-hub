@@ -11,7 +11,8 @@ Keperluan user: satu tempat rekod silibus / tajuk yang diajar setiap kelas & caw
 - **PDF** `src/components/pdf/LaporanSilibusPDF.tsx` (A4 portrait, header CFK, jadual 6 lajur, zebra) — corak dynamic import `pdf(...).toBlob()` sama bilangan-kelas.
 - **Diubah:** `src/types/database.ts` (blok `silibus`), `supabase/schema.sql` (jadual + index + RLS, sync 2026-07-23), `src/components/layout/Sidebar.tsx` (link).
 - **Diuji penuh di production (23 Jul):** tambah rekod (Klebang/Khamis/tajuk/page) ✅, banyak topik satu kelas ✅, PDF ✅, edit prapopulasi ✅, padam 2-klik ✅. Data ujian dipadam.
-- **Susulan (23 Jul): medan Nama Pelajar untuk kelas Personal** — trace kelas siapa. ⚠️ **WAJIB re-run `scripts/sql/silibus.sql`** (tambah `ALTER TABLE silibus ADD COLUMN IF NOT EXISTS pelajar_id UUID REFERENCES pelajar(id)` + index; idempotent). ModalSilibus tunjuk `CariPelajar` bila Personal (simpan `pelajar_id`, null bila Kumpulan). Senarai + PDF: lajur "Cawangan / Pelajar" tunjuk nama pelajar untuk Personal (helper `labelKelas`). ⚠️ SQL mesti run SEBELUM deploy — SELECT & INSERT guna `pelajar_id`, page pecah jika kolum tiada.
+- **Susulan (23 Jul): medan Nama Pelajar untuk kelas Personal** — trace kelas siapa. SQL `silibus.sql` di-run semula user (tambah `pelajar_id` + index; idempotent). ModalSilibus tunjuk `CariPelajar` bila Personal (simpan `pelajar_id`, null bila Kumpulan). Senarai + PDF: lajur "Cawangan / Pelajar" tunjuk nama pelajar untuk Personal (helper `labelKelas`). Commit `e3b21f6`.
+- **DIUJI PENUH di production (23 Jul, commit e3b21f6):** Personal → medan pelajar muncul ✅, carian pelajar (taip "har" → senarai sebenar) ✅, pilih HARITH KAMIL → simpan ✅, lajur "Cawangan / Pelajar" (Kumpulan=cawangan, Personal=nama pelajar tebal) ✅, edit Personal prapopulasi ✅, PDF ✅, padam data ujian ✅. **Ciri Silibus Kelas LENGKAP & LIVE.** User dah mula guna (rekod sebenar: Sri Iskandar · Chapter 3).
 
 ## ⚡ SESI 12 (19 Jul 2026)
 
