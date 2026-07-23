@@ -1,6 +1,16 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 19 Jul 2026 (Sesi 12)
+**Dikemaskini:** 23 Jul 2026 (Sesi 13)
+
+## ⚡ SESI 13 (23 Jul 2026)
+
+### Rekod Silibus / Tajuk Kelas + Laporan PDF (build+typecheck LULUS; BELUM diuji browser)
+Keperluan user: satu tempat rekod silibus / tajuk yang diajar setiap kelas & cawangan, boleh muat turun PDF. Keputusan user: (1) **admin sahaja** rekod; (2) **log ikut tarikh** (satu baris = satu tajuk pada satu tarikh); (3) pilih **cawangan + tarikh** (tak terikat jadual). Medan yang diminta: **tajuk, tarikh, page (muka surat)**.
+- ⚠️ **WAJIB run `scripts/sql/silibus.sql` SEBELUM deploy** — jadual `silibus` (tarikh, cawangan_id pilihan, jenis Kumpulan/Personal, tajuk, muka_surat TEXT, nota, direkod_oleh) + 2 index + RLS (`baca_silibus` terbuka, `tulis_admin_silibus` admin sahaja). Ada blok ROLLBACK.
+- **Page baharu `/silibus`** (sidebar "Silibus Kelas", ikon BookOpen, selepas Jadual Kelas): `page.tsx` (server, fetch cawangan) + `_components/SilibusKlient.tsx` (penapis bulan+cawangan, jadual Tarikh/Hari/Cawangan/Jenis/Tajuk/Muka Surat, butang Muat Turun PDF) + `_components/ModalSilibus.tsx` (borang tambah/edit: tarikh default hari ini, cawangan, togol jenis, tajuk wajib, page, nota; padam 2-klik). CRUD terus ke Supabase (RLS), corak sama ModalSlot/ModalBatalSlot.
+- **PDF** `src/components/pdf/LaporanSilibusPDF.tsx` (A4 portrait, header CFK, jadual 6 lajur, zebra) — corak dynamic import `pdf(...).toBlob()` sama bilangan-kelas.
+- **Diubah:** `src/types/database.ts` (blok `silibus`), `supabase/schema.sql` (jadual + index + RLS, sync 2026-07-23), `src/components/layout/Sidebar.tsx` (link).
+- **Ujian klik-lalu diperlukan (selepas run SQL):** login admin → sidebar Silibus Kelas → Tambah Rekod (tarikh + cawangan + tajuk + page) → muncul senarai (lajur Hari betul) → penapis bulan/cawangan → Edit/Padam → Muat Turun PDF. Padam data ujian selepas.
 
 ## ⚡ SESI 12 (19 Jul 2026)
 

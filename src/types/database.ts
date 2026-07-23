@@ -921,6 +921,42 @@ export interface Database {
         }
         Relationships: []
       }
+      silibus: {
+        Row: {
+          id: string
+          tarikh: string
+          cawangan_id: string | null
+          jenis: 'Kumpulan' | 'Personal'
+          tajuk: string
+          muka_surat: string | null
+          nota: string | null
+          direkod_oleh: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          tarikh: string
+          cawangan_id?: string | null
+          jenis?: 'Kumpulan' | 'Personal'
+          tajuk: string
+          muka_surat?: string | null
+          nota?: string | null
+          direkod_oleh?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          tarikh?: string
+          cawangan_id?: string | null
+          jenis?: 'Kumpulan' | 'Personal'
+          tajuk?: string
+          muka_surat?: string | null
+          nota?: string | null
+          direkod_oleh?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

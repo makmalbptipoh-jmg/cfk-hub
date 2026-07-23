@@ -7,7 +7,7 @@
 -- (paste-and-run dalam Supabase SQL Editor); fail ini menggabungkan
 -- kesemua migrasi tersebut ke dalam definisi CREATE TABLE.
 --
--- Tarikh sync terakhir: 2026-07-18
+-- Tarikh sync terakhir: 2026-07-23
 -- Jalankan dalam Supabase SQL Editor (ikut urutan).
 -- ============================================================
 
@@ -425,6 +425,20 @@ CREATE TABLE IF NOT EXISTS aktiviti (
   CONSTRAINT chk_aktiviti_masa CHECK (masa_tamat IS NULL OR masa_mula IS NULL OR masa_tamat > masa_mula)
 );
 
+-- REKOD SILIBUS / TAJUK KELAS (silibus.sql)
+-- Log bertarikh: satu baris = satu tajuk diajar pada satu tarikh untuk satu kelas.
+CREATE TABLE IF NOT EXISTS silibus (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  tarikh DATE NOT NULL,
+  cawangan_id UUID REFERENCES cawangan(id),          -- pilihan (Personal boleh tiada)
+  jenis TEXT NOT NULL DEFAULT 'Kumpulan' CHECK (jenis IN ('Kumpulan', 'Personal')),
+  tajuk TEXT NOT NULL,
+  muka_surat TEXT,                                   -- "page" — cth "ms 12-15"
+  nota TEXT,
+  direkod_oleh UUID REFERENCES pengguna_profil(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 22. JADUAL LOG AKTIVITI / AUDIT (log-aktiviti.sql)
 -- Rekod automatik siapa Cipta/Edit/Padam rekod penting + Log Masuk.
 CREATE TABLE IF NOT EXISTS log_aktiviti (
@@ -560,6 +574,10 @@ CREATE INDEX IF NOT EXISTS idx_jadual_slot_hari ON jadual_slot (status, hari_min
 CREATE INDEX IF NOT EXISTS idx_slot_batal_tarikh ON jadual_slot_batal (tarikh);
 CREATE INDEX IF NOT EXISTS idx_aktiviti_tarikh ON aktiviti (status, tarikh);
 
+-- SILIBUS
+CREATE INDEX IF NOT EXISTS idx_silibus_tarikh ON silibus (tarikh DESC);
+CREATE INDEX IF NOT EXISTS idx_silibus_cawangan ON silibus (cawangan_id, tarikh DESC);
+
 -- ============================================================
 -- ROW LEVEL SECURITY (RLS)
 -- Keadaan AKHIR polisi selepas rls-ketat.sql + migrasi lain:
@@ -590,6 +608,7 @@ ALTER TABLE log_aktiviti ENABLE ROW LEVEL SECURITY;
 ALTER TABLE jadual_slot ENABLE ROW LEVEL SECURITY;
 ALTER TABLE jadual_slot_batal ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aktiviti ENABLE ROW LEVEL SECURITY;
+ALTER TABLE silibus ENABLE ROW LEVEL SECURITY;
 
 -- Helper: semak is_admin
 CREATE OR REPLACE FUNCTION is_admin(user_id UUID)
@@ -785,6 +804,18 @@ CREATE POLICY "baca_aktiviti" ON aktiviti
 
 DROP POLICY IF EXISTS "tulis_admin_aktiviti" ON aktiviti;
 CREATE POLICY "tulis_admin_aktiviti" ON aktiviti
+  FOR ALL TO authenticated
+  USING (is_admin(auth.uid()))
+  WITH CHECK (is_admin(auth.uid()));
+
+-- ---------- silibus ----------
+-- BACA terbuka kepada semua pengguna log masuk; TULIS admin sahaja
+DROP POLICY IF EXISTS "baca_silibus" ON silibus;
+CREATE POLICY "baca_silibus" ON silibus
+  FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "tulis_admin_silibus" ON silibus;
+CREATE POLICY "tulis_admin_silibus" ON silibus
   FOR ALL TO authenticated
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
