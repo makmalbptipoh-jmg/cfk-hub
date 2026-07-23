@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 import { tarikhTempatan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
+import { CariPelajar, type PelajarCarian } from '@/components/pelajar/CariPelajar'
 import type { Cawangan, Silibus } from './SilibusKlient'
 
 export function ModalSilibus({
@@ -22,6 +23,7 @@ export function ModalSilibus({
   const [tarikh, setTarikh] = useState(rekodEdit?.tarikh ?? tarikhTempatan())
   const [cawanganId, setCawanganId] = useState(rekodEdit?.cawangan_id ?? '')
   const [jenis, setJenis] = useState<'Kumpulan' | 'Personal'>(rekodEdit?.jenis ?? 'Kumpulan')
+  const [pelajarId, setPelajarId] = useState(rekodEdit?.pelajar_id ?? '')
   const [tajuk, setTajuk] = useState(rekodEdit?.tajuk ?? '')
   const [mukaSurat, setMukaSurat] = useState(rekodEdit?.muka_surat ?? '')
   const [nota, setNota] = useState(rekodEdit?.nota ?? '')
@@ -41,6 +43,7 @@ export function ModalSilibus({
     const rekod = {
       tarikh,
       cawangan_id: cawanganId || null,
+      pelajar_id: jenis === 'Personal' ? pelajarId || null : null,
       jenis,
       tajuk: tajuk.trim(),
       muka_surat: mukaSurat.trim() || null,
@@ -126,6 +129,17 @@ export function ModalSilibus({
               <button type="button" onClick={() => setJenis('Personal')} style={togol(jenis === 'Personal')}>Personal</button>
             </div>
           </div>
+
+          {jenis === 'Personal' && (
+            <div>
+              <label style={labelStyle}>Nama Pelajar (kelas siapa)</label>
+              <CariPelajar
+                onPilih={(p: PelajarCarian) => setPelajarId(p.id)}
+                placeholder="Cari nama pelajar personal..."
+                nilaiAwal={rekodEdit?.pelajar?.nama_penuh ?? ''}
+              />
+            </div>
+          )}
 
           <div>
             <label style={labelStyle}>Tajuk / Silibus Diajar</label>

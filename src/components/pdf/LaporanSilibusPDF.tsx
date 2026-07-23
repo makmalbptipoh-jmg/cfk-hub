@@ -21,7 +21,7 @@ const s = StyleSheet.create({
 })
 
 // Lebar kolum (flex): Tajuk paling lebar
-const L = { tarikh: 1.3, hari: 1, cawangan: 1.5, jenis: 1, tajuk: 3, mukaSurat: 1.3 }
+const L = { tarikh: 1.2, hari: 0.9, cawangan: 2, jenis: 0.9, tajuk: 2.8, mukaSurat: 1.2 }
 
 export type BarisSilibus = {
   tarikh: string // sudah diformat, cth "20/07/2026"
@@ -61,7 +61,7 @@ export function LaporanSilibusPDF({ cawanganLabel, bulanLabel, baris, tarikhJana
           <View style={s.barisHeader}>
             <Text style={[s.selHeader, { flex: L.tarikh }]}>TARIKH</Text>
             <Text style={[s.selHeader, { flex: L.hari }]}>HARI</Text>
-            <Text style={[s.selHeader, { flex: L.cawangan }]}>CAWANGAN</Text>
+            <Text style={[s.selHeader, { flex: L.cawangan }]}>CAWANGAN / PELAJAR</Text>
             <Text style={[s.selHeader, { flex: L.jenis }]}>JENIS</Text>
             <Text style={[s.selHeader, { flex: L.tajuk }]}>TAJUK / SILIBUS</Text>
             <Text style={[s.selHeader, { flex: L.mukaSurat }]}>MUKA SURAT</Text>

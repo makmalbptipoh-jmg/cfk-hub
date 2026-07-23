@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS silibus (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   tarikh DATE NOT NULL,
   cawangan_id UUID REFERENCES cawangan(id),          -- pilihan (Personal boleh tiada cawangan)
+  pelajar_id UUID REFERENCES pelajar(id),            -- untuk kelas Personal: trace kelas siapa
   jenis TEXT NOT NULL DEFAULT 'Kumpulan' CHECK (jenis IN ('Kumpulan', 'Personal')),
   tajuk TEXT NOT NULL,                               -- tajuk / silibus yang diajar
   muka_surat TEXT,                                   -- "page" — cth "ms 12-15" / "Modul 2"
@@ -20,8 +21,12 @@ CREATE TABLE IF NOT EXISTS silibus (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Untuk jadual yang sudah wujud (dari run terdahulu): tambah kolum pelajar_id.
+ALTER TABLE silibus ADD COLUMN IF NOT EXISTS pelajar_id UUID REFERENCES pelajar(id);
+
 CREATE INDEX IF NOT EXISTS idx_silibus_tarikh ON silibus (tarikh DESC);
 CREATE INDEX IF NOT EXISTS idx_silibus_cawangan ON silibus (cawangan_id, tarikh DESC);
+CREATE INDEX IF NOT EXISTS idx_silibus_pelajar ON silibus (pelajar_id, tarikh DESC);
 
 COMMENT ON TABLE silibus IS 'Rekod silibus/tajuk yang diajar setiap kelas (cawangan + tarikh + jenis). Log dalaman untuk laporan pengajaran.';
 

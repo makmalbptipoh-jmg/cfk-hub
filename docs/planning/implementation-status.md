@@ -10,7 +10,8 @@ Keperluan user: satu tempat rekod silibus / tajuk yang diajar setiap kelas & caw
 - **Page baharu `/silibus`** (sidebar "Silibus Kelas", ikon BookOpen, selepas Jadual Kelas): `page.tsx` (server, fetch cawangan) + `_components/SilibusKlient.tsx` (penapis bulan+cawangan, jadual Tarikh/Hari/Cawangan/Jenis/Tajuk/Muka Surat, butang Muat Turun PDF) + `_components/ModalSilibus.tsx` (borang tambah/edit: tarikh default hari ini, cawangan, togol jenis, tajuk wajib, page, nota; padam 2-klik). CRUD terus ke Supabase (RLS), corak sama ModalSlot/ModalBatalSlot.
 - **PDF** `src/components/pdf/LaporanSilibusPDF.tsx` (A4 portrait, header CFK, jadual 6 lajur, zebra) — corak dynamic import `pdf(...).toBlob()` sama bilangan-kelas.
 - **Diubah:** `src/types/database.ts` (blok `silibus`), `supabase/schema.sql` (jadual + index + RLS, sync 2026-07-23), `src/components/layout/Sidebar.tsx` (link).
-- **Ujian klik-lalu diperlukan (selepas run SQL):** login admin → sidebar Silibus Kelas → Tambah Rekod (tarikh + cawangan + tajuk + page) → muncul senarai (lajur Hari betul) → penapis bulan/cawangan → Edit/Padam → Muat Turun PDF. Padam data ujian selepas.
+- **Diuji penuh di production (23 Jul):** tambah rekod (Klebang/Khamis/tajuk/page) ✅, banyak topik satu kelas ✅, PDF ✅, edit prapopulasi ✅, padam 2-klik ✅. Data ujian dipadam.
+- **Susulan (23 Jul): medan Nama Pelajar untuk kelas Personal** — trace kelas siapa. ⚠️ **WAJIB re-run `scripts/sql/silibus.sql`** (tambah `ALTER TABLE silibus ADD COLUMN IF NOT EXISTS pelajar_id UUID REFERENCES pelajar(id)` + index; idempotent). ModalSilibus tunjuk `CariPelajar` bila Personal (simpan `pelajar_id`, null bila Kumpulan). Senarai + PDF: lajur "Cawangan / Pelajar" tunjuk nama pelajar untuk Personal (helper `labelKelas`). ⚠️ SQL mesti run SEBELUM deploy — SELECT & INSERT guna `pelajar_id`, page pecah jika kolum tiada.
 
 ## ⚡ SESI 12 (19 Jul 2026)
 

@@ -14,14 +14,16 @@ export type Silibus = {
   id: string
   tarikh: string
   cawangan_id: string | null
+  pelajar_id: string | null
   jenis: 'Kumpulan' | 'Personal'
   tajuk: string
   muka_surat: string | null
   nota: string | null
   cawangan: { nama: string } | null
+  pelajar: { nama_penuh: string } | null
 }
 
-const SELECT_SILIBUS = '*, cawangan:cawangan_id(nama)'
+const SELECT_SILIBUS = '*, cawangan:cawangan_id(nama), pelajar:pelajar_id(nama_penuh)'
 
 function labelBulan(bm: string) {
   const [y, m] = bm.split('-').map(Number)
@@ -30,6 +32,14 @@ function labelBulan(bm: string) {
 
 // 'YYYY-MM-DD' → 'DD/MM/YYYY'
 const tarikhRingkas = (t: string) => t.split('-').reverse().join('/')
+
+// Label kelas: Personal → nama pelajar (+ cawangan jika ada); Kumpulan → cawangan
+const labelKelas = (r: Silibus) => {
+  if (r.jenis === 'Personal' && r.pelajar?.nama_penuh) {
+    return r.cawangan?.nama ? `${r.pelajar.nama_penuh} · ${r.cawangan.nama}` : r.pelajar.nama_penuh
+  }
+  return r.cawangan?.nama ?? '—'
+}
 
 export function SilibusKlient({ cawanganAwal }: { cawanganAwal: Cawangan[] }) {
   const [bulan, setBulan] = useState(bulanTempatan())
@@ -81,7 +91,7 @@ export function SilibusKlient({ cawanganAwal }: { cawanganAwal: Cawangan[] }) {
       const baris: BarisSilibus[] = senarai.map((r) => ({
         tarikh: tarikhRingkas(r.tarikh),
         hari: HARI[hariMinggu(r.tarikh)],
-        cawangan: r.cawangan?.nama ?? '—',
+        cawangan: labelKelas(r),
         jenis: r.jenis,
         tajuk: r.tajuk,
         mukaSurat: r.muka_surat ?? '',
@@ -174,7 +184,7 @@ export function SilibusKlient({ cawanganAwal }: { cawanganAwal: Cawangan[] }) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                {['Tarikh', 'Hari', 'Cawangan', 'Jenis', 'Tajuk / Silibus', 'Muka Surat', ''].map((h, i) => (
+                {['Tarikh', 'Hari', 'Cawangan / Pelajar', 'Jenis', 'Tajuk / Silibus', 'Muka Surat', ''].map((h, i) => (
                   <th key={i} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     {h}
                   </th>
@@ -186,7 +196,16 @@ export function SilibusKlient({ cawanganAwal }: { cawanganAwal: Cawangan[] }) {
                 <tr key={r.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}>
                   <td style={{ padding: '11px 16px', fontSize: '13px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap' }}>{formatTarikh(r.tarikh)}</td>
                   <td style={{ padding: '11px 16px', fontSize: '12.5px', color: 'var(--text-muted)' }}>{HARI[hariMinggu(r.tarikh)]}</td>
-                  <td style={{ padding: '11px 16px', fontSize: '13px', color: 'var(--text)' }}>{r.cawangan?.nama ?? '—'}</td>
+                  <td style={{ padding: '11px 16px', fontSize: '13px', color: 'var(--text)' }}>
+                    {r.jenis === 'Personal' && r.pelajar?.nama_penuh ? (
+                      <>
+                        <span style={{ fontWeight: 600 }}>{r.pelajar.nama_penuh}</span>
+                        {r.cawangan?.nama && <span style={{ color: 'var(--text-muted)' }}> · {r.cawangan.nama}</span>}
+                      </>
+                    ) : (
+                      r.cawangan?.nama ?? '—'
+                    )}
+                  </td>
                   <td style={{ padding: '11px 16px' }}>
                     <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: r.jenis === 'Kumpulan' ? '#ECFCCB' : '#DBEAFE', color: r.jenis === 'Kumpulan' ? '#3F6212' : '#1E40AF' }}>
                       {r.jenis}

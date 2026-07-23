@@ -431,6 +431,7 @@ CREATE TABLE IF NOT EXISTS silibus (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   tarikh DATE NOT NULL,
   cawangan_id UUID REFERENCES cawangan(id),          -- pilihan (Personal boleh tiada)
+  pelajar_id UUID REFERENCES pelajar(id),            -- untuk kelas Personal: trace kelas siapa
   jenis TEXT NOT NULL DEFAULT 'Kumpulan' CHECK (jenis IN ('Kumpulan', 'Personal')),
   tajuk TEXT NOT NULL,
   muka_surat TEXT,                                   -- "page" — cth "ms 12-15"
@@ -577,6 +578,7 @@ CREATE INDEX IF NOT EXISTS idx_aktiviti_tarikh ON aktiviti (status, tarikh);
 -- SILIBUS
 CREATE INDEX IF NOT EXISTS idx_silibus_tarikh ON silibus (tarikh DESC);
 CREATE INDEX IF NOT EXISTS idx_silibus_cawangan ON silibus (cawangan_id, tarikh DESC);
+CREATE INDEX IF NOT EXISTS idx_silibus_pelajar ON silibus (pelajar_id, tarikh DESC);
 
 -- ============================================================
 -- ROW LEVEL SECURITY (RLS)

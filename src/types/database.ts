@@ -926,6 +926,7 @@ export interface Database {
           id: string
           tarikh: string
           cawangan_id: string | null
+          pelajar_id: string | null
           jenis: 'Kumpulan' | 'Personal'
           tajuk: string
           muka_surat: string | null
@@ -937,6 +938,7 @@ export interface Database {
           id?: string
           tarikh: string
           cawangan_id?: string | null
+          pelajar_id?: string | null
           jenis?: 'Kumpulan' | 'Personal'
           tajuk: string
           muka_surat?: string | null
@@ -948,6 +950,7 @@ export interface Database {
           id?: string
           tarikh?: string
           cawangan_id?: string | null
+          pelajar_id?: string | null
           jenis?: 'Kumpulan' | 'Personal'
           tajuk?: string
           muka_surat?: string | null
