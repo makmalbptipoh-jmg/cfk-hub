@@ -11,7 +11,7 @@ Keperluan user: app guna beberapa perkhidmatan luar — perlu satu tempat senara
 - **8 perkhidmatan didokumen**, setiap satu: untuk apa · akaun/username · butiran (ID projek/repo/mod) · pautan papan pemuka · kos/pelan · "kalau ini mati apa jadi" · env var berkaitan · tatacara selenggara langkah-demi-langkah. Ditanda tahap **Kritikal** (Vercel, Supabase) / **Penting** (GitHub, Google Cloud OAuth) / **Sokongan** (ToyyibPay, Sentry, WhatsApp wa.me, Google Fonts).
 - **Seksyen tambahan:** Checklist Selenggara (automatik / bila e-mel Sentry / bulanan / beberapa bulan), "Bila Berlaku Masalah" (app down, data kosong, data terpadam, syak akaun dimasuki), jadual 8 env var (nama + guna + tahap rahsia — nilai TIDAK dipapar), senarai kredensial jangan-kongsi.
 - Sumber kandungan: `docs/PANDUAN-SELENGGARA.md` + status sesi lampau + `.env.local.example` + `backup.yml`.
-- **Akaun BELUM direkod** (ditanda oren dalam UI, user perlu beritahu): Supabase, Google Cloud Console, ToyyibPay, Sentry. Vercel (`chessforkids80`) & GitHub (`makmalbptipoh-jmg`) sudah diisi.
+- **Akaun (disahkan user 25 Jul):** Vercel, Supabase, Google Cloud Console, ToyyibPay & Sentry SEMUA guna `chessforkids80@gmail.com` (username Vercel `chessforkids80-3573`). GitHub: repo milik `makmalbptipoh-jmg`, commit ditolak sebagai `khatib-sketch`.
 - Nota: `lucide-react` v1 **tiada ikon jenama** (`Github`/`Chrome` dibuang) — guna `GitBranch`/`LogIn`.
 
 ## ⚡ SESI 13 (23 Jul 2026)
