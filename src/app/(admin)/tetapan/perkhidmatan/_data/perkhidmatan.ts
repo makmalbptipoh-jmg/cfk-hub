@@ -100,8 +100,7 @@ export const PERKHIDMATAN: Perkhidmatan[] = [
     ikon: Database,
     tahap: 'Kritikal',
     untukApa: 'Pangkalan data (SEMUA data: pelajar, kehadiran, resit, gaji, jadual), sistem log masuk pengguna, dan storan fail (gambar jurulatih, bukti perbelanjaan/pendapatan).',
-    akaun: 'Belum direkod',
-    akaunBelumDirekod: true,
+    akaun: 'chessforkids80@gmail.com',
     butiran: [
       { label: 'ID projek', nilai: 'jfkmfmjsqbwcgzxiyees' },
       { label: 'Bucket storan', nilai: 'gambar-jurulatih, bukti-perbelanjaan, bukti-pendapatan' },
@@ -166,7 +165,7 @@ export const PERKHIDMATAN: Perkhidmatan[] = [
     ikon: GitBranch,
     tahap: 'Penting',
     untukApa: 'Simpan kod app (sejarah penuh), jalankan backup database mingguan automatik, dan uji kod setiap kali ada perubahan (CI).',
-    akaun: 'makmalbptipoh-jmg (organisasi)',
+    akaun: 'makmalbptipoh-jmg (pemilik repo) · commit ditolak sebagai khatib-sketch',
     butiran: [
       { label: 'Repositori', nilai: 'github.com/makmalbptipoh-jmg/cfk-hub' },
       { label: 'Backup automatik', nilai: 'Setiap Ahad 10:00 pagi (waktu Malaysia)' },
@@ -216,8 +215,7 @@ export const PERKHIDMATAN: Perkhidmatan[] = [
     ikon: LogIn,
     tahap: 'Penting',
     untukApa: 'Membolehkan butang "Log Masuk dengan Google" di halaman login — pengguna pilih e-mel terus masuk, tak perlu ingat kata laluan.',
-    akaun: 'Belum direkod',
-    akaunBelumDirekod: true,
+    akaun: 'chessforkids80@gmail.com',
     butiran: [
       { label: 'Nama projek', nilai: 'CFK HUB' },
       { label: 'Jenis', nilai: 'OAuth 2.0 Client ID (Web application)' },
@@ -260,8 +258,7 @@ export const PERKHIDMATAN: Perkhidmatan[] = [
     ikon: CreditCard,
     tahap: 'Sokongan',
     untukApa: 'Bayaran online. Admin jana link bayaran → hantar WhatsApp kepada ibu bapa → ibu bapa bayar FPX/DuitNow → resit CFK auto-jana dalam sistem.',
-    akaun: 'Belum direkod',
-    akaunBelumDirekod: true,
+    akaun: 'chessforkids80@gmail.com',
     butiran: [
       { label: 'Mod semasa', nilai: 'Ikut env TOYYIBPAY_MODE (sandbox = ujian, production = duit sebenar)' },
       { label: 'Alamat ujian', nilai: 'dev.toyyibpay.com' },
@@ -315,8 +312,7 @@ export const PERKHIDMATAN: Perkhidmatan[] = [
     ikon: Bug,
     tahap: 'Sokongan',
     untukApa: 'Pemantau ralat. Bila app tersasar (error) pada mana-mana pengguna, Sentry rekod butiran teknikal dan hantar e-mel — supaya masalah dijumpai sebelum pengguna komplen.',
-    akaun: 'Belum direkod',
-    akaunBelumDirekod: true,
+    akaun: 'chessforkids80@gmail.com',
     butiran: [
       { label: 'Jenis projek', nilai: 'Next.js' },
       { label: 'Status', nilai: 'Aktif (DSN diset di Vercel)' },
