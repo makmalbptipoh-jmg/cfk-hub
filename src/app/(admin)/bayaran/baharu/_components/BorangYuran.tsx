@@ -8,6 +8,7 @@ import { CariPelajar } from '@/components/pelajar/CariPelajar'
 import { BtnUnduhResit } from '@/components/pdf/BtnUnduhResit'
 import { kirYuranBulanan, tarikhTempatan } from '@/lib/utils'
 import { gayaInput, gayaLabel } from '@/components/ui/borang'
+import { DialogSah } from '@/components/ui/DialogSah'
 import { ciptaPermintaanBayaran } from '@/app/actions/bayaran-online'
 
 type PelajarDipilih = {
@@ -55,6 +56,8 @@ export function BorangYuran() {
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
   const [resitDijana, setResitDijana] = useState<ResitDijana[]>([])
+  // Butiran resit sedia ada untuk bulan sama — bukan null bermakna dialog amaran terbuka
+  const [amaranResit, setAmaranResit] = useState<string[] | null>(null)
 
   // Data form
   const [pelajar, setPelajar] = useState<PelajarDipilih | null>(null)
@@ -152,8 +155,37 @@ export function BorangYuran() {
     setLangkah(2)
   }
 
+  // Semak resit AKTIF sedia ada untuk bulan yang sama sebelum jana.
+  // Tanpa ini, resit boleh dijana berulang untuk bulan sama tanpa sebarang
+  // amaran — pendapatan jadi lebih daripada yang sebenar diterima.
+  const cubaJana = async () => {
+    if (!pelajar || peserta.length === 0) return
+    setLoading(true)
+    setRalat(null)
+    const { data: sediaAda } = await createClient()
+      .from('resit')
+      .select('nombor_resit, jumlah, tarikh_bayar, pelajar_id')
+      .in('pelajar_id', peserta.map((p) => p.id))
+      .eq('bulan_bayaran', bulanObj.nama)
+      .eq('tahun_bayaran', bulanObj.tahun)
+      .eq('status', 'Aktif')
+    setLoading(false)
+
+    if (sediaAda && sediaAda.length > 0) {
+      setAmaranResit(
+        sediaAda.map((r) => {
+          const p = peserta.find((x) => x.id === r.pelajar_id)
+          return `${p?.nama_penuh ?? 'Pelajar'} — ${r.nombor_resit}, RM${Number(r.jumlah).toFixed(2)}, dibayar ${r.tarikh_bayar}`
+        })
+      )
+      return
+    }
+    await jana()
+  }
+
   const jana = async () => {
     if (!pelajar || peserta.length === 0) return
+    setAmaranResit(null)
     setLoading(true)
     setRalat(null)
     const supabase = createClient()
@@ -571,7 +603,7 @@ export function BorangYuran() {
             }}>
               ← Kembali Edit
             </button>
-            <button onClick={kaedah === 'Online' ? janaLinkOnline : jana} disabled={loading} style={{
+            <button onClick={kaedah === 'Online' ? janaLinkOnline : cubaJana} disabled={loading} style={{
               flex: 2, padding: '12px',
               background: loading ? '#94A3B8' : 'var(--accent)',
               border: 'none', borderRadius: '12px',
@@ -737,6 +769,23 @@ export function BorangYuran() {
             </Link>
           </div>
         </div>
+      )}
+
+      {amaranResit && (
+        <DialogSah
+          tajuk={`Resit ${bulanObj.label} sudah wujud`}
+          mesej={
+            amaranResit.length === 1
+              ? 'Pelajar ini sudah ada resit AKTIF untuk bulan tersebut:'
+              : `${amaranResit.length} pelajar sudah ada resit AKTIF untuk bulan tersebut:`
+          }
+          butiran={amaranResit}
+          akibat="Jika diteruskan, resit BAHARU akan dijana di samping yang sedia ada — pendapatan bulan ini akan dikira dua kali dalam laporan kewangan dan LHDN. Batalkan resit lama dahulu jika ini pembetulan."
+          labelSah="Saya faham, jana juga"
+          memproses={loading}
+          onSah={jana}
+          onBatal={() => setAmaranResit(null)}
+        />
       )}
     </div>
   )

@@ -5,6 +5,7 @@ import { CalendarCheck, Check, Star } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { akhirBulan, formatTarikh, tarikhTempatan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
+import { DialogSah } from '@/components/ui/DialogSah'
 
 type Sesi = {
   id: string
@@ -52,6 +53,8 @@ export function KehadiranSayaKlient({
   const [menyimpan, setMenyimpan] = useState(false)
   const [cawanganId, setCawanganId] = useState(cawangan[0]?.id ?? '')
   const [jenisKelas, setJenisKelas] = useState<Sesi['jenis_kelas']>('Kumpulan')
+  // Status yang menunggu pengesahan sebab sudah ada sesi lain hari ini
+  const [amaranSesi, setAmaranSesi] = useState<Sesi['status'] | null>(null)
 
   const hariIni = tarikhTempatan()
   // Rekod hari ini untuk kombinasi cawangan + jenis kelas yang dipilih
@@ -89,8 +92,25 @@ export function KehadiranSayaKlient({
     muatData()
   }, [muatData])
 
-  const rekodHariIniStatus = async (status: Sesi['status']) => {
+  // Sesi lain yang SUDAH direkod hari ini (kombinasi cawangan/jenis berbeza).
+  // Setiap sesi Hadir = 1 sesi bergaji, jadi sesi kedua yang tersilap terus
+  // menaikkan gaji bulan itu — mesti disahkan dahulu.
+  const sesiLainHariIni = sesi.filter(
+    (s) => s.tarikh === hariIni && !(s.cawangan_id === cawanganId && s.jenis_kelas === jenisKelas)
+  )
+
+  const rekodHariIniStatus = (status: Sesi['status']) => {
     if (!cawanganId) { toast.error('Sila pilih cawangan dahulu.'); return }
+    // Amaran hanya bila menambah sesi BAHARU (bukan mengubah status sesi sedia ada)
+    if (!rekodHariIni && sesiLainHariIni.length > 0) {
+      setAmaranSesi(status)
+      return
+    }
+    simpanStatus(status)
+  }
+
+  const simpanStatus = async (status: Sesi['status']) => {
+    setAmaranSesi(null)
     setMenyimpan(true)
     const { error } = await createClient()
       .from('kehadiran_jurulatih')
@@ -372,6 +392,27 @@ export function KehadiranSayaKlient({
             )
           })}
         </div>
+      )}
+
+      {amaranSesi && (
+        <DialogSah
+          tajuk="Rekod sesi KEDUA untuk hari ini?"
+          mesej={`Anda sudah rekod ${sesiLainHariIni.length} sesi hari ini:`}
+          butiran={sesiLainHariIni.map(
+            (s) => `${s.cawangan?.nama ?? 'Tanpa cawangan'} · ${s.jenis_kelas} — ${s.status}`
+          )}
+          akibat={
+            amaranSesi === 'Hadir'
+              ? `Ini akan menjadi sesi tambahan. Setiap sesi Hadir dikira sebagai satu sesi bergaji${
+                  kadarBayaran ? ` (RM${kadarBayaran.toFixed(2)})` : ''
+                }. Rekod sesi kedua HANYA jika anda betul-betul mengajar dua kelas berasingan hari ini.`
+              : 'Ini akan menjadi rekod sesi tambahan yang berasingan untuk hari ini.'
+          }
+          labelSah="Ya, saya ada 2 kelas"
+          memproses={menyimpan}
+          onSah={() => simpanStatus(amaranSesi)}
+          onBatal={() => setAmaranSesi(null)}
+        />
       )}
     </div>
   )

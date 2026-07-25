@@ -7,6 +7,7 @@ import { useTutupEscape } from '@/lib/hooks/useTutupEscape'
 import { tarikhTempatan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
 import { CariPelajar, type PelajarCarian } from '@/components/pelajar/CariPelajar'
+import { DialogSah } from '@/components/ui/DialogSah'
 import type { Cawangan, Silibus } from './SilibusKlient'
 
 export function ModalSilibus({
@@ -30,11 +31,41 @@ export function ModalSilibus({
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
   const [sahPadam, setSahPadam] = useState(false)
+  // Tajuk sama yang sudah dilog untuk tarikh + kelas ini
+  const [amaranPendua, setAmaranPendua] = useState<string[] | null>(null)
   useTutupEscape(onTutup)
 
-  const simpan = async () => {
+  // Jadual silibus tiada unique constraint — rekod sama boleh masuk berulang
+  // kali tanpa disedari, mengelirukan laporan tajuk yang telah diajar.
+  const cubaSimpan = async () => {
     if (!tarikh) { setRalat('Sila pilih tarikh.'); return }
     if (!tajuk.trim()) { setRalat('Sila isi tajuk / silibus yang diajar.'); return }
+    setRalat(null)
+    if (rekodEdit) { simpan(); return }
+
+    setLoading(true)
+    let q = createClient()
+      .from('silibus')
+      .select('tajuk, muka_surat')
+      .eq('tarikh', tarikh)
+      .eq('jenis', jenis)
+    q = cawanganId ? q.eq('cawangan_id', cawanganId) : q.is('cawangan_id', null)
+    if (jenis === 'Personal' && pelajarId) q = q.eq('pelajar_id', pelajarId)
+    const { data: sediaAda } = await q
+    setLoading(false)
+
+    const samaTajuk = (sediaAda ?? []).filter(
+      (s) => s.tajuk.trim().toUpperCase() === tajuk.trim().toUpperCase()
+    )
+    if (samaTajuk.length > 0) {
+      setAmaranPendua(samaTajuk.map((s) => `${s.tajuk}${s.muka_surat ? ` (${s.muka_surat})` : ''}`))
+      return
+    }
+    simpan()
+  }
+
+  const simpan = async () => {
+    setAmaranPendua(null)
     setRalat(null)
     setLoading(true)
 
@@ -189,7 +220,7 @@ export function ModalSilibus({
             Batal
           </button>
           <button
-            onClick={simpan}
+            onClick={cubaSimpan}
             disabled={loading}
             style={{ flex: 2, padding: '11px', background: loading ? '#94A3B8' : 'var(--accent)', border: 'none', borderRadius: '12px', fontSize: '13.5px', fontWeight: 700, color: 'var(--accent-text)', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
           >
@@ -197,6 +228,19 @@ export function ModalSilibus({
           </button>
         </div>
       </div>
+
+      {amaranPendua && (
+        <DialogSah
+          tajuk="Tajuk ini sudah dilog"
+          mesej="Tajuk yang sama sudah direkod untuk tarikh dan kelas ini:"
+          butiran={amaranPendua}
+          akibat="Jika diteruskan, tajuk akan muncul lebih daripada sekali dalam laporan silibus kelas ini."
+          labelSah="Ya, tambah juga"
+          memproses={loading}
+          onSah={simpan}
+          onBatal={() => setAmaranPendua(null)}
+        />
+      )}
     </div>
   )
 }

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle2, UserMinus, Search, X, UserPlus } from 'lucide-react'
 import { toast } from '@/lib/stores/toast-store'
+import { DialogSah } from '@/components/ui/DialogSah'
 
 type Pelajar = {
   id: string
@@ -34,9 +35,10 @@ interface Props {
   userId: string
   tarikhHariIni: string
   rekodSedia: Record<string, ToggleStatus>
+  sesiSedia: Record<string, { status: string; cawangan_sesi_id: string | null }>
 }
 
-export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHariIni, rekodSedia }: Props) {
+export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHariIni, rekodSedia, sesiSedia }: Props) {
   const [cawanganChip, setCawanganChip] = useState<string>('')
   const [carian, setCarian] = useState('')
   const [senarai, setSenarai] = useState<Pelajar[]>(pelajar)
@@ -45,6 +47,8 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
   const [berjaya, setBerjaya] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
   const [menyahaktif, setMenyahaktif] = useState<string | null>(null)
+  // Senarai perubahan yang akan menimpa rekod hari ini — bukan null = dialog terbuka
+  const [amaranTimpa, setAmaranTimpa] = useState<string[] | null>(null)
 
   const tarikhPapar = new Date(tarikhHariIni + 'T00:00:00').toLocaleDateString('ms-MY', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -118,16 +122,10 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
     setBerjaya(false)
   }
 
-  const simpan = async () => {
-    setLoading(true)
-    setRalat(null)
-    setBerjaya(false)
-
-    const supabase = createClient()
+  const binaRecords = () => {
     // Chip Personal bukan cawangan sebenar — guna cawangan daftar pelajar
     const cawanganSesiId = cawanganChip && cawanganChip !== CHIP_PERSONAL ? cawanganChip : null
-
-    const records = senaraiFiltred
+    return senaraiFiltred
       .filter((p) => toggles[p.id] != null)
       .map((p) => ({
         pelajar_id: p.id,
@@ -137,14 +135,42 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
         cawangan_sesi_id: cawanganSesiId ?? p.cawangan_daftar_id,
         direkod_oleh: userId,
       }))
+  }
 
+  // Kehadiran guna upsert (pelajar_id, tarikh) — simpanan kedua MENIMPA yang
+  // pertama tanpa sebarang tanda. Paling bahaya: cawangan sesi bertukar, jadi
+  // sesi itu terkira pada cawangan lain dalam Laporan Kelas.
+  const cubaSimpan = () => {
+    setRalat(null)
+    setBerjaya(false)
+    const records = binaRecords()
     if (records.length === 0) {
       setRalat('Tiada rekod dipilih. Sila tandakan sekurang-kurangnya seorang pelajar.')
-      setLoading(false)
       return
     }
+    const namaCawangan = (id: string | null) => cawangan.find((c) => c.id === id)?.nama ?? 'tanpa cawangan'
+    const konflik: string[] = []
+    for (const r of records) {
+      const lama = sesiSedia[r.pelajar_id]
+      if (!lama) continue
+      const nama = senaraiFiltred.find((p) => p.id === r.pelajar_id)?.nama_penuh ?? 'Pelajar'
+      if (lama.cawangan_sesi_id !== r.cawangan_sesi_id) {
+        konflik.push(`${nama}: ${namaCawangan(lama.cawangan_sesi_id)} → ${namaCawangan(r.cawangan_sesi_id)}`)
+      } else if (lama.status !== r.status) {
+        konflik.push(`${nama}: ${lama.status} → ${r.status}`)
+      }
+    }
+    if (konflik.length > 0) { setAmaranTimpa(konflik); return }
+    simpan(records)
+  }
 
-    const { error } = await supabase
+  const simpan = async (records: ReturnType<typeof binaRecords>) => {
+    setAmaranTimpa(null)
+    setLoading(true)
+    setRalat(null)
+    setBerjaya(false)
+
+    const { error } = await createClient()
       .from('kehadiran')
       .upsert(records, { onConflict: 'pelajar_id,tarikh', ignoreDuplicates: false })
 
@@ -415,7 +441,7 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
           </div>
         )}
         <button
-          onClick={simpan}
+          onClick={cubaSimpan}
           disabled={loading || jumlahDitanda === 0}
           style={{
             width: '100%', padding: '13px',
@@ -430,6 +456,19 @@ export function JurulatihKehadiranKlient({ pelajar, cawangan, userId, tarikhHari
           {loading ? 'Menyimpan...' : `Simpan Rekod Kehadiran (${jumlahDitanda})`}
         </button>
       </div>
+
+      {amaranTimpa && (
+        <DialogSah
+          tajuk="Rekod kehadiran hari ini sudah wujud"
+          mesej={`${amaranTimpa.length} pelajar sudah ditanda kehadiran hari ini. Menyimpan akan MENIMPA rekod sedia ada:`}
+          butiran={amaranTimpa}
+          akibat="Setiap pelajar hanya boleh ada SATU rekod kehadiran sehari. Jika cawangan bertukar, sesi itu akan dikira pada cawangan baharu dalam Laporan Kelas."
+          labelSah="Ya, timpa rekod"
+          memproses={loading}
+          onSah={() => simpan(binaRecords())}
+          onBatal={() => setAmaranTimpa(null)}
+        />
+      )}
     </div>
   )
 }

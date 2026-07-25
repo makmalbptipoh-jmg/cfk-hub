@@ -32,7 +32,7 @@ export default async function KehadiranPage() {
       .order('nama_penuh'),
     supabase
       .from('kehadiran')
-      .select('pelajar_id, status')
+      .select('pelajar_id, status, cawangan_sesi_id')
       .eq('tarikh', tarikhHariIni),
   ])
 
@@ -45,8 +45,12 @@ export default async function KehadiranPage() {
   }))
 
   const rekodSedia: Record<string, 'Hadir' | 'Tidak Hadir' | 'Cuti'> = {}
+  // Rekod penuh hari ini — klien perlukan cawangan sesi untuk beri amaran bila
+  // simpanan akan MENIMPA rekod sedia ada (kehadiran guna upsert pelajar+tarikh)
+  const sesiSedia: Record<string, { status: string; cawangan_sesi_id: string | null }> = {}
   for (const r of rekodHariIni ?? []) {
     rekodSedia[r.pelajar_id] = r.status as any
+    sesiSedia[r.pelajar_id] = { status: r.status, cawangan_sesi_id: r.cawangan_sesi_id }
   }
 
   const rekodView = (
@@ -56,6 +60,7 @@ export default async function KehadiranPage() {
       userId={user!.id}
       tarikhHariIni={tarikhHariIni}
       rekodSedia={rekodSedia}
+      sesiSedia={sesiSedia}
     />
   )
 

@@ -86,6 +86,25 @@ export function BorangSesiPersonal() {
     const tahun_bayaran = d.getFullYear()
     const nota = `Kelas Personal (${kaedah})${lokasi ? ' — ' + lokasi : ''}`
 
+    // Semak DAHULU supaya mesej tepat, bukan tekaan. Satu pelajar hanya boleh
+    // ada satu rekod kehadiran sehari (unique pelajar_id + tarikh).
+    const { data: kehadiranSedia } = await supabase
+      .from('kehadiran')
+      .select('status, nota')
+      .eq('pelajar_id', fullPelajar.id)
+      .eq('tarikh', tarikhSesi)
+      .maybeSingle()
+    if (kehadiranSedia) {
+      setRalat(
+        `${fullPelajar.nama_penuh} sudah ada rekod kehadiran pada ${tarikhSesi} ` +
+        `(${kehadiranSedia.status}${kehadiranSedia.nota ? ` — ${kehadiranSedia.nota}` : ''}). ` +
+        'Satu pelajar hanya boleh ada satu rekod kehadiran sehari. Pilih tarikh lain, ' +
+        'atau padam rekod lama di halaman Kehadiran jika ini pembetulan.'
+      )
+      setLoading(false)
+      return
+    }
+
     const { error: errK } = await supabase.from('kehadiran').insert({
       pelajar_id: fullPelajar.id,
       tarikh: tarikhSesi,
