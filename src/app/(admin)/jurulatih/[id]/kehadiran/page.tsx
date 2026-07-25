@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, useCallback, use } from 'react'
 import Link from 'next/link'
 import { Plus, Trash2, Check, Edit2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -49,7 +49,10 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
   const [menyimpan, setMenyimpan] = useState(false)
   const [editSesi, setEditSesi] = useState<Sesi | null>(null)
 
-  const muatData = async () => {
+  // useCallback supaya kebergantungan effect lengkap — tanpa ini `muatData`
+  // menangkap nilai `id`/`bulan` lama (stale closure) bila dipanggil semula
+  // selepas simpan/padam.
+  const muatData = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
     const { mula, akhir } = mulaBulanDari(bulan)
@@ -68,9 +71,9 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
     // Default cawangan: cawangan pertama jurulatih (jika belum dipilih)
     setFormBaru((f) => f.cawangan_id ? f : { ...f, cawangan_id: senaraiCaw.find((x) => milikJurulatih.has(x.id))?.id ?? '' })
     setLoading(false)
-  }
+  }, [id, bulan])
 
-  useEffect(() => { muatData() }, [id, bulan])
+  useEffect(() => { muatData() }, [muatData])
 
   const simpanBaru = async () => {
     if (!formBaru.tarikh) return

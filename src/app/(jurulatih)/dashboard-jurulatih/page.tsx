@@ -12,6 +12,9 @@ export default async function DashboardJurulatihPage() {
 
   // Minggu ini: Isnin hingga hari ini (ikut waktu Malaysia — medan UTC pada
   // instant yang ditambah 8 jam = kalendar MYT, betul walau pelayan UTC).
+  // Server Component: dirender sekali setiap permintaan, jadi membaca jam
+  // adalah betul dan tiada alternatif untuk mendapatkan "sekarang".
+  // eslint-disable-next-line react-hooks/purity -- lihat komen di atas
   const hariIniMyt = new Date(Date.now() + 8 * 60 * 60 * 1000)
   const hariDlmMinggu = hariIniMyt.getUTCDay()
   const hariIsnin = new Date(hariIniMyt)

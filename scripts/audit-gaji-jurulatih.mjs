@@ -19,7 +19,7 @@ const NAMA_BULAN = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos
 const hariMinggu = (t) => { const [y,m,d]=t.split('-').map(Number); return new Date(Date.UTC(y,m-1,d)).getUTCDay() }
 const rm = (n) => 'RM' + Number(n).toFixed(2)
 
-const [{ data: jurulatih }, { data: hadir }, { data: bayaran }, { data: advance }, { data: slot }, { data: batal }, { data: belanja }, { data: cawangan }] =
+const [{ data: jurulatih }, { data: hadir }, { data: bayaran }, { data: advance }, { data: slot }, { data: batal }, { data: belanja }] =
   await Promise.all([
     db.from('jurulatih').select('id, nama_penuh, kadar_bayaran, status').order('nama_penuh'),
     db.from('kehadiran_jurulatih').select('jurulatih_id, tarikh, cawangan_id, jenis_kelas').eq('status', 'Hadir'),
@@ -28,10 +28,8 @@ const [{ data: jurulatih }, { data: hadir }, { data: bayaran }, { data: advance 
     db.from('jadual_slot').select('id, hari_minggu, cawangan_id, jenis, jurulatih_ids'),
     db.from('jadual_slot_batal').select('slot_id, tarikh'),
     db.from('kewangan_perbelanjaan').select('id, tarikh, kategori, penerangan, jumlah').eq('kategori', 'Gaji Jurulatih'),
-    db.from('cawangan').select('id, nama'),
   ])
 
-const namaCaw = Object.fromEntries((cawangan ?? []).map((c) => [c.id, c.nama]))
 const J = Object.fromEntries(jurulatih.map((j) => [j.id, j]))
 
 // ── Tapis sesi pada kelas DIBATALKAN (rule sama dgn src/lib/gajiSesi.ts)

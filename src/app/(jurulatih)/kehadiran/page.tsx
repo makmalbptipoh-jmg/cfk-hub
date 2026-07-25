@@ -36,7 +36,14 @@ export default async function KehadiranPage() {
       .eq('tarikh', tarikhHariIni),
   ])
 
-  const pelajar = (pelajarRaw ?? []).map((p: any) => ({
+  type BarisPelajar = {
+    id: string
+    nama_penuh: string
+    cawangan_daftar_id: string
+    jenis_kelas: 'Kumpulan' | 'Personal' | 'Kumpulan+Personal'
+    cawangan: { nama: string } | null
+  }
+  const pelajar = ((pelajarRaw ?? []) as unknown as BarisPelajar[]).map((p) => ({
     id: p.id,
     nama_penuh: p.nama_penuh,
     cawangan_daftar_id: p.cawangan_daftar_id,
@@ -49,7 +56,7 @@ export default async function KehadiranPage() {
   // simpanan akan MENIMPA rekod sedia ada (kehadiran guna upsert pelajar+tarikh)
   const sesiSedia: Record<string, { status: string; cawangan_sesi_id: string | null }> = {}
   for (const r of rekodHariIni ?? []) {
-    rekodSedia[r.pelajar_id] = r.status as any
+    rekodSedia[r.pelajar_id] = r.status as 'Hadir' | 'Tidak Hadir' | 'Cuti'
     sesiSedia[r.pelajar_id] = { status: r.status, cawangan_sesi_id: r.cawangan_sesi_id }
   }
 

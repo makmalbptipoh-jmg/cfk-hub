@@ -86,13 +86,13 @@ export default function KewanganRingkasanPage() {
       pendapatanCawangan[key] = (pendapatanCawangan[key] ?? 0) + r.jumlah
     }
     for (const p of pendapatanLain ?? []) {
-      const key = (p.cawangan as any)?.nama ?? 'Umum'
+      const key = (p.cawangan as unknown as { nama: string } | null)?.nama ?? 'Umum'
       pendapatanCawangan[key] = (pendapatanCawangan[key] ?? 0) + p.jumlah
     }
 
     const perbelanjaanCawangan: Record<string, number> = {}
     for (const p of belanja ?? []) {
-      const key = (p.cawangan as any)?.nama ?? 'Umum'
+      const key = (p.cawangan as unknown as { nama: string } | null)?.nama ?? 'Umum'
       perbelanjaanCawangan[key] = (perbelanjaanCawangan[key] ?? 0) + p.jumlah
     }
 

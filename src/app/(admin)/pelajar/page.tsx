@@ -7,6 +7,9 @@ export default async function PelajarPage() {
   const supabase = await createClient()
 
   // Setakat bulan semasa waktu Malaysia (UTC+8), meliputi sepanjang tahun
+  // Server Component: dirender sekali setiap permintaan, jadi membaca jam
+  // adalah betul dan tiada alternatif untuk mendapatkan "sekarang".
+  // eslint-disable-next-line react-hooks/purity -- lihat komen di atas
   const myt = new Date(Date.now() + 8 * 60 * 60 * 1000)
   const tahun = myt.getUTCFullYear()
   const bulanSemasa = myt.getUTCMonth() + 1

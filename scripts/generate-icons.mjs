@@ -1,5 +1,4 @@
 import sharp from "sharp";
-import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 

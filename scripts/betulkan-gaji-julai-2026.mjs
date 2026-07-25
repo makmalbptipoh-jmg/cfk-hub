@@ -29,7 +29,6 @@ const PEMBETULAN = {
 const TARIKH = '2026-07-25'
 
 const { data: jurulatih } = await db.from('jurulatih').select('id, nama_penuh')
-const idNama = Object.fromEntries(jurulatih.map((j) => [j.id, j.nama_penuh]))
 const namaId = Object.fromEntries(jurulatih.map((j) => [j.nama_penuh, j.id]))
 
 const { data: bayaran } = await db.from('bayaran_jurulatih')
