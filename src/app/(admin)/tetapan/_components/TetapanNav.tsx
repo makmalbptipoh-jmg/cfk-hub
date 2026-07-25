@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 const tabs = [
   { href: '/tetapan/pengguna', label: 'Pengguna' },
   { href: '/tetapan/cawangan', label: 'Cawangan' },
+  { href: '/tetapan/perkhidmatan', label: 'Perkhidmatan Luar' },
 ]
 
 export function TetapanNav() {

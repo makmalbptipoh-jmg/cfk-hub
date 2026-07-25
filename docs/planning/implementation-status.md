@@ -1,6 +1,20 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 23 Jul 2026 (Sesi 13)
+**Dikemaskini:** 25 Jul 2026 (Sesi 14)
+
+## ⚡ SESI 14 (25 Jul 2026)
+
+### Halaman "Perkhidmatan Luar" dalam Tetapan (typecheck+lint+build LULUS; TIADA SQL)
+Keperluan user: app guna beberapa perkhidmatan luar — perlu satu tempat senaraikan semua app terlibat, akaun/username, dan tatacara selenggara.
+- **Tab baharu `/tetapan/perkhidmatan`** ("Perkhidmatan Luar", ketiga dalam `TetapanNav`). Halaman rujukan statik — **tiada migrasi SQL, tiada kata laluan disimpan**.
+- **Fail baharu:** `tetapan/perkhidmatan/page.tsx` (klien, kad boleh kembang/kuncup) + `_data/perkhidmatan.ts` (semua kandungan; senang kemas kini tanpa sentuh UI).
+- **8 perkhidmatan didokumen**, setiap satu: untuk apa · akaun/username · butiran (ID projek/repo/mod) · pautan papan pemuka · kos/pelan · "kalau ini mati apa jadi" · env var berkaitan · tatacara selenggara langkah-demi-langkah. Ditanda tahap **Kritikal** (Vercel, Supabase) / **Penting** (GitHub, Google Cloud OAuth) / **Sokongan** (ToyyibPay, Sentry, WhatsApp wa.me, Google Fonts).
+- **Seksyen tambahan:** Checklist Selenggara (automatik / bila e-mel Sentry / bulanan / beberapa bulan), "Bila Berlaku Masalah" (app down, data kosong, data terpadam, syak akaun dimasuki), jadual 8 env var (nama + guna + tahap rahsia — nilai TIDAK dipapar), senarai kredensial jangan-kongsi.
+- Sumber kandungan: `docs/PANDUAN-SELENGGARA.md` + status sesi lampau + `.env.local.example` + `backup.yml`.
+- **Akaun BELUM direkod** (ditanda oren dalam UI, user perlu beritahu): Supabase, Google Cloud Console, ToyyibPay, Sentry. Vercel (`chessforkids80`) & GitHub (`makmalbptipoh-jmg`) sudah diisi.
+- Nota: `lucide-react` v1 **tiada ikon jenama** (`Github`/`Chrome` dibuang) — guna `GitBranch`/`LogIn`.
+
+## ⚡ SESI 13 (23 Jul 2026)
 
 ## ⚡ SESI 13 (23 Jul 2026)
 
