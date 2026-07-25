@@ -360,7 +360,7 @@ export default function GajiBulananPage() {
           </div>
           <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '12px' }}>
             Sesi hadir direkod oleh jurulatih sendiri (check-in) atau admin. Sesi pada kelas yang DIBATALKAN tidak dikira dalam gaji.
-            Baki Advance ditolak automatik semasa rekod bayaran gaji; lajur "Sudah Dibayar" menunjukkan jumlah BERSIH yang benar-benar keluar.
+            Baki Advance ditolak automatik semasa rekod bayaran gaji; lajur <strong>Sudah Dibayar</strong> menunjukkan jumlah BERSIH yang benar-benar keluar.
             Status <strong>Lebih Bayar</strong> bermakna rekod bayaran menuntut lebih banyak sesi daripada kehadiran sebenar — semak sejarah bayaran jurulatih itu.
           </p>
         </>
