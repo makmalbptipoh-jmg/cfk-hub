@@ -41,7 +41,7 @@ export const PERKHIDMATAN: Perkhidmatan[] = [
     ikon: Cloud,
     tahap: 'Kritikal',
     untukApa: 'Tempat app ini dihoskan (server). Juga simpan semua kunci rahsia (env vars) dan buat deploy automatik setiap kali kod dikemas kini.',
-    akaun: 'chessforkids80',
+    akaun: 'chessforkids80@gmail.com (username: chessforkids80-3573)',
     butiran: [
       { label: 'Nama projek', nilai: 'cfk-hub' },
       { label: 'Alamat app', nilai: 'https://cfk-hub.vercel.app' },
