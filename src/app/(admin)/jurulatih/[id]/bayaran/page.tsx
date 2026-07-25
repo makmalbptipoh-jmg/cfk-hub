@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { akhirBulan } from '@/lib/utils'
+import { akhirBulan, bulanTempatan, NAMA_BULAN } from '@/lib/utils'
 import { tapisSesiDibatalkan, SELECT_SESI_GAJI, SELECT_SLOT_GAJI, type SlotUntukGaji } from '@/lib/gajiSesi'
 import { BayaranJurulatihKlient } from './_components/BayaranJurulatihKlient'
 
@@ -12,11 +12,14 @@ export default async function BayaranJurulatihPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const sekarang = new Date()
-  const bulanSemasa = sekarang.toLocaleString('ms-MY', { month: 'long' })
-  const tahunSemasa = sekarang.getFullYear()
-  const mulaB = `${tahunSemasa}-${String(sekarang.getMonth() + 1).padStart(2, '0')}-01`
-  const akhirB = akhirBulan(tahunSemasa, sekarang.getMonth() + 1)
+  // Bulan semasa WAKTU MALAYSIA. Server Vercel berjalan pada UTC, jadi
+  // getMonth()/toLocaleString() terus akan tersalah bulan pada 1 haribulan
+  // (00:00–08:00 MYT masih bulan lepas di UTC) — guna bulanTempatan().
+  const bulanKunci = bulanTempatan()
+  const [tahunSemasa, bulanNum] = bulanKunci.split('-').map(Number)
+  const bulanSemasa = NAMA_BULAN[bulanNum - 1]
+  const mulaB = `${bulanKunci}-01`
+  const akhirB = akhirBulan(tahunSemasa, bulanNum)
 
   const [
     { data: jurulatih, error },
@@ -53,9 +56,15 @@ export default async function BayaranJurulatihPage({
     batalBulan ?? []
   )
   const bilSesiHadirBulanIni = sesiSah.length
-  const sudahRekodBulanIni = (bayaran ?? []).some(
+
+  // Sesi yang SUDAH dituntut oleh rekod bayaran bulan ini. Tanpa ini, rekod
+  // baharu pertengahan bulan akan mengira semula sesi yang sudah dibayar awal
+  // bulan (punca gaji berganda — dikesan Julai 2026).
+  const bayaranBulanIni = (bayaran ?? []).filter(
     (b: any) => b.bulan_bayaran === bulanSemasa && b.tahun_bayaran === tahunSemasa
   )
+  const sesiSudahDibayarBulanIni = bayaranBulanIni.reduce((t: number, b: any) => t + (b.bilangan_sesi ?? 0), 0)
+  const sudahRekodBulanIni = bayaranBulanIni.length > 0
 
   return (
     <BayaranJurulatihKlient
@@ -72,6 +81,7 @@ export default async function BayaranJurulatihPage({
       bulanSemasa={bulanSemasa}
       tahunSemasa={tahunSemasa}
       bilSesiHadirBulanIni={bilSesiHadirBulanIni}
+      sesiSudahDibayarBulanIni={sesiSudahDibayarBulanIni}
       sudahRekodBulanIni={sudahRekodBulanIni}
     />
   )

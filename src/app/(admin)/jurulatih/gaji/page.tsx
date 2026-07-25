@@ -13,12 +13,15 @@ type BarisGaji = {
   sesiKumpulan: number
   sesiPersonal: number
   sesiDibuang: number
+  sesiDibayar: number
   kadar: number
   patutDibayar: number
   bakiAdvance: number
+  kasarDibayar: number
+  potonganAdvance: number
   sudahDibayar: number
   baki: number
-  status: 'Selesai' | 'Sebahagian' | 'Belum Bayar' | 'Tiada Sesi'
+  status: 'Selesai' | 'Sebahagian' | 'Belum Bayar' | 'Tiada Sesi' | 'Lebih Bayar'
 }
 
 type Tunggakan = {
@@ -39,6 +42,7 @@ const WARNA_STATUS: Record<BarisGaji['status'], { bg: string; text: string }> = 
   Sebahagian: { bg: '#FEF3C7', text: '#92400E' },
   'Belum Bayar': { bg: '#FEE2E2', text: '#DC2626' },
   'Tiada Sesi': { bg: '#F1F5F9', text: '#64748B' },
+  'Lebih Bayar': { bg: '#FFE4E6', text: '#9F1239' },
 }
 
 export default function GajiBulananPage() {
@@ -63,7 +67,7 @@ export default function GajiBulananPage() {
     const [{ data: jurulatih }, { data: hadir }, { data: bayaran }, { data: advance }, { data: hadirImbas }, { data: bayaranImbas }, { data: slotGaji }, { data: batalGaji }] = await Promise.all([
       supabase.from('jurulatih').select('id, nama_penuh, kadar_bayaran').eq('status', 'Aktif').order('nama_penuh'),
       supabase.from('kehadiran_jurulatih').select(SELECT_SESI_GAJI).eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
-      supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, status').eq('bulan_bayaran', namaBulan).eq('tahun_bayaran', tahun),
+      supabase.from('bayaran_jurulatih').select('jurulatih_id, bilangan_sesi, jumlah, potongan_advance, status').eq('bulan_bayaran', namaBulan).eq('tahun_bayaran', tahun),
       supabase.from('advance_jurulatih').select('jurulatih_id, baki').eq('status', 'Belum Selesai'),
       supabase.from('kehadiran_jurulatih').select(SELECT_SESI_GAJI).eq('status', 'Hadir').gte('tarikh', mulaImbas).lt('tarikh', mulaB),
       supabase
@@ -91,9 +95,17 @@ export default function GajiBulananPage() {
     for (const k of hadirDibuang) {
       sesiBuang[k.jurulatih_id] = (sesiBuang[k.jurulatih_id] ?? 0) + 1
     }
-    const dibayar: Record<string, number> = {}
+    // Kira ikut SESI dan ikut RINGGIT berasingan. Kadar boleh berbeza antara
+    // rekod (cth. sesi Personal dibayar lebih tinggi), jadi ringgit sahaja
+    // tidak cukup untuk tahu sama ada semua sesi sudah dibayar.
+    const sesiDibayar: Record<string, number> = {}
+    const kasarDibayar: Record<string, number> = {}
+    const potonganDibayar: Record<string, number> = {}
     for (const b of bayaran ?? []) {
-      if (b.status === 'Sudah Bayar') dibayar[b.jurulatih_id] = (dibayar[b.jurulatih_id] ?? 0) + (b.jumlah ?? 0)
+      if (b.status !== 'Sudah Bayar') continue
+      sesiDibayar[b.jurulatih_id] = (sesiDibayar[b.jurulatih_id] ?? 0) + (b.bilangan_sesi ?? 0)
+      kasarDibayar[b.jurulatih_id] = (kasarDibayar[b.jurulatih_id] ?? 0) + (b.jumlah ?? 0)
+      potonganDibayar[b.jurulatih_id] = (potonganDibayar[b.jurulatih_id] ?? 0) + (b.potongan_advance ?? 0)
     }
     const bakiAdv: Record<string, number> = {}
     for (const a of advance ?? []) {
@@ -106,20 +118,31 @@ export default function GajiBulananPage() {
       const sesi = kump + pers
       const kadar = j.kadar_bayaran ?? 0
       const patut = sesi * kadar
-      const sudah = dibayar[j.id] ?? 0
-      const baki = Math.max(0, patut - sudah)
+      const sesiBayar = sesiDibayar[j.id] ?? 0
+      const kasar = kasarDibayar[j.id] ?? 0
+      const potongan = potonganDibayar[j.id] ?? 0
+      const sesiBaki = sesi - sesiBayar
+      // Baki ringgit dikira dari sesi yang belum dibayar × kadar profil
+      const baki = Math.max(0, sesiBaki) * kadar
       const status: BarisGaji['status'] =
-        sesi === 0 ? 'Tiada Sesi' : baki === 0 ? 'Selesai' : sudah > 0 ? 'Sebahagian' : 'Belum Bayar'
+        sesi === 0 && sesiBayar === 0 ? 'Tiada Sesi'
+          : sesiBaki < 0 ? 'Lebih Bayar'
+          : sesiBaki === 0 ? 'Selesai'
+          : sesiBayar > 0 ? 'Sebahagian'
+          : 'Belum Bayar'
       return {
         id: j.id,
         nama_penuh: j.nama_penuh,
         sesiKumpulan: kump,
         sesiPersonal: pers,
         sesiDibuang: sesiBuang[j.id] ?? 0,
+        sesiDibayar: sesiBayar,
         kadar,
         patutDibayar: patut,
         bakiAdvance: bakiAdv[j.id] ?? 0,
-        sudahDibayar: sudah,
+        kasarDibayar: kasar,
+        potonganAdvance: potongan,
+        sudahDibayar: kasar - potongan,
         baki,
         status,
       }
@@ -182,7 +205,7 @@ export default function GajiBulananPage() {
             <Wallet size={20} /> Gaji Bulanan Jurulatih
           </h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Sesi hadir × kadar − sudah dibayar = baki perlu dibayar — {labelBulan}
+            Gaji = sesi hadir × kadar. Baki = (sesi hadir − sesi sudah dibayar) × kadar — {labelBulan}
           </p>
         </div>
         <div>
@@ -250,10 +273,10 @@ export default function GajiBulananPage() {
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '820px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '940px' }}>
                   <thead>
                     <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                      {['Jurulatih', 'Sesi Hadir', 'Kadar', 'Patut Dibayar', 'Baki Advance', 'Sudah Dibayar', 'Baki', 'Status', ''].map((h) => (
+                      {['Jurulatih', 'Sesi Hadir', 'Sesi Dibayar', 'Kadar', 'Patut Dibayar', 'Baki Advance', 'Sudah Dibayar (Bersih)', 'Baki', 'Status', ''].map((h) => (
                         <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                           {h}
                         </th>
@@ -277,6 +300,16 @@ export default function GajiBulananPage() {
                             </div>
                           )}
                         </td>
+                        <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '13.5px', fontWeight: 700, color: b.sesiDibayar > b.sesiKumpulan + b.sesiPersonal ? '#9F1239' : 'var(--text)' }}>
+                            {b.sesiDibayar}
+                          </span>
+                          {b.sesiDibayar > b.sesiKumpulan + b.sesiPersonal && (
+                            <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#9F1239', marginTop: '2px' }}>
+                              +{b.sesiDibayar - (b.sesiKumpulan + b.sesiPersonal)} lebih dari hadir
+                            </div>
+                          )}
+                        </td>
                         <td style={{ padding: '11px 14px', fontSize: '13px', color: 'var(--text)', whiteSpace: 'nowrap' }}>
                           {b.kadar > 0 ? formatRinggit(b.kadar) : '—'}
                         </td>
@@ -286,8 +319,13 @@ export default function GajiBulananPage() {
                         <td style={{ padding: '11px 14px', fontSize: '13px', color: b.bakiAdvance > 0 ? '#92400E' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                           {b.bakiAdvance > 0 ? formatRinggit(b.bakiAdvance) : '—'}
                         </td>
-                        <td style={{ padding: '11px 14px', fontSize: '13px', color: 'var(--text)', whiteSpace: 'nowrap' }}>
-                          {formatRinggit(b.sudahDibayar)}
+                        <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '13px', color: 'var(--text)' }}>{formatRinggit(b.sudahDibayar)}</span>
+                          {b.potonganAdvance > 0 && (
+                            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                              {formatRinggit(b.kasarDibayar)} − advance {formatRinggit(b.potonganAdvance)}
+                            </div>
+                          )}
                         </td>
                         <td style={{ padding: '11px 14px', fontSize: '13.5px', fontWeight: 800, color: b.baki > 0 ? '#DC2626' : 'var(--hadir-text)', whiteSpace: 'nowrap' }}>
                           {formatRinggit(b.baki)}
@@ -308,7 +346,7 @@ export default function GajiBulananPage() {
                       </tr>
                     ))}
                     <tr style={{ borderTop: '2px solid var(--text)', background: '#F8FAFC' }}>
-                      <td colSpan={3} style={{ padding: '11px 14px', fontSize: '13.5px', fontWeight: 800, color: 'var(--text)' }}>JUMLAH</td>
+                      <td colSpan={4} style={{ padding: '11px 14px', fontSize: '13.5px', fontWeight: 800, color: 'var(--text)' }}>JUMLAH</td>
                       <td style={{ padding: '11px 14px', fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap' }}>{formatRinggit(jumlah.patut)}</td>
                       <td />
                       <td style={{ padding: '11px 14px', fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap' }}>{formatRinggit(jumlah.dibayar)}</td>
@@ -322,7 +360,8 @@ export default function GajiBulananPage() {
           </div>
           <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '12px' }}>
             Sesi hadir direkod oleh jurulatih sendiri (check-in) atau admin. Sesi pada kelas yang DIBATALKAN tidak dikira dalam gaji.
-            Baki Advance ditolak automatik semasa rekod bayaran gaji.
+            Baki Advance ditolak automatik semasa rekod bayaran gaji; lajur "Sudah Dibayar" menunjukkan jumlah BERSIH yang benar-benar keluar.
+            Status <strong>Lebih Bayar</strong> bermakna rekod bayaran menuntut lebih banyak sesi daripada kehadiran sebenar — semak sejarah bayaran jurulatih itu.
           </p>
         </>
       )}

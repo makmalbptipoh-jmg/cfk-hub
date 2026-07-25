@@ -21,6 +21,7 @@ interface Props {
   bulan: string
   tahun: number
   bilSesiHadir: number
+  sesiSudahDibayar: number
   kadarPerSesi: number
   advanceTertunggak: AdvanceTertunggak[]
   noTng: string | null
@@ -29,8 +30,11 @@ interface Props {
   onBerjaya: () => void
 }
 
-export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bilSesiHadir, kadarPerSesi, advanceTertunggak, noTng, tngQrUrl, onTutup, onBerjaya }: Props) {
-  const [bilSesi, setBilSesi] = useState(bilSesiHadir)
+export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bilSesiHadir, sesiSudahDibayar, kadarPerSesi, advanceTertunggak, noTng, tngQrUrl, onTutup, onBerjaya }: Props) {
+  // Baki sesi yang BELUM dituntut oleh mana-mana rekod bayaran bulan ini.
+  // Rekod baharu hanya boleh bayar baki ini — bukan sesi sepenuh bulan.
+  const sesiBelumDibayar = Math.max(0, bilSesiHadir - sesiSudahDibayar)
+  const [bilSesi, setBilSesi] = useState(sesiBelumDibayar)
   const [kadar, setKadar] = useState(kadarPerSesi)
   const [tarikhBayar, setTarikhBayar] = useState(tarikhTempatan())
   const [kaedah, setKaedah] = useState<string>('Tunai')
@@ -55,9 +59,15 @@ export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bi
 
   const simpan = async () => {
     if (bilSesi <= 0) { setRalat('Bilangan sesi mesti lebih dari 0.'); return }
-    // Gaji WAJIB ikut kehadiran — tidak boleh bayar melebihi sesi Hadir yang direkod
-    if (bilSesi > bilSesiHadir) {
-      setRalat(`Bilangan sesi melebihi kehadiran direkod (${bilSesiHadir} sesi hadir). Rekod kehadiran dahulu di page Kehadiran.`)
+    // Gaji WAJIB ikut kehadiran — dan hanya sesi yang BELUM dibayar.
+    // Tanpa semakan ini, rekod kedua dalam bulan sama akan bayar semula
+    // sesi yang sudah dibayar (gaji berganda).
+    if (bilSesi > sesiBelumDibayar) {
+      setRalat(
+        sesiSudahDibayar > 0
+          ? `Hanya ${sesiBelumDibayar} sesi belum dibayar untuk ${bulan} ${tahun} (${bilSesiHadir} sesi hadir − ${sesiSudahDibayar} sesi sudah direkod). Kurangkan bilangan sesi.`
+          : `Bilangan sesi melebihi kehadiran direkod (${bilSesiHadir} sesi hadir). Rekod kehadiran dahulu di page Kehadiran.`
+      )
       return
     }
     if (potongan < 0 || potongan > potonganMaks) {
@@ -152,15 +162,38 @@ export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bi
           </button>
         </div>
 
+        {/* Amaran: sudah ada rekod bayaran untuk bulan ini */}
+        {sesiSudahDibayar > 0 && (
+          <div style={{
+            background: sesiBelumDibayar === 0 ? '#FEF2F2' : '#FFFBEB',
+            border: `1px solid ${sesiBelumDibayar === 0 ? '#FECACA' : '#FDE68A'}`,
+            borderRadius: '12px', padding: '12px 16px', marginBottom: '14px',
+          }}>
+            <div style={{ fontSize: '12.5px', fontWeight: 700, color: sesiBelumDibayar === 0 ? '#991B1B' : '#92400E', marginBottom: '4px' }}>
+              {sesiBelumDibayar === 0
+                ? '⚠ Semua sesi bulan ini sudah dibayar'
+                : '⚠ Sudah ada rekod bayaran untuk bulan ini'}
+            </div>
+            <div style={{ fontSize: '12px', color: sesiBelumDibayar === 0 ? '#991B1B' : '#78350F', lineHeight: 1.5 }}>
+              {bilSesiHadir} sesi hadir · {sesiSudahDibayar} sesi sudah dibayar · <strong>{sesiBelumDibayar} sesi belum dibayar</strong>
+              {sesiBelumDibayar === 0
+                ? '. Tiada baki untuk dibayar — rekod kehadiran baharu dahulu jika ada sesi tambahan.'
+                : '. Rekod ini hanya untuk baki tersebut, bukan sepenuh bulan.'}
+            </div>
+          </div>
+        )}
+
         {/* Pengiraan */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px', textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>
               Bil. Sesi Hadir
             </label>
-            <input type="number" min="0" max={bilSesiHadir} value={bilSesi} onChange={(e) => setBilSesi(+e.target.value)} style={gayaInput} />
+            <input type="number" min="0" max={sesiBelumDibayar} value={bilSesi} onChange={(e) => setBilSesi(+e.target.value)} style={gayaInput} />
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Kehadiran direkod: {bilSesiHadir} sesi (had maksimum)
+              {sesiSudahDibayar > 0
+                ? `${bilSesiHadir} sesi hadir − ${sesiSudahDibayar} sudah dibayar = ${sesiBelumDibayar} baki (had maksimum)`
+                : `Kehadiran direkod: ${bilSesiHadir} sesi (had maksimum)`}
             </p>
           </div>
           <div>
@@ -313,15 +346,15 @@ export function ModalRekodBayaran({ jurulatihId, namaJurulatih, bulan, tahun, bi
           }}>
             Batal
           </button>
-          <button onClick={simpan} disabled={loading} style={{
+          <button onClick={simpan} disabled={loading || sesiBelumDibayar === 0} style={{
             flex: 2, padding: '11px',
-            background: loading ? '#94A3B8' : 'var(--accent)',
+            background: loading || sesiBelumDibayar === 0 ? '#94A3B8' : 'var(--accent)',
             border: 'none', borderRadius: '12px',
             fontSize: '13.5px', fontWeight: 700,
-            color: 'var(--accent-text)', cursor: loading ? 'not-allowed' : 'pointer',
+            color: 'var(--accent-text)', cursor: loading || sesiBelumDibayar === 0 ? 'not-allowed' : 'pointer',
             fontFamily: 'inherit',
           }}>
-            {loading ? 'Menyimpan...' : 'Rekod Bayaran'}
+            {loading ? 'Menyimpan...' : sesiBelumDibayar === 0 ? 'Tiada Baki Sesi' : 'Rekod Bayaran'}
           </button>
         </div>
       </div>

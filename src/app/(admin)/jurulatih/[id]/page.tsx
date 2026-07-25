@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { akhirBulan } from '@/lib/utils'
+import { akhirBulan, bulanTempatan, NAMA_BULAN } from '@/lib/utils'
 import { ProfilJurulatihKlient } from './_components/ProfilJurulatihKlient'
 
 export default async function ProfilJurulatihPage({
@@ -55,8 +55,11 @@ export default async function ProfilJurulatihPage({
     return { bulan: b.label, sesi: data?.length ?? 0 }
   }))
 
+  // Bulan semasa waktu Malaysia — server Vercel guna UTC, jadi jangan guna
+  // toLocaleString/getFullYear terus (tersalah bulan pada 1 haribulan pagi).
+  const [tahunKini, bulanKini] = bulanTempatan().split('-').map(Number)
   const sudahBayarBulanIni = (bayaran ?? []).some(
-    (b: any) => b.bulan_bayaran === sekarang.toLocaleString('ms-MY', { month: 'long' }) && b.tahun_bayaran === sekarang.getFullYear() && b.status === 'Sudah Bayar'
+    (b: any) => b.bulan_bayaran === NAMA_BULAN[bulanKini - 1] && b.tahun_bayaran === tahunKini && b.status === 'Sudah Bayar'
   )
 
   // Gambar profil: signed URL (bucket peribadi) — sah 1 jam

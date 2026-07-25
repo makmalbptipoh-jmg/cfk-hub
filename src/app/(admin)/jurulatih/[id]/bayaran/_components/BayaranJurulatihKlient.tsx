@@ -45,14 +45,21 @@ interface Props {
   bulanSemasa: string
   tahunSemasa: number
   bilSesiHadirBulanIni: number
+  sesiSudahDibayarBulanIni: number
   sudahRekodBulanIni: boolean
 }
 
-export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, bulanSemasa, tahunSemasa, bilSesiHadirBulanIni, sudahRekodBulanIni }: Props) {
+export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, bulanSemasa, tahunSemasa, bilSesiHadirBulanIni, sesiSudahDibayarBulanIni, sudahRekodBulanIni }: Props) {
   const router = useRouter()
   const [modal, setModal] = useState(false)
 
-  const jumlahKeseluruhan = bayaran.filter((b) => b.status === 'Sudah Bayar').reduce((sum, b) => sum + b.jumlah, 0)
+  // Jumlah keseluruhan = BERSIH yang benar-benar keluar (kasar − potongan advance),
+  // kerana bahagian advance sudah dibayar lebih awal sebagai advance.
+  const dibayar = bayaran.filter((b) => b.status === 'Sudah Bayar')
+  const kasarKeseluruhan = dibayar.reduce((sum, b) => sum + b.jumlah, 0)
+  const potonganKeseluruhan = dibayar.reduce((sum, b) => sum + (b.potongan_advance ?? 0), 0)
+  const jumlahKeseluruhan = kasarKeseluruhan - potonganKeseluruhan
+  const sesiBelumDibayarBulanIni = Math.max(0, bilSesiHadirBulanIni - sesiSudahDibayarBulanIni)
 
   return (
     <div style={{ maxWidth: '720px' }}>
@@ -80,6 +87,11 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, 
           <div style={{ fontSize: '12.5px', color: sudahRekodBulanIni ? 'var(--hadir-text)' : '#92400E', opacity: 0.8 }}>
             {bilSesiHadirBulanIni} sesi hadir bulan ini · Kadar: {formatRinggit(jurulatih.kadar_bayaran)}/sesi
           </div>
+          {sesiSudahDibayarBulanIni > 0 && (
+            <div style={{ fontSize: '12.5px', fontWeight: 700, color: sesiBelumDibayarBulanIni > 0 ? '#C2410C' : 'var(--hadir-text)', marginTop: '4px' }}>
+              {bilSesiHadirBulanIni} − {sesiSudahDibayarBulanIni} sudah dibayar = {sesiBelumDibayarBulanIni} sesi belum dibayar
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -123,8 +135,11 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, 
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         <div>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Jumlah Keseluruhan Dibayar</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{bayaran.filter((b) => b.status === 'Sudah Bayar').length} rekod bayaran</div>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Jumlah Keseluruhan Dibayar (Bersih)</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {dibayar.length} rekod bayaran
+            {potonganKeseluruhan > 0 && ` · kasar ${formatRinggit(kasarKeseluruhan)} − advance ${formatRinggit(potonganKeseluruhan)}`}
+          </div>
         </div>
         <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text)' }}>{formatRinggit(jumlahKeseluruhan)}</div>
       </div>
@@ -222,6 +237,7 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, 
           bulan={bulanSemasa}
           tahun={tahunSemasa}
           bilSesiHadir={bilSesiHadirBulanIni}
+          sesiSudahDibayar={sesiSudahDibayarBulanIni}
           kadarPerSesi={jurulatih.kadar_bayaran}
           advanceTertunggak={advanceTertunggak}
           noTng={jurulatih.no_tng}

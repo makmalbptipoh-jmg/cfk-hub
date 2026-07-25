@@ -20,7 +20,7 @@ export default async function JurulatihPage() {
       .select('id, nama_penuh, no_telefon, kadar_bayaran, tarikh_mula, status, cawangan_ids')
       .order('nama_penuh'),
     supabase.from('cawangan').select('id, nama'),
-    supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, status, bulan_bayaran, tahun_bayaran, tarikh_bayar, created_at'),
+    supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, potongan_advance, status, bulan_bayaran, tahun_bayaran, tarikh_bayar, created_at'),
     supabase.from('kehadiran_jurulatih').select('jurulatih_id, tarikh, cawangan_id, jenis_kelas').eq('status', 'Hadir'),
     supabase.from('jadual_slot').select(SELECT_SLOT_GAJI),
     supabase.from('jadual_slot_batal').select('slot_id, tarikh').gte('tarikh', mulaB).lte('tarikh', akhirB),
@@ -30,10 +30,13 @@ export default async function JurulatihPage() {
   for (const c of cawangan ?? []) peta[c.id] = c.nama
 
   // Agregat per jurulatih: gaji dibayar, sesi hadir bulan ini, point (1 point / sesi hadir)
+  // Gaji dibayar = BERSIH (kasar − potongan advance). Bahagian advance sudah
+  // keluar lebih awal sebagai advance, jadi mengira kasar akan kira dua kali.
   const gajiPerJurulatih: Record<string, number> = {}
   for (const b of bayaran ?? []) {
     if (b.status === 'Sudah Bayar') {
-      gajiPerJurulatih[b.jurulatih_id] = (gajiPerJurulatih[b.jurulatih_id] ?? 0) + b.jumlah
+      gajiPerJurulatih[b.jurulatih_id] =
+        (gajiPerJurulatih[b.jurulatih_id] ?? 0) + b.jumlah - (b.potongan_advance ?? 0)
     }
   }
   // Bayaran 'Sudah Bayar' terkini per jurulatih (ikut tarikh_bayar, fallback created_at)
@@ -47,7 +50,7 @@ export default async function JurulatihPage() {
       terkiniPerJurulatih[b.jurulatih_id] = {
         bulan_bayaran: b.bulan_bayaran,
         tahun_bayaran: b.tahun_bayaran,
-        jumlah: b.jumlah,
+        jumlah: b.jumlah - (b.potongan_advance ?? 0),
         tarikh_bayar: b.tarikh_bayar,
         kunci,
       }
