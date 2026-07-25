@@ -50,6 +50,11 @@ const FMT_RM = '#,##0.00'
 const KELABU = 'FFF1F5F9'
 const GELAP = 'FF1E293B'
 
+// Bundarkan ke sen. Yuran pro-rata (cth. RM80÷3 = RM26.67) menghasilkan
+// pecahan; tanpa ini jumlah terkumpul boleh hanyut beberapa sen kerana
+// ketidaktepatan nombor titik terapung — LHDN mahu angka yang bertaut tepat.
+const sen = (n: number) => Math.round(n * 100) / 100
+
 export function BtnLaporanLHDN() {
   const tahunSemasa = new Date().getFullYear()
   const [tahun, setTahun] = useState(tahunSemasa)
@@ -100,7 +105,7 @@ export function BtnLaporanLHDN() {
       wb.created = new Date()
 
       binaSheetPenyata(wb, tahun, resit, belanja, pendapatanLain)
-      binaSheetBulanan(wb, tahun, resit)
+      binaSheetBulanan(wb, tahun, resit, pendapatanLain)
       binaSheetPendapatan(wb, tahun, resit)
       if (pendapatanLain.length > 0) binaSheetPendapatanLain(wb, tahun, pendapatanLain)
       binaSheetPerbelanjaan(wb, tahun, belanja)
@@ -205,20 +210,21 @@ function binaSheetPenyata(wb: any, tahun: number, resit: ResitRow[], belanja: Be
 
   const pendapatanJenis: Record<string, number> = {}
   for (const r of resit) {
-    pendapatanJenis[r.jenis] = (pendapatanJenis[r.jenis] ?? 0) + r.jumlah
+    pendapatanJenis[r.jenis] = sen((pendapatanJenis[r.jenis] ?? 0) + r.jumlah)
   }
   const pendapatanLainKategori: Record<string, number> = {}
   for (const p of pendapatanLain) {
-    pendapatanLainKategori[p.kategori] = (pendapatanLainKategori[p.kategori] ?? 0) + p.jumlah
+    pendapatanLainKategori[p.kategori] = sen((pendapatanLainKategori[p.kategori] ?? 0) + p.jumlah)
   }
   const belanjaKategori: Record<string, number> = {}
   for (const b of belanja) {
-    belanjaKategori[b.kategori] = (belanjaKategori[b.kategori] ?? 0) + b.jumlah
+    belanjaKategori[b.kategori] = sen((belanjaKategori[b.kategori] ?? 0) + b.jumlah)
   }
-  const jumlahPendapatan =
+  const jumlahPendapatan = sen(
     resit.reduce((s, r) => s + r.jumlah, 0) +
     pendapatanLain.reduce((s, p) => s + p.jumlah, 0)
-  const jumlahBelanja = belanja.reduce((s, b) => s + b.jumlah, 0)
+  )
+  const jumlahBelanja = sen(belanja.reduce((s, b) => s + b.jumlah, 0))
 
   let r = 7
   const seksyen = (label: string) => {
@@ -260,7 +266,7 @@ function binaSheetPenyata(wb: any, tahun: number, resit: ResitRow[], belanja: Be
   baris('JUMLAH PERBELANJAAN', jumlahBelanja, true)
   r++
 
-  const untung = jumlahPendapatan - jumlahBelanja
+  const untung = sen(jumlahPendapatan - jumlahBelanja)
   ws.getCell(`A${r}`).value = untung >= 0 ? 'PENDAPATAN BERSIH (UNTUNG)' : 'PENDAPATAN BERSIH (RUGI)'
   ws.getCell(`A${r}`).font = { bold: true, size: 11 }
   ws.getCell(`B${r}`).value = untung
@@ -276,28 +282,35 @@ function binaSheetPenyata(wb: any, tahun: number, resit: ResitRow[], belanja: Be
   ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
 }
 
-function binaSheetBulanan(wb: any, tahun: number, resit: ResitRow[]) {
+function binaSheetBulanan(wb: any, tahun: number, resit: ResitRow[], pendapatanLain: PendapatanLainRow[]) {
   const ws = wb.addWorksheet('Pendapatan Bulanan')
-  ws.columns = [{ width: 16 }, { width: 16 }, { width: 16 }, { width: 16 }, { width: 16 }]
-  tajukSheet(ws, 'Pecahan Pendapatan Bulanan', tahun, 'E')
+  ws.columns = [{ width: 16 }, { width: 16 }, { width: 16 }, { width: 16 }, { width: 18 }, { width: 16 }]
+  tajukSheet(ws, 'Pecahan Pendapatan Bulanan', tahun, 'F')
 
-  barisKepala(ws, 7, ['Bulan', 'Kumpulan (RM)', 'Personal (RM)', 'Pendaftaran (RM)', 'Jumlah (RM)'])
+  // Pendapatan lain DIMASUKKAN supaya JUMLAH sheet ini bertaut tepat dengan
+  // JUMLAH PENDAPATAN dalam sheet Penyata Pendapatan.
+  barisKepala(ws, 7, ['Bulan', 'Kumpulan (RM)', 'Personal (RM)', 'Pendaftaran (RM)', 'Pendapatan Lain (RM)', 'Jumlah (RM)'])
 
-  const data: number[][] = BULAN_MS.map(() => [0, 0, 0])
+  const data: number[][] = BULAN_MS.map(() => [0, 0, 0, 0])
   const idxJenis: Record<string, number> = { Kumpulan: 0, Personal: 1, Pendaftaran: 2 }
   for (const rst of resit) {
     const bulanIdx = new Date(rst.tarikh_bayar + 'T00:00:00').getMonth()
     const j = idxJenis[rst.jenis]
-    if (j !== undefined) data[bulanIdx][j] += rst.jumlah
+    if (j !== undefined) data[bulanIdx][j] = sen(data[bulanIdx][j] + rst.jumlah)
+  }
+  for (const p of pendapatanLain) {
+    const bulanIdx = new Date(p.tarikh + 'T00:00:00').getMonth()
+    data[bulanIdx][3] = sen(data[bulanIdx][3] + p.jumlah)
   }
 
   let r = 8
-  const total = [0, 0, 0]
+  const total = [0, 0, 0, 0]
   BULAN_MS.forEach((nama, i) => {
-    const [k, p, d] = data[i]
-    total[0] += k; total[1] += p; total[2] += d
+    const [k, p, d, l] = data[i]
+    total[0] = sen(total[0] + k); total[1] = sen(total[1] + p)
+    total[2] = sen(total[2] + d); total[3] = sen(total[3] + l)
     ws.getCell(`A${r}`).value = nama
-    const nilai = [k, p, d, k + p + d]
+    const nilai = [k, p, d, l, sen(k + p + d + l)]
     nilai.forEach((v, c) => {
       const cell = ws.getRow(r).getCell(c + 2)
       cell.value = v
@@ -308,7 +321,7 @@ function binaSheetBulanan(wb: any, tahun: number, resit: ResitRow[]) {
 
   ws.getCell(`A${r}`).value = 'JUMLAH'
   ws.getCell(`A${r}`).font = { bold: true }
-  const jumlahBesar = total[0] + total[1] + total[2]
+  const jumlahBesar = sen(total[0] + total[1] + total[2] + total[3])
   ;[...total, jumlahBesar].forEach((v, c) => {
     const cell = ws.getRow(r).getCell(c + 2)
     cell.value = v
@@ -316,14 +329,18 @@ function binaSheetBulanan(wb: any, tahun: number, resit: ResitRow[]) {
     cell.font = { bold: true }
     cell.border = { top: { style: 'thin' }, bottom: { style: 'double' } }
   })
+  r += 2
+  ws.getCell(`A${r}`).value =
+    'JUMLAH di atas mesti sama dengan JUMLAH PENDAPATAN dalam sheet "Penyata Pendapatan".'
+  ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
 }
 
 function binaSheetPendapatan(wb: any, tahun: number, resit: ResitRow[]) {
   const ws = wb.addWorksheet('Butiran Pendapatan')
-  ws.columns = [{ width: 13 }, { width: 16 }, { width: 38 }, { width: 13 }, { width: 16 }, { width: 14 }]
-  tajukSheet(ws, 'Butiran Pendapatan (Resit Aktif)', tahun, 'F')
+  ws.columns = [{ width: 13 }, { width: 16 }, { width: 38 }, { width: 13 }, { width: 16 }, { width: 16 }, { width: 14 }]
+  tajukSheet(ws, 'Butiran Pendapatan (Resit Aktif)', tahun, 'G')
 
-  barisKepala(ws, 7, ['Tarikh Bayar', 'No. Resit', 'Pelajar', 'Jenis', 'Bulan Yuran', 'Jumlah (RM)'])
+  barisKepala(ws, 7, ['Tarikh Bayar', 'No. Resit', 'Pelajar', 'Jenis', 'Bulan Yuran', 'Kaedah', 'Jumlah (RM)'])
 
   let r = 8
   for (const rst of resit) {
@@ -332,96 +349,126 @@ function binaSheetPendapatan(wb: any, tahun: number, resit: ResitRow[]) {
     ws.getCell(`C${r}`).value = rst.pelajar?.nama_penuh ?? '—'
     ws.getCell(`D${r}`).value = rst.jenis
     ws.getCell(`E${r}`).value = rst.bulan_bayaran
-    ws.getCell(`F${r}`).value = rst.jumlah
-    ws.getCell(`F${r}`).numFmt = FMT_RM
+    // Kaedah kosong ditanda jelas — JANGAN diam-diam anggap Transfer
+    ws.getCell(`F${r}`).value = rst.kaedah_bayaran ?? 'Tidak Dinyatakan'
+    if (!rst.kaedah_bayaran) ws.getCell(`F${r}`).font = { color: { argb: 'FF92400E' }, italic: true }
+    ws.getCell(`G${r}`).value = rst.jumlah
+    ws.getCell(`G${r}`).numFmt = FMT_RM
     r++
   }
 
-  ws.getCell(`E${r}`).value = 'JUMLAH'
-  ws.getCell(`E${r}`).font = { bold: true }
-  ws.getCell(`F${r}`).value = resit.reduce((s, x) => s + x.jumlah, 0)
-  ws.getCell(`F${r}`).numFmt = FMT_RM
+  ws.getCell(`F${r}`).value = 'JUMLAH'
   ws.getCell(`F${r}`).font = { bold: true }
-  ws.getCell(`F${r}`).border = { top: { style: 'thin' }, bottom: { style: 'double' } }
+  ws.getCell(`G${r}`).value = sen(resit.reduce((s, x) => s + x.jumlah, 0))
+  ws.getCell(`G${r}`).numFmt = FMT_RM
+  ws.getCell(`G${r}`).font = { bold: true }
+  ws.getCell(`G${r}`).border = { top: { style: 'thin' }, bottom: { style: 'double' } }
 }
 
 function binaSheetRekonsiliasi(wb: any, tahun: number, resit: ResitRow[], belanja: BelanjaRow[], pendapatanLain: PendapatanLainRow[]) {
   const ws = wb.addWorksheet('Rekonsiliasi Bank')
   ws.columns = [
-    { width: 14 }, // Bulan
-    { width: 18 }, // Masuk Bank (Transfer)
-    { width: 17 }, // Pendapatan Tunai
-    { width: 17 }, // Perbelanjaan
-    { width: 19 }, // Pergerakan Dijangka
-    { width: 24 }, // Baki Penyata Bank (isi manual)
-    { width: 15 }, // Beza
+    { width: 14 }, // A Bulan
+    { width: 18 }, // B Masuk Bank (Transfer)
+    { width: 15 }, // C Tunai
+    { width: 20 }, // D Tidak Dinyatakan
+    { width: 15 }, // E Belanja
+    { width: 19 }, // F Pergerakan Dijangka
+    { width: 24 }, // G Baki Penyata Bank (isi manual)
+    { width: 15 }, // H Beza
   ]
-  tajukSheet(ws, 'Rekonsiliasi Bank Bulanan', tahun, 'G')
+  tajukSheet(ws, 'Rekonsiliasi Bank Bulanan', tahun, 'H')
 
   const KUNING = 'FFFEF3C7'
 
+  // Agregat bulanan. Kaedah bayaran KOSONG diasingkan — jangan campur ke mana-mana
+  // lajur, kerana kita tidak tahu wang itu masuk bank atau diterima tunai.
+  const masukBank = Array(12).fill(0)
+  const tunai = Array(12).fill(0)
+  const takPasti = Array(12).fill(0)
+  const keluar = Array(12).fill(0)
+  const letak = (arrBank: number[], m: number, kaedah: string | null, nilai: number) => {
+    if (!kaedah) takPasti[m] = sen(takPasti[m] + nilai)
+    else if (kaedah === 'Tunai') tunai[m] = sen(tunai[m] + nilai)
+    else arrBank[m] = sen(arrBank[m] + nilai)
+  }
+  for (const rst of resit) {
+    letak(masukBank, new Date(rst.tarikh_bayar + 'T00:00:00').getMonth(), rst.kaedah_bayaran, rst.jumlah)
+  }
+  for (const p of pendapatanLain) {
+    letak(masukBank, new Date(p.tarikh + 'T00:00:00').getMonth(), p.kaedah, p.jumlah)
+  }
+  for (const b of belanja) {
+    const m = new Date(b.tarikh + 'T00:00:00').getMonth()
+    keluar[m] = sen(keluar[m] + b.jumlah)
+  }
+  const jumTakPasti = sen(takPasti.reduce((s: number, n: number) => s + n, 0))
+
   // Arahan
-  ws.mergeCells('A7:G7')
+  ws.mergeCells('A7:H7')
   ws.getCell('A7').value =
-    'ARAHAN: Isi sel KUNING dari penyata bank Maybank (baki akhir setiap bulan). Kolum BEZA dikira automatik — ' +
+    'ARAHAN: Isi sel KUNING dari penyata bank (baki akhir setiap bulan). Kolum BEZA dikira automatik — ' +
     'beza besar bermakna ada transaksi belum direkod, bayaran tunai, atau perbezaan masa (timing).'
   ws.getCell('A7').font = { size: 9, italic: true, color: { argb: 'FF92400E' } }
   ws.getCell('A7').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: KUNING } }
   ws.getCell('A7').alignment = { wrapText: true }
   ws.getRow(7).height = 30
 
-  // Baki awal tahun (isi manual)
-  ws.getCell('A8').value = `Baki Bank pada 1 Januari ${tahun} (isi dari penyata):`
-  ws.getCell('A8').font = { bold: true, size: 10 }
-  ws.mergeCells('A8:E8')
-  ws.getCell('F8').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: KUNING } }
-  ws.getCell('F8').numFmt = FMT_RM
-  ws.getCell('F8').border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
+  // Amaran khusus bila ada rekod tanpa kaedah bayaran
+  let barisAwal = 8
+  if (jumTakPasti > 0) {
+    ws.mergeCells('A8:H8')
+    ws.getCell('A8').value =
+      `AMARAN: RM${jumTakPasti.toFixed(2)} pendapatan TIDAK DINYATAKAN kaedah bayarannya (lajur D). ` +
+      'Jumlah ini TIDAK dimasukkan dalam "Pergerakan Dijangka" kerana tidak diketahui sama ada masuk bank atau tunai. ' +
+      'Kemas kini kaedah bayaran pada rekod tersebut untuk rekonsiliasi yang tepat.'
+    ws.getCell('A8').font = { size: 9, bold: true, color: { argb: 'FF991B1B' } }
+    ws.getCell('A8').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } }
+    ws.getCell('A8').alignment = { wrapText: true }
+    ws.getRow(8).height = 30
+    barisAwal = 9
+  }
 
-  barisKepala(ws, 9, [
+  // Baki awal tahun (isi manual)
+  ws.getCell(`A${barisAwal}`).value = `Baki Bank pada 1 Januari ${tahun} (isi dari penyata):`
+  ws.getCell(`A${barisAwal}`).font = { bold: true, size: 10 }
+  ws.mergeCells(`A${barisAwal}:F${barisAwal}`)
+  const selBakiAwal = `G${barisAwal}`
+  ws.getCell(selBakiAwal).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: KUNING } }
+  ws.getCell(selBakiAwal).numFmt = FMT_RM
+  ws.getCell(selBakiAwal).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
+
+  const barisKepalaNum = barisAwal + 1
+  barisKepala(ws, barisKepalaNum, [
     'Bulan',
     'Masuk Bank (RM)',
     'Tunai (RM)',
+    'Tidak Dinyatakan (RM)',
     'Belanja (RM)',
     'Pergerakan (RM)',
     'Baki Penyata Bank (RM)',
     'Beza (RM)',
   ])
 
-  // Agregat bulanan: Transfer masuk bank; Tunai tidak; belanja dianggap keluar bank
-  const masukBank = Array(12).fill(0)
-  const tunai = Array(12).fill(0)
-  const keluar = Array(12).fill(0)
-  for (const rst of resit) {
-    const m = new Date(rst.tarikh_bayar + 'T00:00:00').getMonth()
-    if (rst.kaedah_bayaran === 'Tunai') tunai[m] += rst.jumlah
-    else masukBank[m] += rst.jumlah
-  }
-  for (const p of pendapatanLain) {
-    const m = new Date(p.tarikh + 'T00:00:00').getMonth()
-    if (p.kaedah === 'Tunai') tunai[m] += p.jumlah
-    else masukBank[m] += p.jumlah
-  }
-  for (const b of belanja) {
-    const m = new Date(b.tarikh + 'T00:00:00').getMonth()
-    keluar[m] += b.jumlah
-  }
-
-  let r = 10
+  let r = barisKepalaNum + 1
+  const barisPertama = r
   BULAN_MS.forEach((nama, i) => {
     ws.getCell(`A${r}`).value = nama
     ws.getCell(`B${r}`).value = masukBank[i]
     ws.getCell(`C${r}`).value = tunai[i]
-    ws.getCell(`D${r}`).value = keluar[i]
-    // Pergerakan dijangka dalam bank = masuk bank - belanja
-    ws.getCell(`E${r}`).value = { formula: `B${r}-D${r}` }
+    ws.getCell(`D${r}`).value = takPasti[i]
+    if (takPasti[i] > 0) ws.getCell(`D${r}`).font = { color: { argb: 'FF991B1B' }, bold: true }
+    ws.getCell(`E${r}`).value = keluar[i]
+    // Pergerakan dijangka dalam bank = masuk bank (disahkan) − belanja.
+    // Lajur D SENGAJA dikecualikan — statusnya tidak diketahui.
+    ws.getCell(`F${r}`).value = { formula: `B${r}-E${r}` }
     // Baki penyata bank — isi manual (kuning)
-    ws.getCell(`F${r}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: KUNING } }
-    ws.getCell(`F${r}`).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
-    // Beza = baki bulan ini - baki sebelum - pergerakan dijangka
-    const bakiSebelum = r === 10 ? 'F8' : `F${r - 1}`
-    ws.getCell(`G${r}`).value = { formula: `IF(F${r}="","",F${r}-${bakiSebelum}-E${r})` }
-    for (const col of ['B', 'C', 'D', 'E', 'F', 'G']) ws.getCell(`${col}${r}`).numFmt = FMT_RM
+    ws.getCell(`G${r}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: KUNING } }
+    ws.getCell(`G${r}`).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
+    // Beza = baki bulan ini − baki sebelum − pergerakan dijangka
+    const bakiSebelum = r === barisPertama ? selBakiAwal : `G${r - 1}`
+    ws.getCell(`H${r}`).value = { formula: `IF(G${r}="","",G${r}-${bakiSebelum}-F${r})` }
+    for (const col of ['B', 'C', 'D', 'E', 'F', 'G', 'H']) ws.getCell(`${col}${r}`).numFmt = FMT_RM
     r++
   })
 
@@ -429,11 +476,12 @@ function binaSheetRekonsiliasi(wb: any, tahun: number, resit: ResitRow[], belanj
   ws.getCell(`A${r}`).value = 'JUMLAH'
   ws.getCell(`A${r}`).font = { bold: true }
   const jumlah = [
-    masukBank.reduce((s: number, n: number) => s + n, 0),
-    tunai.reduce((s: number, n: number) => s + n, 0),
-    keluar.reduce((s: number, n: number) => s + n, 0),
+    sen(masukBank.reduce((s: number, n: number) => s + n, 0)),
+    sen(tunai.reduce((s: number, n: number) => s + n, 0)),
+    jumTakPasti,
+    sen(keluar.reduce((s: number, n: number) => s + n, 0)),
   ]
-  ;[...jumlah, jumlah[0] - jumlah[2]].forEach((v, c) => {
+  ;[...jumlah, sen(jumlah[0] - jumlah[3])].forEach((v, c) => {
     const cell = ws.getRow(r).getCell(c + 2)
     cell.value = v
     cell.numFmt = FMT_RM
@@ -442,13 +490,17 @@ function binaSheetRekonsiliasi(wb: any, tahun: number, resit: ResitRow[], belanj
   })
   r += 2
 
-  ws.getCell(`A${r}`).value =
-    'Nota: "Masuk Bank" = resit + pendapatan lain kaedah Transfer (kaedah tidak dinyatakan dianggap Transfer). "Tunai" tidak melalui bank.'
-  ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
-  r++
-  ws.getCell(`A${r}`).value =
-    'Perbelanjaan dianggap dibayar dari bank — jika ada belanja tunai, laraskan pemahaman beza dengan sewajarnya.'
-  ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
+  const nota = [
+    'Nota: "Masuk Bank" = resit + pendapatan lain berkaedah Transfer/TNG. "Tunai" tidak melalui bank.',
+    '"Tidak Dinyatakan" = rekod tanpa kaedah bayaran. Ia DIKECUALIKAN dari Pergerakan Dijangka kerana tidak diketahui masuk bank atau tidak — bukan diandaikan.',
+    'Perbelanjaan dianggap dibayar dari bank — jika ada belanja tunai, laraskan pemahaman beza dengan sewajarnya.',
+    `Semakan silang: B + C + D bagi tahun ini = ${sen(jumlah[0] + jumlah[1] + jumlah[2]).toFixed(2)} = JUMLAH PENDAPATAN dalam sheet Penyata Pendapatan.`,
+  ]
+  for (const n of nota) {
+    ws.getCell(`A${r}`).value = n
+    ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
+    r++
+  }
 }
 
 function binaSheetPendapatanLain(wb: any, tahun: number, pendapatanLain: PendapatanLainRow[]) {
@@ -472,7 +524,7 @@ function binaSheetPendapatanLain(wb: any, tahun: number, pendapatanLain: Pendapa
 
   ws.getCell(`E${r}`).value = 'JUMLAH'
   ws.getCell(`E${r}`).font = { bold: true }
-  ws.getCell(`F${r}`).value = pendapatanLain.reduce((s, x) => s + x.jumlah, 0)
+  ws.getCell(`F${r}`).value = sen(pendapatanLain.reduce((s, x) => s + x.jumlah, 0))
   ws.getCell(`F${r}`).numFmt = FMT_RM
   ws.getCell(`F${r}`).font = { bold: true }
   ws.getCell(`F${r}`).border = { top: { style: 'thin' }, bottom: { style: 'double' } }
@@ -498,7 +550,7 @@ function binaSheetPerbelanjaan(wb: any, tahun: number, belanja: BelanjaRow[]) {
 
   ws.getCell(`D${r}`).value = 'JUMLAH'
   ws.getCell(`D${r}`).font = { bold: true }
-  ws.getCell(`E${r}`).value = belanja.reduce((s, x) => s + x.jumlah, 0)
+  ws.getCell(`E${r}`).value = sen(belanja.reduce((s, x) => s + x.jumlah, 0))
   ws.getCell(`E${r}`).numFmt = FMT_RM
   ws.getCell(`E${r}`).font = { bold: true }
   ws.getCell(`E${r}`).border = { top: { style: 'thin' }, bottom: { style: 'double' } }
