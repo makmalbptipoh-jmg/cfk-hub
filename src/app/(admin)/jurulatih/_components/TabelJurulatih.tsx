@@ -120,7 +120,7 @@ export function TabelJurulatih({ jurulatih, stat }: Props) {
               Belum ada jurulatih berdaftar
             </p>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-              Klik "Tambah Jurulatih" untuk daftar jurulatih pertama.
+              Klik &quot;Tambah Jurulatih&quot; untuk daftar jurulatih pertama.
             </p>
           </div>
         ) : (

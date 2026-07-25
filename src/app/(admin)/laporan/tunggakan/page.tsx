@@ -45,7 +45,7 @@ export default async function TunggakanPage() {
         id: p.id,
         nama_penuh: p.nama_penuh,
         no_telefon: p.no_telefon,
-        cawangan_nama: (p as any).cawangan?.nama ?? '—',
+        cawangan_nama: (p as unknown as { cawangan: { nama: string } | null }).cawangan?.nama ?? '—',
         yuran_bulanan: p.yuran_bulanan,
         bulanTunggak,
         bilBulan: bulanTunggak.length,

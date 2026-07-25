@@ -39,7 +39,8 @@ export function CariPelajar({ onPilih, placeholder = 'Cari nama atau telefon pel
         .or(`nama_penuh.ilike.%${query}%,no_telefon.ilike.%${query}%`)
         .limit(8)
 
-      const mapped: PelajarCarian[] = (data ?? []).map((p: any) => ({
+      type BarisCarian = { id: string; nama_penuh: string; no_telefon: string; status: string; cawangan: { nama: string } | null }
+      const mapped: PelajarCarian[] = ((data ?? []) as unknown as BarisCarian[]).map((p) => ({
         id: p.id,
         nama_penuh: p.nama_penuh,
         no_telefon: p.no_telefon,

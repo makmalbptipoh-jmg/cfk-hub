@@ -58,11 +58,11 @@ export default function KehadiranJurulatihPage({ params }: { params: Promise<{ i
       supabase.from('kehadiran_jurulatih').select('id, tarikh, status, cawangan_id, jenis_kelas, nota, cawangan:cawangan_id(nama)').eq('jurulatih_id', id).gte('tarikh', mula).lte('tarikh', akhir).order('tarikh'),
       supabase.from('cawangan').select('id, nama').eq('status', 'Aktif').order('nama'),
     ])
-    setNamaJurulatih((j as any)?.nama_penuh ?? '')
+    setNamaJurulatih(j?.nama_penuh ?? '')
     setSesi((k ?? []) as unknown as Sesi[])
     const senaraiCaw = c ?? []
     // Utamakan cawangan jurulatih sendiri di atas senarai
-    const milikJurulatih = new Set(((j as any)?.cawangan_ids ?? []) as string[])
+    const milikJurulatih = new Set(j?.cawangan_ids ?? [])
     senaraiCaw.sort((a, b) => Number(milikJurulatih.has(b.id)) - Number(milikJurulatih.has(a.id)))
     setCawangan(senaraiCaw)
     // Default cawangan: cawangan pertama jurulatih (jika belum dipilih)

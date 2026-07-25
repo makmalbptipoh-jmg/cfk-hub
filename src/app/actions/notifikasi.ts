@@ -303,7 +303,8 @@ export async function janaDanMuatNotifikasi(): Promise<{ senarai: Notifikasi[]; 
     .eq('sumber_daftar', 'Jurulatih')
     .gte('created_at', cutoff30)
   if ((pelajarJurulatih ?? []).length > 0) {
-    const barisPelajar = (pelajarJurulatih as any[]).map((p) => ({
+    type BarisPelajarBaharu = { id: string; nama_penuh: string; cawangan: { nama: string } | null }
+    const barisPelajar = (pelajarJurulatih as unknown as BarisPelajarBaharu[]).map((p) => ({
       jenis: 'pelajar_baharu_jurulatih',
       tajuk: 'Pelajar baru didaftar jurulatih',
       mesej: `${p.nama_penuh} didaftar oleh jurulatih${p.cawangan?.nama ? ` di ${p.cawangan.nama}` : ''}. Sila semak profil.`,

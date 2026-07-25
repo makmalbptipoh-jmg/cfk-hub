@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { CariPelajar } from '@/components/pelajar/CariPelajar'
+import { CariPelajar, type PelajarCarian } from '@/components/pelajar/CariPelajar'
 import { BtnUnduhResit } from '@/components/pdf/BtnUnduhResit'
 import { kirYuranBulanan, tarikhTempatan } from '@/lib/utils'
 import { gayaInput, gayaLabel } from '@/components/ui/borang'
@@ -101,7 +101,7 @@ export function BorangYuran() {
       : [{ id: pelajar.id, nama_penuh: pelajar.nama_penuh, cawangan: pelajar.cawangan }]
     : []
 
-  const pilihPelajar = async (p: any) => {
+  const pilihPelajar = async (p: PelajarCarian) => {
     // Fetch full record to get jenis_kelas, cawangan nama & adik-beradik
     const supabase = createClient()
     const { data } = await supabase
@@ -111,7 +111,7 @@ export function BorangYuran() {
       .single()
 
     const jenisPelajar = data?.jenis_kelas ?? 'Kumpulan'
-    const cawanganNama = (data?.cawangan as any)?.nama ?? p.cawangan_nama ?? '—'
+    const cawanganNama = (data?.cawangan as unknown as { nama: string } | null)?.nama ?? p.cawangan_nama ?? '—'
 
     setPelajar({
       id: p.id,
@@ -136,7 +136,7 @@ export function BorangYuran() {
         .neq('id', p.id)
         .order('nama_penuh')
       setAdikBeradik(
-        (ahli ?? []).map((a: any) => ({
+        ((ahli ?? []) as unknown as { id: string; nama_penuh: string; cawangan: { nama: string } | null }[]).map((a) => ({
           id: a.id,
           nama_penuh: a.nama_penuh,
           cawangan: a.cawangan?.nama ?? '—',

@@ -86,7 +86,7 @@ export default function LaporanKewanganPage() {
       jenisTxn: 'masuk',
       jenis: 'Pendapatan',
       kategori: r.jenis,
-      penerangan: `${r.nombor_resit} — ${(r.pelajar as any)?.nama_penuh ?? ''}`,
+      penerangan: `${r.nombor_resit} — ${(r.pelajar as unknown as { nama_penuh: string } | null)?.nama_penuh ?? ''}`,
       jumlah: r.jumlah,
     }))
 

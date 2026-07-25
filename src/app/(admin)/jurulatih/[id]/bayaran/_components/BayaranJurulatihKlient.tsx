@@ -166,7 +166,7 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, 
           <div style={{ padding: '48px', textAlign: 'center' }}>
             <Wallet size={32} style={{ color: 'var(--border)', margin: '0 auto 12px' }} />
             <p style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Belum ada rekod bayaran</p>
-            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>Klik "Rekod Bayaran Bulan Ini" untuk mula.</p>
+            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>Klik &quot;Rekod Bayaran Bulan Ini&quot; untuk mula.</p>
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>

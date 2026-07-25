@@ -54,7 +54,9 @@ export default async function PantauanPersonalPage() {
 
   const pakej = kiraPakejPersonal(pelajarPersonal ?? [], resitPakej ?? [], kehadiran ?? [])
 
-  const baris = (pelajarPersonal ?? []).map((p: any) => {
+  // Relasi `cawangan:cawangan_daftar_id(nama)` tiada jenis dijana Supabase
+  type BarisPersonal = NonNullable<typeof pelajarPersonal>[number] & { cawangan: { nama: string } | null }
+  const baris = ((pelajarPersonal ?? []) as unknown as BarisPersonal[]).map((p) => {
     const s = pakej.get(p.id) ?? { kredit: 0, digunakan: 0, baki: 0, tarikhPakejPertama: null, tarikhSesiTerakhir: null }
     return { ...p, cawangan_nama: p.cawangan?.nama ?? '—', pakej: s, status: statusPakej(s) }
   })

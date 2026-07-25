@@ -59,17 +59,19 @@ export default async function ProfilPelajarPage({
 
   if (error || !pelajarRaw) notFound()
 
-  const p = pelajarRaw as any
-  const stat = {
-    hadir: (kehadiranBulanIni ?? []).filter((k: any) => k.status === 'Hadir').length,
-    tidak_hadir: (kehadiranBulanIni ?? []).filter((k: any) => k.status === 'Tidak Hadir').length,
-    cuti: (kehadiranBulanIni ?? []).filter((k: any) => k.status === 'Cuti').length,
-  }
-  const total = {
-    hadir: (kehadiranSemua ?? []).filter((k: any) => k.status === 'Hadir').length,
-    tidak_hadir: (kehadiranSemua ?? []).filter((k: any) => k.status === 'Tidak Hadir').length,
-    cuti: (kehadiranSemua ?? []).filter((k: any) => k.status === 'Cuti').length,
-  }
+  // `select('*, cawangan:...')` — Supabase tidak menjana jenis untuk relasi
+  // bersarang, jadi bentuk baris ditakrifkan di sini.
+  // Kekalkan jenis lajur yang dijana Supabase, cuma ganti relasi bersarang
+  // `cawangan` yang tidak dapat ditaakul oleh penjana jenis.
+  type BarisPelajar = Omit<NonNullable<typeof pelajarRaw>, 'cawangan'> & { cawangan: { nama: string } | null }
+  const p = pelajarRaw as unknown as BarisPelajar
+  const kiraStatus = (baris: { status: string }[] | null) => ({
+    hadir: (baris ?? []).filter((k) => k.status === 'Hadir').length,
+    tidak_hadir: (baris ?? []).filter((k) => k.status === 'Tidak Hadir').length,
+    cuti: (baris ?? []).filter((k) => k.status === 'Cuti').length,
+  })
+  const stat = kiraStatus(kehadiranBulanIni)
+  const total = kiraStatus(kehadiranSemua)
 
   return (
     <ProfilPelajarKlient

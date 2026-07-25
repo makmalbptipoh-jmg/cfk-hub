@@ -46,7 +46,10 @@ export function ModalTambahPengguna({ cawangan, onTutup, onBerjaya }: Props) {
     inputRef.current?.focus()
   }, [])
 
-  const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }))
+  // Generik: kunci mesti medan borang yang wujud, dan nilai mesti sepadan
+  // jenis medan itu — menggantikan `any` yang membenarkan apa-apa sahaja.
+  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
+    setForm((f) => ({ ...f, [k]: v }))
 
   const hantar = async () => {
     if (!form.nama.trim() || !form.emel.trim() || !form.kataLaluan) {

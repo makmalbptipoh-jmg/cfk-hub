@@ -121,7 +121,10 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
     setPreviewQr(URL.createObjectURL(file))
   }
 
-  const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }))
+  // Generik: kunci mesti medan borang yang wujud, dan nilai mesti sepadan
+  // jenis medan itu — menggantikan `any` yang membenarkan apa-apa sahaja.
+  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
+    setForm((f) => ({ ...f, [k]: v }))
 
   const toggleCawangan = (cid: string) => {
     setForm((f) => ({
@@ -427,7 +430,7 @@ export default function EditJurulatihPage({ params }: { params: Promise<{ id: st
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '24px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginBottom: '6px' }}>Akaun Login</h2>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
-            Kaitkan akaun sistem supaya jurulatih boleh rekod kehadiran sendiri melalui tab "Sesi Saya" di telefon.
+            Kaitkan akaun sistem supaya jurulatih boleh rekod kehadiran sendiri melalui tab &quot;Sesi Saya&quot; di telefon.
             Cipta akaun dahulu di Tetapan → Pengguna jika belum ada.
           </p>
           <select value={form.pengguna_id} onChange={(e) => set('pengguna_id', e.target.value)} style={gayaInput}>

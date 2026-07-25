@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -20,7 +19,6 @@ type ImportRekod = {
 }
 
 export default function ImportPage() {
-  const router = useRouter()
   const [rekod, setRekod] = useState<ImportRekod[]>([])
   const [dipilih, setDipilih] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
@@ -46,7 +44,8 @@ export default function ImportPage() {
   const togglePilih = (id: string) => {
     setDipilih((prev) => {
       const set = new Set(prev)
-      set.has(id) ? set.delete(id) : set.add(id)
+      if (set.has(id)) set.delete(id)
+      else set.add(id)
       return set
     })
   }
@@ -99,7 +98,6 @@ export default function ImportPage() {
   }
 
   const rekodDipilihCount = dipilih.size
-  const rekodDilangkau = rekod.filter((r) => r.adalah_pendua && !dipilih.has(r.id)).length
 
   return (
     <div>

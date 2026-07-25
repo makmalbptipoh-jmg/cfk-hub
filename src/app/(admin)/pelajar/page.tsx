@@ -37,7 +37,18 @@ export default async function PelajarPage() {
     if (n > 0) tunggakanCount[pid] = n
   }
 
-  const pelajar = (pelajarRaw ?? []).map((p: any) => ({
+  type BarisPelajar = {
+    id: string
+    nama_penuh: string
+    nama_ibu_bapa: string
+    no_telefon: string
+    jenis_kelas: string
+    yuran_bulanan: number
+    status: string
+    cawangan_daftar_id: string
+    cawangan: { nama: string } | null
+  }
+  const pelajar = ((pelajarRaw ?? []) as unknown as BarisPelajar[]).map((p) => ({
     id: p.id,
     nama_penuh: p.nama_penuh,
     nama_ibu_bapa: p.nama_ibu_bapa,

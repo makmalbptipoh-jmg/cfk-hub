@@ -31,7 +31,14 @@ export default async function PenggunaTetapanPage() {
     petaEmel[u.id] = u.email ?? ''
   }
 
-  const pengguna = (profil ?? []).map((p: any) => ({
+  type BarisProfil = {
+    id: string
+    nama: string
+    is_admin: boolean
+    cawangan_id: string | null
+    cawangan: { nama: string } | null
+  }
+  const pengguna = ((profil ?? []) as unknown as BarisProfil[]).map((p) => ({
     id: p.id,
     nama: p.nama,
     emel: petaEmel[p.id] ?? null,

@@ -20,7 +20,10 @@ export default async function LihatResitPage({
 
   if (error || !resit) notFound()
 
-  const p = resit as any
+  // Relasi bersarang (resit → pelajar → cawangan) tiada jenis dijana Supabase
+  const p = resit as unknown as Omit<NonNullable<typeof resit>, 'pelajar'> & {
+    pelajar: { id: string; nama_penuh: string; cawangan: { nama: string } | null } | null
+  }
 
   return (
     <LihatResitKlient

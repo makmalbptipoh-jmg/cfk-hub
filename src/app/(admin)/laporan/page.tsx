@@ -75,9 +75,13 @@ export default function LaporanPage() {
       supabase.from('resit').select('id').eq('pelajar_id', pelajar.id).eq('bulan_bayaran', b.nama).eq('tahun_bayaran', b.tahun).eq('status', 'Aktif'),
     ])
 
-    const rekod: Rekod[] = (kehadiran ?? []).map((k: any) => ({
+    // Relasi `cawangan:cawangan_daftar_id(nama)` tiada jenis dijana Supabase
+    type BarisProfil = { nama_penuh: string; jenis_kelas: string; cawangan: { nama: string } | null }
+    const profilR = profil as unknown as BarisProfil | null
+
+    const rekod: Rekod[] = (kehadiran ?? []).map((k) => ({
       tarikh: k.tarikh,
-      status: k.status,
+      status: k.status as Rekod['status'],
       nota: k.nota,
     }))
 
@@ -90,9 +94,9 @@ export default function LaporanPage() {
     const perluBayar = jumlahHadir >= 4 && !sudahBayar
 
     setLaporan({
-      nama_pelajar: (profil as any)?.nama_penuh ?? pelajar.nama_penuh,
-      cawangan: (profil?.cawangan as any)?.nama ?? pelajar.cawangan_nama ?? '—',
-      jenis_kelas: (profil as any)?.jenis_kelas ?? '—',
+      nama_pelajar: profilR?.nama_penuh ?? pelajar.nama_penuh,
+      cawangan: profilR?.cawangan?.nama ?? pelajar.cawangan_nama ?? '—',
+      jenis_kelas: profilR?.jenis_kelas ?? '—',
       rekod,
       jumlahHadir,
       jumlahTidakHadir,

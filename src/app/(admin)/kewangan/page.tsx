@@ -82,7 +82,7 @@ export default function KewanganRingkasanPage() {
 
     const pendapatanCawangan: Record<string, number> = {}
     for (const r of resit ?? []) {
-      const key = (r.pelajar as any)?.cawangan?.nama ?? 'Lain-lain'
+      const key = (r.pelajar as unknown as { cawangan: { nama: string } | null } | null)?.cawangan?.nama ?? 'Lain-lain'
       pendapatanCawangan[key] = (pendapatanCawangan[key] ?? 0) + r.jumlah
     }
     for (const p of pendapatanLain ?? []) {

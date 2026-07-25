@@ -161,7 +161,7 @@ export default function CawanganTetapanPage() {
           </div>
         ) : senarai.length === 0 ? (
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '60px', textAlign: 'center' }}>
-            <p style={{ fontSize: '13.5px', color: 'var(--text-muted)' }}>Tiada cawangan lagi. Klik "Tambah Cawangan" untuk bermula.</p>
+            <p style={{ fontSize: '13.5px', color: 'var(--text-muted)' }}>Tiada cawangan lagi. Klik &quot;Tambah Cawangan&quot; untuk bermula.</p>
           </div>
         ) : (
           senarai.map((c) => (

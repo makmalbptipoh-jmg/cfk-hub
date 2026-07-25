@@ -45,7 +45,9 @@ interface SidebarProps {
   email: string
 }
 
-export function Sidebar({ nama, email }: SidebarProps) {
+// `email` diterima dalam SidebarProps tetapi tidak dipapar — kekalkan dalam
+// jenis supaya pemanggil tidak perlu diubah, cuma jangan destructure di sini.
+export function Sidebar({ nama }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 

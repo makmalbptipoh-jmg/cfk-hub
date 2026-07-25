@@ -264,7 +264,7 @@ export default function PerbelanjaanPage() {
             Tiada rekod perbelanjaan
           </p>
           <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-            Klik "Tambah Perbelanjaan" untuk mula rekod.
+            Klik &quot;Tambah Perbelanjaan&quot; untuk mula rekod.
           </p>
         </div>
       ) : (

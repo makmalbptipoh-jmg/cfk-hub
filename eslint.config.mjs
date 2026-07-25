@@ -13,6 +13,13 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    // Komponen PDF guna <Image> dari @react-pdf/renderer, BUKAN <img> HTML.
+    // Ia dilukis ke dalam fail PDF dan tiada prop `alt` — peraturan
+    // aksesibiliti jsx-a11y tidak berkenaan di sini.
+    files: ["src/components/pdf/**/*.tsx"],
+    rules: { "jsx-a11y/alt-text": "off" },
+  },
 ]);
 
 export default eslintConfig;

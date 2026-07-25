@@ -80,7 +80,7 @@ export function ModalBatalResit({ resit, onTutup, onBerjaya }: Props) {
         }}>
           <AlertTriangle size={16} style={{ color: '#C2410C', flexShrink: 0, marginTop: '1px' }} />
           <p style={{ fontSize: '12.5px', color: '#92400E', lineHeight: 1.5 }}>
-            Resit ini akan ditandakan <strong>Dibatalkan</strong>. Rekod akan kekal dalam sistem dan PDF akan memaparkan tanda air "DIBATALKAN".
+            Resit ini akan ditandakan <strong>Dibatalkan</strong>. Rekod akan kekal dalam sistem dan PDF akan memaparkan tanda air &quot;DIBATALKAN&quot;.
           </p>
         </div>
 

@@ -56,7 +56,16 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
 
     const { data } = await query
 
-    const mapped: RekodKehadiran[] = (data ?? []).map((r: any) => ({
+    type BarisRekod = {
+      id: string
+      pelajar_id: string
+      status: RekodKehadiran['status']
+      nota: string | null
+      pelajar: { nama_penuh: string } | null
+      cawangan_daftar: { nama: string } | null
+      cawangan_sesi: { nama: string } | null
+    }
+    const mapped: RekodKehadiran[] = ((data ?? []) as unknown as BarisRekod[]).map((r) => ({
       id: r.id,
       pelajar_id: r.pelajar_id,
       pelajar_nama: r.pelajar?.nama_penuh ?? '—',
@@ -89,7 +98,7 @@ export function AdminKehadiranKlient({ cawangan, tarikhAwal }: Props) {
       .eq('id', editId)
 
     if (!error) {
-      setRekod((prev) => prev.map((r) => r.id === editId ? { ...r, status: editStatus as any, nota: notaBaru } : r))
+      setRekod((prev) => prev.map((r) => r.id === editId ? { ...r, status: editStatus as RekodKehadiran['status'], nota: notaBaru } : r))
       toast.success('Rekod berjaya dikemaskini.')
     } else {
       toast.error('Gagal kemaskini rekod. Cuba lagi.')

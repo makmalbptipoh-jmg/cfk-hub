@@ -61,9 +61,9 @@ export default async function BayaranJurulatihPage({
   // baharu pertengahan bulan akan mengira semula sesi yang sudah dibayar awal
   // bulan (punca gaji berganda — dikesan Julai 2026).
   const bayaranBulanIni = (bayaran ?? []).filter(
-    (b: any) => b.bulan_bayaran === bulanSemasa && b.tahun_bayaran === tahunSemasa
+    (b) => b.bulan_bayaran === bulanSemasa && b.tahun_bayaran === tahunSemasa
   )
-  const sesiSudahDibayarBulanIni = bayaranBulanIni.reduce((t: number, b: any) => t + (b.bilangan_sesi ?? 0), 0)
+  const sesiSudahDibayarBulanIni = bayaranBulanIni.reduce((t, b) => t + (b.bilangan_sesi ?? 0), 0)
   const sudahRekodBulanIni = bayaranBulanIni.length > 0
 
   return (

@@ -86,7 +86,7 @@ export default function TambahPelajarPage() {
         .ilike('nama_penuh', `%${nama}%`)
         .limit(3)
       setPendua(
-        ((data ?? []) as any[]).map((p) => ({
+        ((data ?? []) as unknown as { id: string; nama_penuh: string; status: string; cawangan: { nama: string } | null }[]).map((p) => ({
           id: p.id,
           nama_penuh: p.nama_penuh,
           status: p.status,

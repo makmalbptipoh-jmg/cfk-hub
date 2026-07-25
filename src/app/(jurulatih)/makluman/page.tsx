@@ -42,13 +42,14 @@ export default async function MaklumanPage() {
 
   const kiraHadir: Record<string, number> = {}
   for (const k of kehadiran ?? []) kiraHadir[k.pelajar_id] = (kiraHadir[k.pelajar_id] ?? 0) + 1
-  const sudahBayar = new Set((resit ?? []).map((r: any) => r.pelajar_id))
+  const sudahBayar = new Set((resit ?? []).map((r) => r.pelajar_id))
 
-  const pelajarMapped = (pelajar ?? []).map((p: any) => ({
+  type BarisMakluman = { id: string; nama_penuh: string; no_telefon: string | null; cawangan: { nama: string } | null }
+  const pelajarMapped = ((pelajar ?? []) as unknown as BarisMakluman[]).map((p) => ({
     id: p.id,
     nama_penuh: p.nama_penuh,
     no_telefon: p.no_telefon ?? '',
-    cawangan: (p.cawangan as any)?.nama ?? '—',
+    cawangan: (p.cawangan as { nama: string } | null)?.nama ?? '—',
     bilHadir: kiraHadir[p.id] ?? 0,
     perluBayar: perluBayarBulan(kiraHadir[p.id] ?? 0, sudahBayar.has(p.id)),
   }))

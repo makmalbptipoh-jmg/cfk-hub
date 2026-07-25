@@ -217,16 +217,16 @@ export function ProfilJurulatihKlient({ jurulatih: j, statBulan, kehadiran, baya
 
       {/* Tab */}
       <div style={{ borderBottom: '2px solid var(--border)', display: 'flex', marginBottom: '20px' }}>
-        {[
+        {([
           { key: 'profil', label: 'Profil' },
           { key: 'kehadiran', label: 'Kehadiran', icon: CalendarCheck },
           { key: 'bayaran', label: 'Bayaran', icon: Wallet },
           { key: 'advance', label: bakiAdvance > 0 ? `Advance (${formatRinggit(bakiAdvance)})` : 'Advance', icon: HandCoins },
-        ].map(({ key, label }) => {
+        ] as const).map(({ key, label }) => {
           const aktif = tab === key
           return (
             <button key={key}
-              onClick={() => setTab(key as any)}
+              onClick={() => setTab(key)}
               style={{
                 padding: '10px 16px', background: 'none', border: 'none',
                 borderBottom: aktif ? '2px solid var(--primary)' : '2px solid transparent',

@@ -10,6 +10,44 @@ import { CartaTrend } from './_components/CartaTrend'
 
 export const dynamic = 'force-dynamic'
 
+// Bentuk baris yang dipulangkan setiap query. Supabase tidak menjana jenis
+// untuk relasi bersarang (cth. `pelajar:pelajar_id(...)`), jadi ditakrifkan
+// sekali di sini dan hasil query di-cast, bukan `any` di setiap tempat guna.
+type BarisResitTahun = { jumlah: number; tarikh_bayar: string; pelajar: { cawangan_daftar_id: string } | null }
+type BarisKehadiranTahun = { tarikh: string; cawangan_sesi_id: string | null }
+type BarisResitBulan = { pelajar_id: string; jumlah: number; status: string; pelajar: { cawangan_daftar_id: string } | null }
+type BarisKehadiranBulan = { pelajar_id: string; status: string; cawangan_sesi_id: string | null }
+type BarisPelajarAktif = { id: string; nama_penuh: string; no_telefon: string; cawangan_daftar_id: string }
+type BarisSlotHariIni = {
+  id: string
+  jenis: string
+  masa_mula: string | null
+  lokasi: string | null
+  jurulatih_ids: string[] | null
+  cawangan: { nama: string } | null
+  pelajar: { nama_penuh: string } | null
+}
+type BarisAktivitiHariIni = {
+  id: string
+  nama: string
+  kategori: string
+  masa_mula: string | null
+  lokasi: string | null
+  pelajar: { nama_penuh: string } | null
+}
+type BarisGajiBulan = { jurulatih_id: string; jumlah: number; potongan_advance: number; status: string }
+type BarisJurulatih = { id: string; nama_penuh: string; kadar_bayaran: number | null; status: string }
+type BarisResitTerkini = {
+  id: string
+  nombor_resit: string
+  pelajar_id: string
+  jenis: string
+  jumlah: number
+  tarikh_bayar: string
+  status: string
+  pelajar: { nama_penuh: string } | null
+}
+
 // Instant semasa ditambah 8 jam — medan getUTC* padanya = kalendar waktu
 // Malaysia (UTC+8), betul walaupun pelayan Vercel berjalan dalam UTC.
 function mytNow() {
@@ -72,39 +110,48 @@ export default async function DashboardPage({
     supabase.from('aktiviti').select('id, nama, kategori, masa_mula, lokasi, pelajar:pelajar_id(nama_penuh)').eq('status', 'Aktif').eq('tarikh', tarikhHariIni).order('masa_mula'),
     supabase.from('jurulatih').select('id, nama_penuh, kadar_bayaran, status'),
     supabase.from('kehadiran_jurulatih').select(SELECT_SESI_GAJI).eq('status', 'Hadir').gte('tarikh', mulaB).lte('tarikh', akhirB),
-    supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, status').eq('bulan_bayaran', bulan).eq('tahun_bayaran', tahun),
+    supabase.from('bayaran_jurulatih').select('jurulatih_id, jumlah, potongan_advance, status').eq('bulan_bayaran', bulan).eq('tahun_bayaran', tahun),
     supabase.from('jadual_slot_batal').select('slot_id').eq('tarikh', tarikhHariIni),
     supabase.from('jadual_slot').select(SELECT_SLOT_GAJI),
     supabase.from('jadual_slot_batal').select('slot_id, tarikh').gte('tarikh', mulaB).lte('tarikh', akhirB),
   ])
 
+  // Bentuk baris hasil query — Supabase memulangkan relasi bersarang yang
+  // tidak dijana jenisnya, jadi tetapkan sekali di sini dan bukan `any`
+  // bertaburan di setiap tempat guna.
+  const resitTahunR = (resitTahun ?? []) as unknown as BarisResitTahun[]
+  const kehadiranTahunR = (kehadiranTahun ?? []) as unknown as BarisKehadiranTahun[]
+  const resitBulanR = (resitBulanRaw ?? []) as unknown as BarisResitBulan[]
+  const kehadiranBulanR = (kehadiranBulan ?? []) as unknown as BarisKehadiranBulan[]
+  const pelajarAktifR = (pelajarAktif ?? []) as unknown as BarisPelajarAktif[]
+
   // Siri 12-bulan untuk carta trend (ikut cawangan dipilih)
   const pendapatanBulanan = Array(12).fill(0)
-  for (const r of resitTahun ?? []) {
-    if (cawId && (r as any).pelajar?.cawangan_daftar_id !== cawId) continue
-    const m = +String((r as any).tarikh_bayar).slice(5, 7)
-    if (m >= 1 && m <= 12) pendapatanBulanan[m - 1] += (r as any).jumlah ?? 0
+  for (const r of resitTahunR) {
+    if (cawId && r.pelajar?.cawangan_daftar_id !== cawId) continue
+    const m = +String(r.tarikh_bayar).slice(5, 7)
+    if (m >= 1 && m <= 12) pendapatanBulanan[m - 1] += r.jumlah ?? 0
   }
   const kehadiranBulanan = Array(12).fill(0)
-  for (const k of kehadiranTahun ?? []) {
-    if (cawId && (k as any).cawangan_sesi_id !== cawId) continue
-    const m = +String((k as any).tarikh).slice(5, 7)
+  for (const k of kehadiranTahunR) {
+    if (cawId && k.cawangan_sesi_id !== cawId) continue
+    const m = +String(k.tarikh).slice(5, 7)
     if (m >= 1 && m <= 12) kehadiranBulanan[m - 1]++
   }
 
   // Tapis resit ikut cawangan (melalui pelajar) jika cawangan dipilih
-  const resitBulan = (resitBulanRaw ?? []).filter((r: any) => !cawId || r.pelajar?.cawangan_daftar_id === cawId)
+  const resitBulan = resitBulanR.filter((r) => !cawId || r.pelajar?.cawangan_daftar_id === cawId)
 
   // === Widget 1: Pelajar Belum Bayar (dalam skop cawangan) ===
-  const pelajarIdDgnResit = new Set(resitBulan.map((r: any) => r.pelajar_id))
+  const pelajarIdDgnResit = new Set(resitBulan.map((r) => r.pelajar_id))
   const kiraHadirBulan: Record<string, number> = {}
-  for (const k of kehadiranBulan ?? []) {
-    if ((k as any).status === 'Hadir') kiraHadirBulan[k.pelajar_id] = (kiraHadirBulan[k.pelajar_id] ?? 0) + 1
+  for (const k of kehadiranBulanR) {
+    if (k.status === 'Hadir') kiraHadirBulan[k.pelajar_id] = (kiraHadirBulan[k.pelajar_id] ?? 0) + 1
   }
 
-  const pelajarBelumBayar = (pelajarAktif ?? [])
-    .filter((p: any) => perluBayarBulan(kiraHadirBulan[p.id] ?? 0, pelajarIdDgnResit.has(p.id)))
-    .map((p: any) => ({
+  const pelajarBelumBayar = pelajarAktifR
+    .filter((p) => perluBayarBulan(kiraHadirBulan[p.id] ?? 0, pelajarIdDgnResit.has(p.id)))
+    .map((p) => ({
       id: p.id,
       nama_penuh: p.nama_penuh,
       no_telefon: p.no_telefon,
@@ -112,15 +159,15 @@ export default async function DashboardPage({
     }))
 
   // === Widget 2: Hadir (bulan dipilih, ikut cawangan sesi jika ditapis) ===
-  const kehadiranSkop = (kehadiranBulan ?? []).filter((k: any) => !cawId || k.cawangan_sesi_id === cawId)
-  const hadirBulan = kehadiranSkop.filter((k: any) => k.status === 'Hadir').length
-  const tidakHadirBulan = kehadiranSkop.filter((k: any) => k.status === 'Tidak Hadir').length
+  const kehadiranSkop = kehadiranBulanR.filter((k) => !cawId || k.cawangan_sesi_id === cawId)
+  const hadirBulan = kehadiranSkop.filter((k) => k.status === 'Hadir').length
+  const tidakHadirBulan = kehadiranSkop.filter((k) => k.status === 'Tidak Hadir').length
 
   // === Widget 3: Pendapatan bulan dipilih ===
-  const pendapatanBulan = resitBulan.reduce((sum: number, r: any) => sum + (r.jumlah ?? 0), 0)
+  const pendapatanBulan = resitBulan.reduce((sum, r) => sum + (r.jumlah ?? 0), 0)
 
   // === Widget 4: Jumlah Pelajar Aktif (skop cawangan) ===
-  const jumlahAktif = (pelajarAktif ?? []).length
+  const jumlahAktif = pelajarAktifR.length
 
   // === Jadual: Kehadiran bulan dipilih Per Cawangan ===
   const kehadiranPerCawangan: Record<string, { nama: string; hadir: number; tidakHadir: number; cuti: number }> = {}
@@ -128,10 +175,10 @@ export default async function DashboardPage({
     kehadiranPerCawangan[c.id] = { nama: c.nama, hadir: 0, tidakHadir: 0, cuti: 0 }
   }
   for (const k of kehadiranSkop) {
-    const cid = (k as any).cawangan_sesi_id
-    if (kehadiranPerCawangan[cid]) {
-      if ((k as any).status === 'Hadir') kehadiranPerCawangan[cid].hadir++
-      else if ((k as any).status === 'Tidak Hadir') kehadiranPerCawangan[cid].tidakHadir++
+    const cid = k.cawangan_sesi_id
+    if (cid && kehadiranPerCawangan[cid]) {
+      if (k.status === 'Hadir') kehadiranPerCawangan[cid].hadir++
+      else if (k.status === 'Tidak Hadir') kehadiranPerCawangan[cid].tidakHadir++
       else kehadiranPerCawangan[cid].cuti++
     }
   }
@@ -140,15 +187,15 @@ export default async function DashboardPage({
   // === Widget: Jadual Hari Ini (slot mingguan + aktiviti bertarikh) ===
   const namaJurulatihPeta = new Map((senaraiJurulatih ?? []).map((j) => [j.id, j.nama_penuh]))
   const namaJ = (ids: string[] | null) => (ids ?? []).map((id) => namaJurulatihPeta.get(id)).filter(Boolean).join(', ')
-  const idSlotBatalHariIni = new Set((batalHariIni ?? []).map((b: any) => b.slot_id))
+  const idSlotBatalHariIni = new Set(((batalHariIni ?? []) as { slot_id: string }[]).map((b) => b.slot_id))
   type BarisJadual = { id: string; masa: string | null; label: string; nama: string; info: string; warnaBg: string; warnaText: string; dibatalkan: boolean }
   const barisJadual: BarisJadual[] = [
-    ...(slotHariIni ?? []).map((s: any) => {
+    ...((slotHariIni ?? []) as unknown as BarisSlotHariIni[]).map((s) => {
       const dibatalkan = idSlotBatalHariIni.has(s.id)
       return {
         id: `slot-${s.id}`,
-        masa: s.masa_mula as string | null,
-        label: dibatalkan ? 'Dibatalkan' : (s.jenis as string),
+        masa: s.masa_mula,
+        label: dibatalkan ? 'Dibatalkan' : s.jenis,
         nama: s.jenis === 'Kumpulan' ? (s.cawangan?.nama ?? '—') : (s.pelajar?.nama_penuh ?? '—'),
         info: [s.jurulatih_ids?.length ? `J: ${namaJ(s.jurulatih_ids)}` : null, s.lokasi].filter(Boolean).join(' · '),
         warnaBg: dibatalkan ? '#FEE2E2' : s.jenis === 'Kumpulan' ? '#ECFCCB' : '#DBEAFE',
@@ -156,11 +203,11 @@ export default async function DashboardPage({
         dibatalkan,
       }
     }),
-    ...(aktivitiHariIni ?? []).map((a: any) => ({
+    ...((aktivitiHariIni ?? []) as unknown as BarisAktivitiHariIni[]).map((a) => ({
       id: `akt-${a.id}`,
-      masa: a.masa_mula as string | null,
-      label: a.kategori as string,
-      nama: a.nama as string,
+      masa: a.masa_mula,
+      label: a.kategori,
+      nama: a.nama,
       info: [a.pelajar?.nama_penuh, a.lokasi].filter(Boolean).join(' · '),
       warnaBg: '#FEF3C7',
       warnaText: '#92400E',
@@ -179,17 +226,21 @@ export default async function DashboardPage({
   for (const k of hadirJurulatihSah) {
     sesiJurulatihBulan[k.jurulatih_id] = (sesiJurulatihBulan[k.jurulatih_id] ?? 0) + 1
   }
-  // Jumlah dibayar per jurulatih bulan ini (boleh >1 rekod — bayaran separa)
+  // Jumlah dibayar per jurulatih bulan ini (boleh >1 rekod — bayaran separa).
+  // Guna BERSIH (kasar − potongan advance): bahagian advance sudah keluar
+  // lebih awal sebagai advance, jadi mengira kasar = kira dua kali.
   const dibayarPerJurulatih: Record<string, number> = {}
-  for (const b of (gajiJurulatihBulan ?? []).filter((b: any) => b.status === 'Sudah Bayar')) {
-    dibayarPerJurulatih[(b as any).jurulatih_id] = (dibayarPerJurulatih[(b as any).jurulatih_id] ?? 0) + ((b as any).jumlah ?? 0)
+  const gajiBulanR = (gajiJurulatihBulan ?? []) as unknown as BarisGajiBulan[]
+  for (const b of gajiBulanR.filter((b) => b.status === 'Sudah Bayar')) {
+    dibayarPerJurulatih[b.jurulatih_id] =
+      (dibayarPerJurulatih[b.jurulatih_id] ?? 0) + (b.jumlah ?? 0) - (b.potongan_advance ?? 0)
   }
   const idJurulatihSudahBayar = new Set(Object.keys(dibayarPerJurulatih))
   const totalGajiDibayarBulan = Object.values(dibayarPerJurulatih).reduce((s, n) => s + n, 0)
   // Baki terhutang = sesi Hadir × kadar − sudah dibayar (clamp ≥ 0)
-  const jurulatihBelumGaji = (senaraiJurulatih ?? [])
-    .filter((j: any) => j.status === 'Aktif' && (sesiJurulatihBulan[j.id] ?? 0) > 0)
-    .map((j: any) => {
+  const jurulatihBelumGaji = ((senaraiJurulatih ?? []) as unknown as BarisJurulatih[])
+    .filter((j) => j.status === 'Aktif' && (sesiJurulatihBulan[j.id] ?? 0) > 0)
+    .map((j) => {
       const sesi = sesiJurulatihBulan[j.id] ?? 0
       const anggaran = Math.max(0, sesi * (j.kadar_bayaran ?? 0) - (dibayarPerJurulatih[j.id] ?? 0))
       return { id: j.id, nama_penuh: j.nama_penuh, sesi, anggaran }
@@ -218,7 +269,7 @@ export default async function DashboardPage({
       .map((p) => ({ id: p.id, nama_penuh: p.nama_penuh, digunakan: p.digunakan, kredit: p.kredit }))
   }
 
-  const namaPengguna = (profil as any)?.nama ?? 'Admin'
+  const namaPengguna = (profil as { nama: string } | null)?.nama ?? 'Admin'
   const waktu = new Date().getHours()
   const salam = waktu < 12 ? 'Selamat Pagi' : waktu < 18 ? 'Selamat Petang' : 'Selamat Malam'
 
@@ -577,7 +628,7 @@ export default async function DashboardPage({
               </tr>
             </thead>
             <tbody>
-              {(resitTerkini ?? []).map((r: any, i: number) => (
+              {((resitTerkini ?? []) as unknown as BarisResitTerkini[]).map((r, i) => (
                 <tr key={r.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}>
                   <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: 'var(--text)', fontFamily: 'monospace' }}>
                     {r.nombor_resit}

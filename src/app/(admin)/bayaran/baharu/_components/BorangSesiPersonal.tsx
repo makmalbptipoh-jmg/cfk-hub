@@ -57,7 +57,7 @@ export function BorangSesiPersonal() {
         id: data.id,
         nama_penuh: data.nama_penuh,
         cawangan_daftar_id: data.cawangan_daftar_id,
-        cawangan_nama: (data.cawangan as any)?.nama ?? '—',
+        cawangan_nama: (data.cawangan as unknown as { nama: string } | null)?.nama ?? '—',
       })
     }
   }
@@ -207,7 +207,7 @@ export function BorangSesiPersonal() {
             </div>
             <div>
               <label style={gayaLabel}>Kaedah</label>
-              <select value={kaedah} onChange={(e) => setKaedah(e.target.value as any)} style={gayaInput}>
+              <select value={kaedah} onChange={(e) => setKaedah(e.target.value as typeof kaedah)} style={gayaInput}>
                 <option value="Face-to-face">Face-to-face</option>
                 <option value="Online">Online</option>
               </select>
@@ -229,7 +229,7 @@ export function BorangSesiPersonal() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div>
               <label style={gayaLabel}>Status Kehadiran</label>
-              <select value={statusHadir} onChange={(e) => setStatusHadir(e.target.value as any)} style={gayaInput}>
+              <select value={statusHadir} onChange={(e) => setStatusHadir(e.target.value as typeof statusHadir)} style={gayaInput}>
                 <option value="Hadir">Hadir</option>
                 <option value="Tidak Hadir">Tidak Hadir</option>
               </select>

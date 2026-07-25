@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { akhirBulan, bulanTempatan, NAMA_BULAN } from '@/lib/utils'
@@ -59,7 +60,7 @@ export default async function ProfilJurulatihPage({
   // toLocaleString/getFullYear terus (tersalah bulan pada 1 haribulan pagi).
   const [tahunKini, bulanKini] = bulanTempatan().split('-').map(Number)
   const sudahBayarBulanIni = (bayaran ?? []).some(
-    (b: any) => b.bulan_bayaran === NAMA_BULAN[bulanKini - 1] && b.tahun_bayaran === tahunKini && b.status === 'Sudah Bayar'
+    (b) => b.bulan_bayaran === NAMA_BULAN[bulanKini - 1] && b.tahun_bayaran === tahunKini && b.status === 'Sudah Bayar'
   )
 
   // Gambar profil: signed URL (bucket peribadi) — sah 1 jam
@@ -99,7 +100,7 @@ export default async function ProfilJurulatihPage({
         tng_qr_url: tngQrUrl,
       }}
       statBulan={statBulan}
-      kehadiran={(kehadiran ?? []) as any}
+      kehadiran={(kehadiran ?? []) as unknown as ComponentProps<typeof ProfilJurulatihKlient>['kehadiran']}
       bayaran={bayaran ?? []}
       advance={advance ?? []}
       namaBulanSemasa={namaBulanSemasa}

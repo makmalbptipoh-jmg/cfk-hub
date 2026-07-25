@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { SenaraiAsetKlient } from './_components/SenaraiAsetKlient'
 
@@ -16,7 +17,8 @@ export default async function AsetPage() {
 
   return (
     <SenaraiAsetKlient
-      aset={(aset ?? []) as any}
+      // Relasi `cawangan:cawangan_id(nama)` tiada jenis dijana Supabase
+      aset={(aset ?? []) as unknown as ComponentProps<typeof SenaraiAsetKlient>['aset']}
       cawangan={cawangan ?? []}
     />
   )

@@ -50,10 +50,14 @@ export default async function DashboardJurulatihPage() {
       .single(),
   ])
 
-  const idSudahDitanda = new Set((sudahDitanda ?? []).map((r: any) => r.pelajar_id))
-  const belumDitanda = (semuaPelajar ?? []).filter((p: any) => !idSudahDitanda.has(p.id))
+  // Relasi bersarang `cawangan:cawangan_daftar_id(nama)` tiada jenis dijana
+  type BarisPelajarSenarai = { id: string; nama_penuh: string; cawangan: { nama: string } | null }
+  const idSudahDitanda = new Set((sudahDitanda ?? []).map((r) => r.pelajar_id))
+  const belumDitanda = ((semuaPelajar ?? []) as unknown as BarisPelajarSenarai[]).filter(
+    (p) => !idSudahDitanda.has(p.id)
+  )
 
-  const jumlahHadir = (kehadiranHariIni ?? []).filter((r: any) => r.status === 'Hadir').length
+  const jumlahHadir = (kehadiranHariIni ?? []).filter((r) => r.status === 'Hadir').length
   const jumlahDitanda = (sudahDitanda ?? []).length
   const jumlahSesiMinggu = kehadiranMingguIni?.length ?? 0
 
@@ -147,7 +151,7 @@ export default async function DashboardJurulatihPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {belumDitanda.slice(0, 10).map((p: any) => (
+            {belumDitanda.slice(0, 10).map((p) => (
               <div key={p.id} style={{
                 background: 'var(--card)', border: '1px solid var(--border)',
                 borderRadius: '12px', padding: '12px 14px',

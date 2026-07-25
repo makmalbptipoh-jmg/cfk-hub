@@ -77,7 +77,7 @@ export default async function JurulatihPage() {
     }
   }
 
-  const jurulatih = (raw ?? []).map((j: any) => {
+  const jurulatih = (raw ?? []).map((j) => {
     const sesiBulanIni = sesiBulanIniPerJurulatih[j.id] ?? 0
     return {
       id: j.id,
