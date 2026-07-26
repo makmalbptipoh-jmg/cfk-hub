@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Edit2, UserX, UserCheck, CalendarCheck, Receipt, Star } from 'lucide-react'
+import { Edit2, UserX, UserCheck, CalendarCheck, Receipt, Star, Target } from 'lucide-react'
 import { ModalNyahaktif } from '@/components/pelajar/ModalNyahaktif'
 import { formatTarikh, formatRinggit } from '@/lib/utils'
 import { kiraRating } from '@/lib/rating'
+import { adaKelasPersonal, type BukuRujukan, type KategoriTopik, type TopikPelajar } from '@/lib/progresPelajar'
 import { BtnKadPelajar } from '@/components/pdf/BtnKadPelajar'
+import { ProgresPelajarTab, type RekodSilibus } from './ProgresPelajarTab'
 
 type Pelajar = {
   id: string
@@ -47,6 +49,13 @@ type Resit = {
   status: string
 }
 
+type Progres = {
+  topik: TopikPelajar[]
+  kategori: KategoriTopik[]
+  buku: BukuRujukan[]
+  silibus: RekodSilibus[]
+}
+
 interface ProfilPelajarKlientProps {
   pelajar: Pelajar
   stat: StatKehadiran
@@ -54,6 +63,7 @@ interface ProfilPelajarKlientProps {
   sudahBayarBulanIni: boolean
   kehadiran: Kehadiran[]
   resit: Resit[]
+  progres: Progres
 }
 
 const warnaBadge: Record<string, { bg: string; text: string }> = {
@@ -62,8 +72,12 @@ const warnaBadge: Record<string, { bg: string; text: string }> = {
   Cuti: { bg: 'var(--cuti-bg)', text: 'var(--cuti-text)' },
 }
 
-export function ProfilPelajarKlient({ pelajar, stat, total, sudahBayarBulanIni, kehadiran, resit }: ProfilPelajarKlientProps) {
-  const [tab, setTab] = useState<'kehadiran' | 'bayaran'>('kehadiran')
+type TabProfil = 'kehadiran' | 'bayaran' | 'progres'
+
+export function ProfilPelajarKlient({ pelajar, stat, total, sudahBayarBulanIni, kehadiran, resit, progres }: ProfilPelajarKlientProps) {
+  // Progress pembelajaran hanya untuk pelajar yang ada kelas personal.
+  const adaProgres = adaKelasPersonal(pelajar.jenis_kelas)
+  const [tab, setTab] = useState<TabProfil>('kehadiran')
   const [showModal, setShowModal] = useState(false)
 
   const jumlahSesi = stat.hadir + stat.tidak_hadir + stat.cuti
@@ -250,13 +264,20 @@ export function ProfilPelajarKlient({ pelajar, stat, total, sudahBayarBulanIni, 
       {/* Tab */}
       <div style={{ borderBottom: '2px solid var(--border)', display: 'flex', gap: '0', marginBottom: '20px' }}>
         {[
-          { key: 'kehadiran', label: 'Kehadiran', icon: CalendarCheck },
-          { key: 'bayaran', label: 'Bayaran & Resit', icon: Receipt },
+          { key: 'kehadiran' as const, label: 'Kehadiran', icon: CalendarCheck },
+          { key: 'bayaran' as const, label: 'Bayaran & Resit', icon: Receipt },
+          ...(adaProgres
+            ? [{
+                key: 'progres' as const,
+                label: progres.topik.length > 0 ? `Progress Pembelajaran (${progres.topik.length})` : 'Progress Pembelajaran',
+                icon: Target,
+              }]
+            : []),
         ].map(({ key, label, icon: Icon }) => {
           const aktif = tab === key
           return (
             <button key={key}
-              onClick={() => setTab(key as 'kehadiran' | 'bayaran')}
+              onClick={() => setTab(key)}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
                 padding: '10px 16px',
@@ -310,6 +331,21 @@ export function ProfilPelajarKlient({ pelajar, stat, total, sudahBayarBulanIni, 
               </tbody>
             </table>
           )
+        )}
+
+        {tab === 'progres' && adaProgres && (
+          <ProgresPelajarTab
+            pelajar={{
+              id: pelajar.id,
+              nama_penuh: pelajar.nama_penuh,
+              cawangan_nama: pelajar.cawangan_nama,
+              jenis_kelas: pelajar.jenis_kelas,
+            }}
+            topikAwal={progres.topik}
+            kategoriAwal={progres.kategori}
+            bukuAwal={progres.buku}
+            silibus={progres.silibus}
+          />
         )}
 
         {tab === 'bayaran' && (

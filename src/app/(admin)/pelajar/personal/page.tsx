@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, UserRound, MessageCircle } from 'lucide-react'
+import { ArrowLeft, UserRound, MessageCircle, Target } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatTarikh } from '@/lib/utils'
 import { kiraPakejPersonal, type StatusPakej } from '@/lib/pakejPersonal'
@@ -163,6 +163,12 @@ export default async function PantauanPersonalPage() {
                               <MessageCircle size={12} /> WA
                             </a>
                           )}
+                          <Link
+                            href={`/pelajar/${b.id}`}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '6px 10px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}
+                          >
+                            <Target size={12} /> Progress
+                          </Link>
                           <Link
                             href="/bayaran/baharu"
                             style={{ display: 'inline-block', padding: '6px 12px', background: b.status === 'Cukup' ? 'var(--accent)' : 'var(--bg)', border: b.status === 'Cukup' ? 'none' : '1px solid var(--border)', borderRadius: '8px', fontSize: '12px', fontWeight: 700, color: b.status === 'Cukup' ? 'var(--accent-text)' : 'var(--text)', textDecoration: 'none' }}

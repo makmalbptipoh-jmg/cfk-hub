@@ -1,6 +1,19 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 25 Jul 2026 (Sesi 14)
+**Dikemaskini:** 26 Jul 2026 (Sesi 15)
+
+## ⚡ SESI 15 (26 Jul 2026)
+
+### Progress Pembelajaran per pelajar (kelas Personal) + Bahan & Buku (typecheck+lint+build LULUS; BELUM diuji browser)
+Keperluan user: rekod apa yang diajar kepada setiap pelajar (opening, middlegame, endgame, strategy…) supaya boleh pantau perkembangan mereka; banyak tajuk + butiran. Keputusan user: (1) **pelajar Personal sahaja**; (2) kategori **boleh tambah sendiri**; (3) **3 tahap penguasaan** (Baru Diajar → Sedang Latih → Sudah Kuasai); (4) PDF per pelajar + ringkasan + auto-tarik dari Silibus + **boleh upload buku yang digunakan**.
+- ⚠️ **WAJIB run `scripts/sql/progres-pelajar.sql` SEBELUM deploy** — 3 jadual + 1 bucket: `topik_kategori` (nama UNIQUE, susunan, status; **seed 11 kategori**: Asas & Peraturan, Opening, Middlegame, Endgame, Strategy, Tactics, Checkmate Pattern, Puzzle/Latihan, Analisis Permainan, Persediaan Pertandingan, Lain-lain), `buku_rujukan` (nama, pengarang, fail_path/nama/saiz, nota), `pelajar_topik` (pelajar_id CASCADE, kategori_id, tajuk, butiran, tahap CHECK 3 nilai, tarikh, tarikh_kuasai, buku_id SET NULL, muka_surat) + 5 index + RLS (baca authenticated, tulis admin) + bucket **`bahan-pengajaran`** (peribadi) + 4 polisi storage. Ada blok ROLLBACK.
+- **Tab baharu "Progress Pembelajaran" dalam profil pelajar** (`/pelajar/[id]`) — muncul HANYA bila `jenis_kelas` mengandungi 'Personal' (helper `adaKelasPersonal`). Kandungan: 4 kad ringkasan (jumlah/baru/sedang/kuasai), bar % dikuasai + tajuk terakhir diajar, butang Tambah Topik / Muat Turun PDF / Bahan & Buku, chip tapis ikut tahap, senarai topik **dikumpul ikut kategori** (kad: tajuk + pill tahap + tarikh + buku·muka surat + butiran; butang Edit + **butang pantas tukar tahap** "→ Sedang Latih" dll).
+- **Auto-tarik Silibus:** seksyen "Dari Rekod Silibus Kelas" (baca sahaja) papar rekod `silibus` yang `pelajar_id` = pelajar ini; tajuk yang belum masuk progress ada butang **"Jadikan Topik"** (pra-isi tajuk/tarikh/muka surat/nota dalam modal), yang sudah ada ditanda "✓ Dalam progress".
+- **Fail baharu:** `src/lib/progresPelajar.ts` (TAHAP, WARNA_TAHAP, `kiraRingkasan`, `kumpulIkutKategori`, helper fail buku), `pelajar/[id]/_components/ProgresPelajarTab.tsx` + `ModalTopik.tsx` (kategori dropdown + **"+ Baharu"** tambah kategori terus dari modal, tajuk, 3 togol tahap, tarikh, buku, muka surat, butiran textarea; padam 2-klik), `src/components/pdf/LaporanProgresPDF.tsx` (A4, header CFK, 4 kad ringkasan, jadual per kategori dengan butiran), page `/bahan` + `_components/BahanKlient.tsx`, page `/tetapan/kategori`.
+- **Menu "Bahan & Buku" (`/bahan`)** dalam sidebar selepas Silibus Kelas (ikon `Library`): muat naik buku/modul (PDF atau imej, **maks 25MB**) ke bucket `bahan-pengajaran`, senarai kad + Buka Fail (signed URL 1 jam) + Edit (boleh ganti fail) + Padam 2-klik (fail storage turut dipadam; topik yang merujuk kekal, buku_id → NULL).
+- **Tab "Kategori Topik" dalam Tetapan** (`/tetapan/kategori`, ketiga): senarai + tambah + edit (nama/susunan/status) + padam. Padam **disekat** jika kategori sedang digunakan topik (papar bilangan) — cadang tukar 'Tidak Aktif'.
+- **Diubah:** `src/types/database.ts` (3 blok jenis baharu), `supabase/schema.sql` (3 jadual + index + RLS + bucket, sync 2026-07-26), `Sidebar.tsx` (+Bahan & Buku), `TetapanNav.tsx` (+Kategori Topik), `pelajar/[id]/page.tsx` (fetch topik/kategori/buku/silibus), `ProfilPelajarKlient.tsx` (tab ketiga bersyarat + kiraan pada label), `pelajar/personal/page.tsx` (butang "Progress" per baris).
+- **Ujian klik-lalu diperlukan (selepas run SQL):** /bahan → Tambah Buku + upload PDF → Buka Fail; /tetapan/kategori → 11 kategori terisi, tambah/edit/padam; profil pelajar Personal → tab Progress → Tambah Topik (kategori + tahap + buku + butiran) → kad muncul ikut kategori → butang pantas tukar tahap → ringkasan & bar % berubah → Muat Turun PDF; pelajar Kumpulan sahaja → tab TIDAK muncul; rekod Silibus pelajar itu → "Jadikan Topik". Padam data ujian selepas.
 
 ## ⚡ SESI 14 (25 Jul 2026)
 

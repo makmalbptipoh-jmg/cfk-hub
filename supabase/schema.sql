@@ -440,6 +440,46 @@ CREATE TABLE IF NOT EXISTS silibus (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- PROGRESS PEMBELAJARAN PELAJAR (progres-pelajar.sql)
+-- Rekod apa yang diajar kepada setiap pelajar personal + tahap penguasaan.
+CREATE TABLE IF NOT EXISTS topik_kategori (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  nama TEXT NOT NULL UNIQUE,
+  susunan SMALLINT NOT NULL DEFAULT 100,
+  status TEXT NOT NULL DEFAULT 'Aktif' CHECK (status IN ('Aktif', 'Tidak Aktif')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS buku_rujukan (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  nama TEXT NOT NULL,
+  pengarang TEXT,
+  fail_path TEXT,                                    -- bucket 'bahan-pengajaran'
+  fail_nama TEXT,
+  fail_saiz INTEGER,
+  nota TEXT,
+  status TEXT NOT NULL DEFAULT 'Aktif' CHECK (status IN ('Aktif', 'Tidak Aktif')),
+  dimuat_naik_oleh UUID REFERENCES pengguna_profil(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pelajar_topik (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  pelajar_id UUID NOT NULL REFERENCES pelajar(id) ON DELETE CASCADE,
+  kategori_id UUID REFERENCES topik_kategori(id),
+  tajuk TEXT NOT NULL,
+  butiran TEXT,
+  tahap TEXT NOT NULL DEFAULT 'Baru Diajar'
+    CHECK (tahap IN ('Baru Diajar', 'Sedang Latih', 'Sudah Kuasai')),
+  tarikh DATE NOT NULL,
+  tarikh_kuasai DATE,
+  buku_id UUID REFERENCES buku_rujukan(id) ON DELETE SET NULL,
+  muka_surat TEXT,
+  direkod_oleh UUID REFERENCES pengguna_profil(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  dikemaskini_pada TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 22. JADUAL LOG AKTIVITI / AUDIT (log-aktiviti.sql)
 -- Rekod automatik siapa Cipta/Edit/Padam rekod penting + Log Masuk.
 CREATE TABLE IF NOT EXISTS log_aktiviti (
@@ -580,6 +620,13 @@ CREATE INDEX IF NOT EXISTS idx_silibus_tarikh ON silibus (tarikh DESC);
 CREATE INDEX IF NOT EXISTS idx_silibus_cawangan ON silibus (cawangan_id, tarikh DESC);
 CREATE INDEX IF NOT EXISTS idx_silibus_pelajar ON silibus (pelajar_id, tarikh DESC);
 
+-- PROGRESS PEMBELAJARAN
+CREATE INDEX IF NOT EXISTS idx_pelajar_topik_pelajar ON pelajar_topik (pelajar_id, tarikh DESC);
+CREATE INDEX IF NOT EXISTS idx_pelajar_topik_kategori ON pelajar_topik (kategori_id);
+CREATE INDEX IF NOT EXISTS idx_pelajar_topik_tahap ON pelajar_topik (tahap);
+CREATE INDEX IF NOT EXISTS idx_buku_rujukan_nama ON buku_rujukan (nama);
+CREATE INDEX IF NOT EXISTS idx_topik_kategori_susunan ON topik_kategori (susunan, nama);
+
 -- ============================================================
 -- ROW LEVEL SECURITY (RLS)
 -- Keadaan AKHIR polisi selepas rls-ketat.sql + migrasi lain:
@@ -611,6 +658,9 @@ ALTER TABLE jadual_slot ENABLE ROW LEVEL SECURITY;
 ALTER TABLE jadual_slot_batal ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aktiviti ENABLE ROW LEVEL SECURITY;
 ALTER TABLE silibus ENABLE ROW LEVEL SECURITY;
+ALTER TABLE topik_kategori ENABLE ROW LEVEL SECURITY;
+ALTER TABLE buku_rujukan ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pelajar_topik ENABLE ROW LEVEL SECURITY;
 
 -- Helper: semak is_admin
 CREATE OR REPLACE FUNCTION is_admin(user_id UUID)
@@ -822,9 +872,67 @@ CREATE POLICY "tulis_admin_silibus" ON silibus
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
+-- ---------- progress pembelajaran (topik_kategori / buku_rujukan / pelajar_topik) ----------
+-- BACA terbuka kepada semua pengguna log masuk; TULIS admin sahaja
+DROP POLICY IF EXISTS "baca_topik_kategori" ON topik_kategori;
+CREATE POLICY "baca_topik_kategori" ON topik_kategori
+  FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "tulis_admin_topik_kategori" ON topik_kategori;
+CREATE POLICY "tulis_admin_topik_kategori" ON topik_kategori
+  FOR ALL TO authenticated
+  USING (is_admin(auth.uid()))
+  WITH CHECK (is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "baca_buku_rujukan" ON buku_rujukan;
+CREATE POLICY "baca_buku_rujukan" ON buku_rujukan
+  FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "tulis_admin_buku_rujukan" ON buku_rujukan;
+CREATE POLICY "tulis_admin_buku_rujukan" ON buku_rujukan
+  FOR ALL TO authenticated
+  USING (is_admin(auth.uid()))
+  WITH CHECK (is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "baca_pelajar_topik" ON pelajar_topik;
+CREATE POLICY "baca_pelajar_topik" ON pelajar_topik
+  FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "tulis_admin_pelajar_topik" ON pelajar_topik;
+CREATE POLICY "tulis_admin_pelajar_topik" ON pelajar_topik
+  FOR ALL TO authenticated
+  USING (is_admin(auth.uid()))
+  WITH CHECK (is_admin(auth.uid()));
+
 -- ============================================================
 -- STORAGE — BUCKET & POLISI
 -- ============================================================
+
+-- Bucket peribadi: bahan pengajaran / buku (PDF/imej)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('bahan-pengajaran', 'bahan-pengajaran', false)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "bahan pengajaran baca" ON storage.objects;
+CREATE POLICY "bahan pengajaran baca"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'bahan-pengajaran');
+
+DROP POLICY IF EXISTS "bahan pengajaran muat naik" ON storage.objects;
+CREATE POLICY "bahan pengajaran muat naik"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'bahan-pengajaran');
+
+DROP POLICY IF EXISTS "bahan pengajaran ganti" ON storage.objects;
+CREATE POLICY "bahan pengajaran ganti"
+  ON storage.objects FOR UPDATE TO authenticated
+  USING (bucket_id = 'bahan-pengajaran')
+  WITH CHECK (bucket_id = 'bahan-pengajaran');
+
+DROP POLICY IF EXISTS "bahan pengajaran padam" ON storage.objects;
+CREATE POLICY "bahan pengajaran padam"
+  ON storage.objects FOR DELETE TO authenticated
+  USING (bucket_id = 'bahan-pengajaran');
 
 -- Bucket peribadi: bukti perbelanjaan (imej/PDF)
 INSERT INTO storage.buckets (id, name, public)

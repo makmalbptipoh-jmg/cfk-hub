@@ -960,6 +960,117 @@ export interface Database {
         }
         Relationships: []
       }
+      topik_kategori: {
+        Row: {
+          id: string
+          nama: string
+          susunan: number
+          status: 'Aktif' | 'Tidak Aktif'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nama: string
+          susunan?: number
+          status?: 'Aktif' | 'Tidak Aktif'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nama?: string
+          susunan?: number
+          status?: 'Aktif' | 'Tidak Aktif'
+          created_at?: string
+        }
+        Relationships: []
+      }
+      buku_rujukan: {
+        Row: {
+          id: string
+          nama: string
+          pengarang: string | null
+          fail_path: string | null
+          fail_nama: string | null
+          fail_saiz: number | null
+          nota: string | null
+          status: 'Aktif' | 'Tidak Aktif'
+          dimuat_naik_oleh: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nama: string
+          pengarang?: string | null
+          fail_path?: string | null
+          fail_nama?: string | null
+          fail_saiz?: number | null
+          nota?: string | null
+          status?: 'Aktif' | 'Tidak Aktif'
+          dimuat_naik_oleh?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nama?: string
+          pengarang?: string | null
+          fail_path?: string | null
+          fail_nama?: string | null
+          fail_saiz?: number | null
+          nota?: string | null
+          status?: 'Aktif' | 'Tidak Aktif'
+          dimuat_naik_oleh?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      pelajar_topik: {
+        Row: {
+          id: string
+          pelajar_id: string
+          kategori_id: string | null
+          tajuk: string
+          butiran: string | null
+          tahap: 'Baru Diajar' | 'Sedang Latih' | 'Sudah Kuasai'
+          tarikh: string
+          tarikh_kuasai: string | null
+          buku_id: string | null
+          muka_surat: string | null
+          direkod_oleh: string | null
+          created_at: string
+          dikemaskini_pada: string
+        }
+        Insert: {
+          id?: string
+          pelajar_id: string
+          kategori_id?: string | null
+          tajuk: string
+          butiran?: string | null
+          tahap?: 'Baru Diajar' | 'Sedang Latih' | 'Sudah Kuasai'
+          tarikh: string
+          tarikh_kuasai?: string | null
+          buku_id?: string | null
+          muka_surat?: string | null
+          direkod_oleh?: string | null
+          created_at?: string
+          dikemaskini_pada?: string
+        }
+        Update: {
+          id?: string
+          pelajar_id?: string
+          kategori_id?: string | null
+          tajuk?: string
+          butiran?: string | null
+          tahap?: 'Baru Diajar' | 'Sedang Latih' | 'Sudah Kuasai'
+          tarikh?: string
+          tarikh_kuasai?: string | null
+          buku_id?: string | null
+          muka_surat?: string | null
+          direkod_oleh?: string | null
+          created_at?: string
+          dikemaskini_pada?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
