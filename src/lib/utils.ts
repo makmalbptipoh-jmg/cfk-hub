@@ -14,19 +14,26 @@ export function formatRinggit(amount: number): string {
 }
 
 export function formatTarikh(dateStr: string): string {
+  const d = new Date(dateStr)
+  // Tarikh rosak/kosong dari DB → JANGAN throw (Intl.format melempar
+  // RangeError "Invalid time value" yang meletupkan seluruh halaman ke
+  // global-error). Pulangkan nilai mentah/'—' supaya baris tetap terpapar.
+  if (Number.isNaN(d.getTime())) return dateStr || '—'
   return new Intl.DateTimeFormat('ms-MY', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  }).format(new Date(dateStr))
+  }).format(d)
 }
 
 export function formatTarikhPendek(dateStr: string): string {
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return dateStr || '—'
   return new Intl.DateTimeFormat('ms-MY', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-  }).format(new Date(dateStr))
+  }).format(d)
 }
 
 // Hari terakhir bulan sebagai 'YYYY-MM-DD' TANPA toISOString —
@@ -85,9 +92,11 @@ export const NAMA_BULAN = [
 ]
 
 // Hari minggu bagi tarikh 'YYYY-MM-DD' — dikira terus dari nombor, bebas zon masa.
+// Tarikh rosak → -1 (HARI[-1] = undefined, papar kosong, bukan crash).
 export function hariMinggu(tarikh: string): number {
-  const [y, m, d] = tarikh.split('-').map(Number)
-  return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
+  const [y, m, d] = (tarikh ?? '').split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  return Number.isNaN(dt.getTime()) ? -1 : dt.getUTCDay()
 }
 
 // Tambah/tolak n hari pada tarikh 'YYYY-MM-DD' — dikira dari nombor

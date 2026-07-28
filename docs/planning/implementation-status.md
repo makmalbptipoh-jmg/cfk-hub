@@ -1,6 +1,14 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 26 Jul 2026 (Sesi 15)
+**Dikemaskini:** 28 Jul 2026 (Sesi 16)
+
+## ⚡ SESI 16 (28 Jul 2026)
+
+### Fix: `/silibus` crash ke global-error bila pilih cawangan (Klebang) — production (typecheck+lint+build LULUS)
+Gejala user: buka `https://cfk-hub.vercel.app/silibus`, pilih cawangan Klebang → seluruh app tukar ke halaman "Maaf, sesuatu tidak kena" (global-error.tsx). Punca yang disyaki: satu baris silibus Klebang ada `tarikh` rosak/tak boleh dihurai → `formatTarikh()` panggil `Intl.DateTimeFormat.format(new Date(invalid))` yang **melempar `RangeError: Invalid time value`**; kerana TIADA `error.tsx` di mana-mana segmen, ralat naik terus ke `global-error.tsx` (meletupkan seluruh app).
+- **Fix 1 (punca):** `src/lib/utils.ts` — `formatTarikh`/`formatTarikhPendek` kini semak `Number.isNaN(d.getTime())` → pulang nilai mentah/'—' (tak lagi throw). `hariMinggu` pulang -1 utk tarikh rosak (HARI[-1]=undefined, papar kosong).
+- **Fix 2 (jaring keselamatan + diagnostik):** `src/app/(admin)/error.tsx` baharu — sempadan ralat peringkat kumpulan admin: crash render mana-mana halaman admin kekalkan sidebar, papar "Cuba Lagi" (reset) + kod digest Sentry, bukan lagi lompat ke global-error.
+- **Nota:** fix berasaskan suspek terkuat (belum sahkan error console). Jika crash berulang, error.tsx kini papar kod digest — guna utk cari di Sentry. Susulan dicadang: sahkan baris tarikh rosak dalam DB Klebang & betulkan datanya.
 
 ## ⚡ SESI 15 (26 Jul 2026)
 
