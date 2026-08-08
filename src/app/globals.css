@@ -52,7 +52,9 @@ body {
   min-height: 100vh;
   background-color: var(--bg);
   color: var(--text);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  /* --font-jakarta disuntik oleh next/font (self-hosted) di <html>; fallback
+     ke 'Plus Jakarta Sans' sistem/sans-serif jika pemboleh ubah tiada */
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

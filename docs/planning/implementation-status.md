@@ -1,6 +1,36 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 28 Jul 2026 (Sesi 16)
+**Dikemaskini:** 8 Ogos 2026 (Sesi 18)
+
+## ⚡ SESI 18 (8 Ogos 2026)
+
+### Laporan Pendapatan per Cawangan & Personal + PDF/Excel (typecheck+lint+build LULUS; BELUM diuji browser)
+Keperluan user: penapis untuk tengok pendapatan setiap cawangan dan Personal, boleh muat turun PDF & Excel. Keputusan user (via soalan): (1) Personal dipapar sebagai **kategori/jumlah** (lajur berasingan + baris "Tiada Cawangan"), bukan pecahan per pelajar; (2) tapis **ikut bulan** (macam laporan lain).
+- **Tab baharu "Pendapatan"** dalam `/laporan` (kedua, selepas Kehadiran) — `LaporanNav.tsx` diubah.
+- **Fail baharu:** `laporan/pendapatan/page.tsx` (klien, penapis bulan + cawangan, 3 kad ringkasan Jumlah/Kumpulan/Personal, jadual Cawangan × Kumpulan/Personal/Pendaftaran/Jumlah + baris JUMLAH, butang PDF + Excel), `src/components/pdf/LaporanPendapatanPDF.tsx` (A4 portrait, header CFK, 3 kad + jadual 5 lajur).
+- **Model kiraan:** pendapatan = `resit` status Aktif, diikat pada **bulan yuran** (`bulan_bayaran`/`tahun_bayaran`) — konsisten dgn widget Pendapatan dashboard & Laporan Kewangan. Cawangan ikut `pelajar.cawangan_daftar_id`; resit tanpa cawangan → baris "Tiada Cawangan". Lajur ikut `resit.jenis` (Kumpulan/Personal/Pendaftaran; jenis lain masuk Kumpulan supaya jumlah tepat).
+- **Export:** PDF guna corak dynamic import `@react-pdf/renderer` `pdf(...).toBlob()`; Excel guna `exceljs` (`(await import('exceljs')).default`) — sama corak LaporanKelasKlient/BtnLaporanLHDN. TIADA SQL.
+- **Ujian klik-lalu diperlukan:** /laporan → tab Pendapatan → pilih bulan berdata → jadual per cawangan + baris Personal + JUMLAH betul; tapis cawangan tunggal; Muat Turun PDF + Excel buka betul; bulan kosong → empty state.
+
+### Prestasi mudah alih (PageSpeed): fon self-host via next/font (build LULUS; BELUM diuji PSI semula)
+Keperluan user: analisis laporan PageSpeed (mobile) & betulkan. Nota: API PSI kembalikan 429 (had kadar tanpa API key) — tak dapat angka langsung; analisis dibuat pada kod.
+- **Punca terbesar dikenal pasti:** `app/layout.tsx` muat fon Google sebagai `<link rel="stylesheet">` pihak ketiga dalam `<head>` = **render-blocking request** + 2× `preconnect` + risiko CLS. Ini bendera klasik PSI mudah alih.
+- **Fix:** migrasi ke `next/font/google` (`Plus_Jakarta_Sans`, weight 400–700, display swap, variable `--font-jakarta`) — Next muat turun fon masa build & sajikan dari origin sama. Buang `<link>` + preconnect. `globals.css` guna `font-family: var(--font-jakarta), ...`.
+- **CSP diketatkan** (`next.config.ts`): buang `fonts.googleapis.com`/`fonts.gstatic.com` dari `style-src`/`font-src`/`connect-src` — tak lagi perlu sebab self-host. Disahkan tiada komponen runtime lain rujuk hos itu.
+- **Kesan dijangka:** hapus permintaan CSS menyekat-render pihak ketiga + 2 sambungan origin → FCP/LCP mudah alih lebih baik, CLS lebih stabil (metrik fon sandaran next/font).
+- **Susulan dicadang (belum dibuat, perlu data PSI sebenar):** semak saiz bundle JS admin (banyak halaman `force-dynamic`), lazy-load `@react-pdf/renderer`/`exceljs` sudah dynamic (baik). Uji semula di https://pagespeed.web.dev selepas deploy.
+
+## ⚡ SESI 17 (1 Ogos 2026)
+
+### Page "Pendaftaran Baharu" — tarik TERUS dari Google Sheet + pilih cawangan (typecheck+build LULUS; BELUM diuji browser — perlu env service account)
+Keperluan user: page baharu untuk pelajar yang baru daftar di Google Form; tarik semua entry setiap kali dibuka + pilihan cawangan semasa daftar. Keputusan user: (1) akses sheet guna **Google Service Account** (selamat — data kanak-kanak); (2) **ganti/naik taraf** page "Import Google Forms" sedia ada (`/pelajar/import`); (3) default **Kumpulan / RM70**, abai AGE & SCHOOL.
+- **Latar:** reka asal (ADR-006) = Apps Script tolak ke `import_antrian`, tapi tiada apa isi jadual itu dalam repo + page import lama set `cawangan_daftar_id=null`. Page baru ini tarik terus dari sheet (bukan `import_antrian`).
+- **Sheet (gid 1225745916, ~179 baris):** lajur `Timestamp|BRANCH|STUDENT'S NAME|AGE|ADDRESS|SCHOOL|PARENT NAME|PHONE|consent`. BRANCH: KLEBANG/BUNTONG/TAMBUN/SUNGAI SIPUT/SRI ISKANDAR (+ 1 "Online") — padan nama `cawangan` DB. Spreadsheet ada tab lain (murid/yuran/resit) → kod baca tab gid ini SAHAJA.
+- **Fail baharu:** `src/lib/google-sheets.ts` (JWT service account → Sheets REST readonly; resolusi tab ikut gid; parse A:H), `src/app/api/pendaftaran/sync/route.ts` (`runtime='nodejs'`+`force-dynamic`; GET tarik sheet + anotasi `sudahDaftar` dgn padan nama+8-digit-telefon vs `pelajar`), `src/app/actions/pendaftaran.ts` (`daftarPelajarSheet` — server client cookie admin, RLS `tambah_admin`; insert Kumpulan/RM70/sumber GoogleForms), `import/_components/PendaftaranKlient.tsx` (jadual + dropdown cawangan prefill ikut BRANCH + checkbox + modal + Muat Semula).
+- **Diubah:** `import/page.tsx` (server, fetch cawangan Aktif), `utils.ts` (+`parseTimestampSheet` client-safe), `TabelPelajar.tsx` (label butang "Import Google Forms" → "Pendaftaran Baharu"; route kekal `/pelajar/import`), `package.json` (+`google-auth-library`).
+- **Idempotensi tanpa migrasi:** baris ditanda "Sudah Didaftar" (hijau, checkbox lumpuh) bila `pelajar` sedia ada padan nama (uppercase) + 8 digit akhir telefon. Tiada lajur/jadual baharu.
+- ⚠️ **TERTUNGGAK USER (setup sekali) sebelum boleh uji:** (1) Google Cloud projek "CFK HUB" → **Enable Google Sheets API**; (2) cipta **Service Account** + JSON key (semak commit d197a23 "akaun perkhidmatan sudah disahkan" — mungkin sudah ada); (3) **share** spreadsheet ke email SA (Viewer); (4) isi env `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `GOOGLE_SHEET_ID=18wOTckf0aBxCuto8aD4m2Dsk-cmMTgQLi7Wu2q-K8gA`, `GOOGLE_SHEET_GID=1225745916` dalam `.env.local` + **Vercel** → redeploy.
+- **Ujian klik-lalu diperlukan (selepas env):** `/pelajar/import` → ±179 baris muncul, dropdown prefill ikut BRANCH (baris "Online" kosong), Tarikh Submit betul; pilih 1 baris ujian → Sahkan Daftar → muncul di `/pelajar` (GoogleForms/Kumpulan/RM70); Muat Semula → baris jadi "Sudah Didaftar"; buang 1 env → mesej ralat BM (bukan crash). Padam pelajar ujian selepas.
 
 ## ⚡ SESI 16 (28 Jul 2026)
 

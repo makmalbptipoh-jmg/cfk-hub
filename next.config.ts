@@ -25,12 +25,14 @@ const csp = [
   // tanpa ini semua butang jana PDF gagal senyap di production
   // unsafe-eval: HANYA dev — React dev mode perlukan eval() untuk callstack/HMR; production kekal tanpa
   `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
-  `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-  `font-src 'self' https://fonts.gstatic.com`,
+  `style-src 'self' 'unsafe-inline'`,
+  // Fon kini self-hosted oleh next/font (sajian dari origin sendiri) — tiada
+  // lagi keperluan izinkan fonts.gstatic.com/googleapis.com
+  `font-src 'self'`,
   // Supabase host: gambar profil jurulatih & bukti dari Storage (signed URL)
   `img-src 'self' data: blob: ${SUPABASE_HOST}`,
   // *.sentry.io: pemantauan ralat (client SDK hantar ke ingest Sentry)
-  `connect-src 'self' ${SUPABASE_HOST} ${SUPABASE_WS} https://fonts.googleapis.com https://fonts.gstatic.com https://*.sentry.io`,
+  `connect-src 'self' ${SUPABASE_HOST} ${SUPABASE_WS} https://*.sentry.io`,
   `worker-src 'self' blob:`,
   `frame-src 'self' blob:`,
   `object-src 'none'`,
