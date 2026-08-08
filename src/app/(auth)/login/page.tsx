@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useState } from 'react'
+import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -141,8 +142,9 @@ function LoginContent() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-cfk.png" alt="Logo Chess For Kids" style={{ height: '88px', width: 'auto', display: 'block' }} />
+            {/* next/image: sajikan WebP bersaiz betul + preload (LCP) + rizab
+                ruang (elak CLS). Dimensi intrinsik ikut nisbah 400x323. */}
+            <Image src="/logo-cfk.png" alt="Logo Chess For Kids" width={109} height={88} priority style={{ display: 'block' }} />
           </div>
           <h1
             style={{
