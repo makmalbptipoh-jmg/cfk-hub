@@ -21,19 +21,25 @@ const s = StyleSheet.create({
   logoSub: { fontSize: 8, color: '#64748B', marginTop: 2 },
   tajuk: { fontSize: 14, fontFamily: 'Helvetica-Bold', color: '#1E293B', marginBottom: 4 },
   subjudul: { fontSize: 10, color: '#64748B' },
-  summaryBox: { flexDirection: 'row', gap: 12, marginBottom: 18 },
-  summaryCard: { flex: 1, borderRadius: 8, padding: '12px 14px', border: '1px solid #E2E8F0' },
-  summaryLabel: { fontSize: 8, fontFamily: 'Helvetica-Bold', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
-  summaryNilai: { fontSize: 16, fontFamily: 'Helvetica-Bold' },
+  seksyenTajuk: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#1E293B', marginTop: 18, marginBottom: 8 },
+  summaryBox: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  summaryCard: { flex: 1, borderRadius: 8, padding: '10px 12px', border: '1px solid #E2E8F0' },
+  summaryLabel: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 },
+  summaryNilai: { fontSize: 14, fontFamily: 'Helvetica-Bold' },
   tableHeader: { flexDirection: 'row', backgroundColor: '#1E293B', padding: '7px 10px', borderRadius: '4px 4px 0 0' },
   th: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: 0.5 },
-  tableRow: { flexDirection: 'row', padding: '7px 10px', borderBottom: '1px solid #E2E8F0' },
+  tableRow: { flexDirection: 'row', padding: '6px 10px', borderBottom: '1px solid #E2E8F0' },
   tableRowAlt: { backgroundColor: '#F8FAFC' },
   totalRow: { flexDirection: 'row', padding: '8px 10px', borderTop: '2px solid #1E293B', backgroundColor: '#F1F5F9' },
   td: { fontSize: 9, color: '#0F172A' },
   colCaw: { width: '28%' },
   colNum: { width: '18%', textAlign: 'right' },
-  footer: { marginTop: 'auto', paddingTop: 12, borderTop: '1px solid #E2E8F0' },
+  // Senarai pelajar
+  pCol1: { width: '40%' },
+  pCol2: { width: '25%' },
+  pCol3: { width: '17%' },
+  pCol4: { width: '18%', textAlign: 'right' },
+  footer: { marginTop: 16, paddingTop: 12, borderTop: '1px solid #E2E8F0' },
   footerText: { fontSize: 8, color: '#94A3B8' },
 })
 
@@ -45,10 +51,18 @@ export type BarisPendapatan = {
   jumlah: number
 }
 
+export type BarisPelajar = {
+  nama: string
+  cawangan: string
+  jenis: string
+  jumlah: number
+}
+
 type Props = {
   tempoh: string
   cawanganLabel: string
   baris: BarisPendapatan[]
+  pelajar: BarisPelajar[]
   total: { kumpulan: number; personal: number; pendaftaran: number; jumlah: number }
   bilResit: number
 }
@@ -58,7 +72,7 @@ function rm(n: number) {
   return 'RM ' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-export function LaporanPendapatanPDF({ tempoh, cawanganLabel, baris, total, bilResit }: Props) {
+export function LaporanPendapatanPDF({ tempoh, cawanganLabel, baris, pelajar, total, bilResit }: Props) {
   return (
     <Document title={`Laporan Pendapatan — ${tempoh}`} author="CFK HUB">
       <Page size="A4" style={s.page}>
@@ -77,23 +91,28 @@ export function LaporanPendapatanPDF({ tempoh, cawanganLabel, baris, total, bilR
           </View>
         </View>
 
-        {/* Ringkasan */}
+        {/* Ringkasan — 4 kad supaya Jumlah = Kumpulan + Personal + Pendaftaran */}
         <View style={s.summaryBox}>
           <View style={[s.summaryCard, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}>
-            <Text style={[s.summaryLabel, { color: '#166534' }]}>Jumlah Pendapatan</Text>
+            <Text style={[s.summaryLabel, { color: '#166534' }]}>Jumlah</Text>
             <Text style={[s.summaryNilai, { color: '#166534' }]}>{rm(total.jumlah)}</Text>
           </View>
           <View style={[s.summaryCard, { backgroundColor: '#ECFCCB', borderColor: '#D9F99D' }]}>
-            <Text style={[s.summaryLabel, { color: '#3F6212' }]}>Kelas Kumpulan</Text>
+            <Text style={[s.summaryLabel, { color: '#3F6212' }]}>Kumpulan</Text>
             <Text style={[s.summaryNilai, { color: '#3F6212' }]}>{rm(total.kumpulan)}</Text>
           </View>
           <View style={[s.summaryCard, { backgroundColor: '#DBEAFE', borderColor: '#BFDBFE' }]}>
-            <Text style={[s.summaryLabel, { color: '#1E40AF' }]}>Kelas Personal</Text>
+            <Text style={[s.summaryLabel, { color: '#1E40AF' }]}>Personal</Text>
             <Text style={[s.summaryNilai, { color: '#1E40AF' }]}>{rm(total.personal)}</Text>
+          </View>
+          <View style={[s.summaryCard, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
+            <Text style={[s.summaryLabel, { color: '#92400E' }]}>Pendaftaran</Text>
+            <Text style={[s.summaryNilai, { color: '#92400E' }]}>{rm(total.pendaftaran)}</Text>
           </View>
         </View>
 
-        {/* Jadual */}
+        {/* Jadual Cawangan */}
+        <Text style={s.seksyenTajuk}>Pendapatan Mengikut Cawangan</Text>
         <View style={s.tableHeader}>
           <Text style={[s.th, s.colCaw]}>Cawangan</Text>
           <Text style={[s.th, s.colNum]}>Kumpulan</Text>
@@ -102,7 +121,7 @@ export function LaporanPendapatanPDF({ tempoh, cawanganLabel, baris, total, bilR
           <Text style={[s.th, s.colNum]}>Jumlah</Text>
         </View>
         {baris.length === 0 ? (
-          <View style={{ padding: 20 }}>
+          <View style={{ padding: 16 }}>
             <Text style={{ fontSize: 10, color: '#64748B', textAlign: 'center' }}>
               Tiada pendapatan direkod untuk tempoh ini.
             </Text>
@@ -126,6 +145,27 @@ export function LaporanPendapatanPDF({ tempoh, cawanganLabel, baris, total, bilR
             <Text style={[s.td, s.colNum, { fontFamily: 'Helvetica-Bold' }]}>{rm(total.pendaftaran)}</Text>
             <Text style={[s.td, s.colNum, { fontFamily: 'Helvetica-Bold' }]}>{rm(total.jumlah)}</Text>
           </View>
+        )}
+
+        {/* Senarai Pelajar Yang Bayar */}
+        {pelajar.length > 0 && (
+          <>
+            <Text style={s.seksyenTajuk}>Senarai Pelajar Yang Bayar ({pelajar.length})</Text>
+            <View style={s.tableHeader}>
+              <Text style={[s.th, s.pCol1]}>Pelajar</Text>
+              <Text style={[s.th, s.pCol2]}>Cawangan</Text>
+              <Text style={[s.th, s.pCol3]}>Jenis</Text>
+              <Text style={[s.th, s.pCol4]}>Jumlah</Text>
+            </View>
+            {pelajar.map((p, i) => (
+              <View key={`${p.nama}-${i}`} style={[s.tableRow, i % 2 === 1 ? s.tableRowAlt : {}]} wrap={false}>
+                <Text style={[s.td, s.pCol1]}>{p.nama}</Text>
+                <Text style={[s.td, s.pCol2, { color: '#64748B' }]}>{p.cawangan}</Text>
+                <Text style={[s.td, s.pCol3, { color: '#64748B' }]}>{p.jenis}</Text>
+                <Text style={[s.td, s.pCol4, { fontFamily: 'Helvetica-Bold' }]}>{rm(p.jumlah)}</Text>
+              </View>
+            ))}
+          </>
         )}
 
         {/* Footer */}

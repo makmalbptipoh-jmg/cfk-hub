@@ -1,20 +1,24 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Wallet, Download, FileSpreadsheet, Users, GraduationCap } from 'lucide-react'
+import { Wallet, Download, FileSpreadsheet, Users, GraduationCap, ClipboardList } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatRinggit, bulanTempatan, NAMA_BULAN } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
-import type { BarisPendapatan } from '@/components/pdf/LaporanPendapatanPDF'
+import type { BarisPendapatan, BarisPelajar } from '@/components/pdf/LaporanPendapatanPDF'
 
 type Cawangan = { id: string; nama: string }
 
 // Baris resit yang dipulangkan — Supabase tidak menjana jenis relasi bersarang.
 type ResitRow = {
+  pelajar_id: string | null
   jenis: string
   jumlah: number
-  pelajar: { cawangan_daftar_id: string | null } | null
+  pelajar: { nama_penuh: string; cawangan_daftar_id: string | null } | null
 }
+
+// Susunan jenis untuk label gabungan (cth. "Kumpulan, Pendaftaran")
+const URUTAN_JENIS = ['Kumpulan', 'Personal', 'Pendaftaran']
 
 const TIADA_CAWANGAN = 'Tiada Cawangan'
 
@@ -30,6 +34,7 @@ export default function LaporanPendapatanPage() {
   const [cawangan, setCawangan] = useState<Cawangan[]>([])
   const [loading, setLoading] = useState(true)
   const [baris, setBaris] = useState<BarisPendapatan[]>([])
+  const [pelajarList, setPelajarList] = useState<BarisPelajar[]>([])
   const [bilResit, setBilResit] = useState(0)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [xlsLoading, setXlsLoading] = useState(false)
@@ -51,7 +56,7 @@ export default function LaporanPendapatanPage() {
     // konsisten dengan widget "Pendapatan" di dashboard & Laporan Kewangan.
     const { data, error } = await supabase
       .from('resit')
-      .select('jenis, jumlah, pelajar:pelajar_id(cawangan_daftar_id)')
+      .select('pelajar_id, jenis, jumlah, pelajar:pelajar_id(nama_penuh, cawangan_daftar_id)')
       .eq('bulan_bayaran', NAMA_BULAN[mo - 1])
       .eq('tahun_bayaran', yr)
       .eq('status', 'Aktif')
@@ -67,20 +72,33 @@ export default function LaporanPendapatanPage() {
     const resit = (data ?? []) as unknown as ResitRow[]
     const namaCaw = new Map(cawangan.map((c) => [c.id, c.nama]))
 
-    // Agregat: cawangan → { kumpulan, personal, pendaftaran }
+    // Agregat cawangan → { kumpulan, personal, pendaftaran }
     const peta = new Map<string, { kumpulan: number; personal: number; pendaftaran: number }>()
+    // Agregat pelajar (gabung semua resit seorang pelajar dalam tempoh) →
+    // seorang boleh bayar Kumpulan + Pendaftaran serentak.
+    const petaPelajar = new Map<string, { nama: string; cawangan: string; jenis: Set<string>; jumlah: number }>()
     let dikira = 0
     for (const r of resit) {
       const cid = r.pelajar?.cawangan_daftar_id ?? null
       // Tapis ikut cawangan dipilih (baris tanpa cawangan disembunyikan bila tapis)
       if (cawId && cid !== cawId) continue
       const label = cid ? (namaCaw.get(cid) ?? 'Cawangan Lain') : TIADA_CAWANGAN
+
+      // — cawangan —
       const rec = peta.get(label) ?? { kumpulan: 0, personal: 0, pendaftaran: 0 }
       if (r.jenis === 'Kumpulan') rec.kumpulan += r.jumlah ?? 0
       else if (r.jenis === 'Personal') rec.personal += r.jumlah ?? 0
       else if (r.jenis === 'Pendaftaran') rec.pendaftaran += r.jumlah ?? 0
       else rec.kumpulan += r.jumlah ?? 0 // jenis lain jarang — masuk Kumpulan supaya jumlah tepat
       peta.set(label, rec)
+
+      // — pelajar —
+      const kunci = r.pelajar_id ?? `x-${r.pelajar?.nama_penuh ?? label}`
+      const pel = petaPelajar.get(kunci) ?? { nama: r.pelajar?.nama_penuh ?? '—', cawangan: label, jenis: new Set<string>(), jumlah: 0 }
+      pel.jenis.add(r.jenis)
+      pel.jumlah += r.jumlah ?? 0
+      petaPelajar.set(kunci, pel)
+
       dikira++
     }
 
@@ -99,7 +117,25 @@ export default function LaporanPendapatanPage() {
         return a.cawangan.localeCompare(b.cawangan)
       })
 
+    const senaraiPelajar: BarisPelajar[] = [...petaPelajar.values()]
+      .map((p) => ({
+        nama: p.nama,
+        cawangan: p.cawangan,
+        jenis: URUTAN_JENIS.filter((j) => p.jenis.has(j)).concat([...p.jenis].filter((j) => !URUTAN_JENIS.includes(j))).join(', '),
+        jumlah: p.jumlah,
+      }))
+      // Susun ikut cawangan, kemudian jumlah tertinggi dahulu
+      .sort((a, b) => {
+        if (a.cawangan !== b.cawangan) {
+          if (a.cawangan === TIADA_CAWANGAN) return 1
+          if (b.cawangan === TIADA_CAWANGAN) return -1
+          return a.cawangan.localeCompare(b.cawangan)
+        }
+        return b.jumlah - a.jumlah
+      })
+
     setBaris(senarai)
+    setPelajarList(senaraiPelajar)
     setBilResit(dikira)
     setLoading(false)
   }, [mo, yr, cawId, cawangan])
@@ -134,6 +170,7 @@ export default function LaporanPendapatanPage() {
           tempoh={tempoh}
           cawanganLabel={cawanganLabel}
           baris={baris}
+          pelajar={pelajarList}
           total={total}
           bilResit={bilResit}
         />
@@ -208,6 +245,39 @@ export default function LaporanPendapatanPage() {
       ws.getCell(`A${r}`).value = `${bilResit} resit aktif · Pendapatan ikut bulan yuran · Dijana ${new Date().toLocaleDateString('ms-MY')}`
       ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
 
+      // Sheet 2: senarai pelajar yang bayar
+      const ws2 = wb.addWorksheet('Senarai Pelajar')
+      ws2.columns = [{ width: 6 }, { width: 34 }, { width: 22 }, { width: 24 }, { width: 16 }]
+      ws2.mergeCells('A1:E1')
+      ws2.getCell('A1').value = `Pelajar Yang Bayar — ${tempoh} — ${cawanganLabel}`
+      ws2.getCell('A1').font = { bold: true, size: 12 }
+      const head2 = ws2.getRow(3)
+      ;['No.', 'Pelajar', 'Cawangan', 'Jenis', 'Jumlah (RM)'].forEach((h, i) => {
+        const cell = head2.getCell(i + 1)
+        cell.value = h
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } }
+        cell.alignment = { horizontal: i === 0 || i === 4 ? 'right' : 'left' }
+      })
+      let r2 = 4
+      for (const [i, p] of pelajarList.entries()) {
+        const row = ws2.getRow(r2)
+        row.getCell(1).value = i + 1
+        row.getCell(2).value = p.nama
+        row.getCell(3).value = p.cawangan
+        row.getCell(4).value = p.jenis
+        row.getCell(5).value = p.jumlah
+        row.getCell(5).numFmt = FMT_RM
+        r2++
+      }
+      const totalP = ws2.getRow(r2)
+      totalP.getCell(4).value = 'JUMLAH'
+      totalP.getCell(4).font = { bold: true }
+      totalP.getCell(5).value = pelajarList.reduce((sm, p) => sm + p.jumlah, 0)
+      totalP.getCell(5).numFmt = FMT_RM
+      totalP.getCell(5).font = { bold: true }
+      totalP.getCell(5).border = { top: { style: 'thin' }, bottom: { style: 'double' } }
+
       const buffer = await wb.xlsx.writeBuffer()
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const url = URL.createObjectURL(blob)
@@ -251,12 +321,16 @@ export default function LaporanPendapatanPage() {
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>Memuatkan...</div>
       ) : (
         <>
-          {/* Stat Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '20px' }}>
+          {/* Stat Cards — 4 kad supaya Jumlah = Kumpulan + Personal + Pendaftaran */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '8px' }}>
             <KadStat label="Jumlah Pendapatan" jumlah={total.jumlah} warna="#166534" bg="#F0FDF4" border="#86EFAC" Icon={Wallet} />
             <KadStat label="Kelas Kumpulan" jumlah={total.kumpulan} warna="#3F6212" bg="#F7FEE7" border="#D9F99D" Icon={Users} />
             <KadStat label="Kelas Personal" jumlah={total.personal} warna="#1E40AF" bg="#EFF6FF" border="#BFDBFE" Icon={GraduationCap} />
+            <KadStat label="Pendaftaran" jumlah={total.pendaftaran} warna="#92400E" bg="#FFFBEB" border="#FDE68A" Icon={ClipboardList} />
           </div>
+          <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '18px' }}>
+            Jumlah = Kumpulan + Personal + Pendaftaran.
+          </p>
 
           {/* Butang Muat Turun */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
@@ -319,6 +393,52 @@ export default function LaporanPendapatanPage() {
           <p style={{ marginTop: '10px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
             Pendapatan dikira mengikut <strong>bulan yuran</strong> (sama seperti widget Pendapatan di dashboard). Cawangan ditentukan mengikut cawangan pendaftaran pelajar. Baris &quot;{TIADA_CAWANGAN}&quot; = resit pelajar tanpa cawangan berdaftar.
           </p>
+
+          {/* Senarai Pelajar Yang Bayar */}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', marginTop: '22px' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                <ClipboardList size={15} style={{ color: 'var(--text-muted)' }} />
+                Senarai Pelajar Yang Bayar — {cawanganLabel}
+              </h3>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{pelajarList.length} pelajar</span>
+            </div>
+            {pelajarList.length === 0 ? (
+              <div style={{ padding: '32px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
+                Tiada pelajar bayar untuk tempoh ini.
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
+                      {['Pelajar', 'Cawangan', 'Jenis', 'Jumlah'].map((h, i) => (
+                        <th key={h} style={{ padding: '9px 14px', textAlign: i === 3 ? 'right' : 'left', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pelajarList.map((p, i) => (
+                      <tr key={`${p.nama}-${i}`} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none', background: i % 2 === 1 ? '#FAFBFC' : 'transparent' }}>
+                        <td style={{ padding: '9px 14px', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{p.nama}</td>
+                        <td style={{ padding: '9px 14px', fontSize: '12.5px', color: p.cawangan === TIADA_CAWANGAN ? 'var(--text-muted)' : 'var(--text)' }}>{p.cawangan}</td>
+                        <td style={{ padding: '9px 14px', fontSize: '12px', color: 'var(--text-muted)' }}>{p.jenis}</td>
+                        <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>{formatRinggit(p.jumlah)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ borderTop: '2px solid var(--border)', background: '#F1F5F9' }}>
+                      <td colSpan={3} style={{ padding: '11px 14px', fontSize: '13px', fontWeight: 800, color: 'var(--text)' }}>JUMLAH</td>
+                      <td style={{ padding: '11px 14px', textAlign: 'right', fontSize: '14px', fontWeight: 800, color: '#166534', whiteSpace: 'nowrap' }}>
+                        {formatRinggit(pelajarList.reduce((sm, p) => sm + p.jumlah, 0))}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>
