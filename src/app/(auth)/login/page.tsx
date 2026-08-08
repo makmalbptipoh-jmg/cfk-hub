@@ -22,6 +22,27 @@ const MESEJ_RALAT_CALLBACK: Record<string, string> = {
     'Log masuk dengan Google gagal. Sila cuba lagi atau log masuk dengan kata laluan.',
 }
 
+const gayaRalat: React.CSSProperties = {
+  background: '#FFF1F2',
+  border: '1px solid #FECDD3',
+  borderRadius: '10px',
+  padding: '10px 14px',
+  marginBottom: '16px',
+  fontSize: '13px',
+  color: '#9F1239',
+}
+
+// SATU-SATUNYA bahagian yang perlu useSearchParams — diasingkan dalam Suspense
+// sendiri supaya BAKI UI login (logo, tajuk, butang) dirender di pelayan (SSR)
+// dan terpapar serta-merta. Sebelum ini seluruh kad login berada dalam
+// <Suspense fallback={null}> → tidak wujud dalam HTML awal → LCP lambat di mudah alih.
+function RalatCallbackBanner() {
+  const ralat = useSearchParams().get('ralat')
+  const mesej = MESEJ_RALAT_CALLBACK[ralat ?? '']
+  if (!mesej) return null
+  return <div style={gayaRalat}>{mesej}</div>
+}
+
 function LogoGoogle() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -47,12 +68,8 @@ function LogoGoogle() {
 
 function LoginContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const ralatCallback = searchParams.get('ralat')
 
-  const [authError, setAuthError] = useState<string | null>(
-    MESEJ_RALAT_CALLBACK[ralatCallback ?? ''] ?? null
-  )
+  const [authError, setAuthError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [tunjukKataLaluan, setTunjukKataLaluan] = useState(false)
@@ -161,22 +178,13 @@ function LoginContent() {
           </p>
         </div>
 
-        {/* Auth Error */}
-        {authError && (
-          <div
-            style={{
-              background: '#FFF1F2',
-              border: '1px solid #FECDD3',
-              borderRadius: '10px',
-              padding: '10px 14px',
-              marginBottom: '16px',
-              fontSize: '13px',
-              color: '#9F1239',
-            }}
-          >
-            {authError}
-          </div>
-        )}
+        {/* Ralat dari callback OAuth (?ralat=) — client-only, kecil */}
+        <Suspense fallback={null}>
+          <RalatCallbackBanner />
+        </Suspense>
+
+        {/* Ralat auth dari borang log masuk */}
+        {authError && <div style={gayaRalat}>{authError}</div>}
 
         {/* Butang Google — cara utama */}
         <button
@@ -370,9 +378,8 @@ function LoginContent() {
 }
 
 export default function LoginPage() {
-  return (
-    <Suspense fallback={null}>
-      <LoginContent />
-    </Suspense>
-  )
+  // LoginContent tidak lagi guna useSearchParams secara langsung — ia dirender
+  // di pelayan (SSR) supaya kad login terpapar dalam HTML awal (LCP pantas).
+  // Hanya RalatCallbackBanner (dalam LoginContent) berada di sebalik Suspense.
+  return <LoginContent />
 }
