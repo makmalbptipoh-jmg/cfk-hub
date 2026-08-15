@@ -3,6 +3,31 @@ import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from '@/types/database'
 
 export async function updateSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // Laluan awam yang TIDAK perlu maklumat auth — pulang SEGERA tanpa cipta
+  // klien Supabase / round-trip getUser() (jimat TTFB → LCP lebih pantas).
+  //  - /auth        : callback OAuth (kod belum jadi sesi)
+  //  - /api/bayaran + /bayaran-selesai : callback ToyyibPay & page terima kasih
+  if (
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/api/bayaran') ||
+    pathname.startsWith('/bayaran-selesai')
+  ) {
+    return NextResponse.next({ request })
+  }
+
+  // /login untuk pelawat TANPA cookie auth Supabase = pasti belum log masuk →
+  // sajikan terus tanpa panggil getUser() (TTFB pantas untuk halaman awam ini,
+  // punca LCP mudah alih). Hanya bila ADA cookie kita sahkan — untuk redirect
+  // pengguna yang sudah log masuk ke dashboard.
+  const adaCookieAuth = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith('sb-') && c.name.includes('auth-token'))
+  if (pathname.startsWith('/login') && !adaCookieAuth) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient<Database>(
@@ -30,23 +55,9 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const pathname = request.nextUrl.pathname
-
-  // Laluan callback OAuth — mesti awam (kod belum ditukar kepada sesi)
-  if (pathname.startsWith('/auth')) {
-    return supabaseResponse
-  }
-
-  // Bayaran online: callback ToyyibPay (server-ke-server) + page "terima
-  // kasih" untuk ibu bapa — kedua-dua mesti awam (tiada sesi login).
-  if (pathname.startsWith('/api/bayaran') || pathname.startsWith('/bayaran-selesai')) {
-    return supabaseResponse
-  }
-
-  // Halaman awam — benarkan tanpa auth
+  // Halaman login (dengan cookie) — redirect ke dashboard jika sah log masuk
   if (pathname.startsWith('/login')) {
     if (user) {
-      // Sudah log masuk, redirect ke dashboard
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)
