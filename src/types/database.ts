@@ -960,6 +960,114 @@ export interface Database {
         }
         Relationships: []
       }
+      silibus_tajuk: {
+        Row: {
+          id: string
+          nama: string
+          susunan: number
+          nota: string | null
+          status: 'Aktif' | 'Tidak Aktif'
+          dicipta_oleh: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nama: string
+          susunan?: number
+          nota?: string | null
+          status?: 'Aktif' | 'Tidak Aktif'
+          dicipta_oleh?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nama?: string
+          susunan?: number
+          nota?: string | null
+          status?: 'Aktif' | 'Tidak Aktif'
+          dicipta_oleh?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      silibus_subtajuk: {
+        Row: {
+          id: string
+          tajuk_id: string
+          nama: string
+          susunan: number
+          fen: string | null
+          pgn_teks: string | null
+          pgn_path: string | null
+          pgn_nama: string | null
+          pgn_saiz: number | null
+          nota: string | null
+          pautan: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          tajuk_id: string
+          nama: string
+          susunan?: number
+          fen?: string | null
+          pgn_teks?: string | null
+          pgn_path?: string | null
+          pgn_nama?: string | null
+          pgn_saiz?: number | null
+          nota?: string | null
+          pautan?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          tajuk_id?: string
+          nama?: string
+          susunan?: number
+          fen?: string | null
+          pgn_teks?: string | null
+          pgn_path?: string | null
+          pgn_nama?: string | null
+          pgn_saiz?: number | null
+          nota?: string | null
+          pautan?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      silibus_progress: {
+        Row: {
+          id: string
+          subtajuk_id: string
+          cawangan_id: string
+          status: 'Belum' | 'Sedang' | 'Selesai'
+          tarikh_selesai: string | null
+          nota: string | null
+          dikemaskini_oleh: string | null
+          dikemaskini_pada: string
+        }
+        Insert: {
+          id?: string
+          subtajuk_id: string
+          cawangan_id: string
+          status?: 'Belum' | 'Sedang' | 'Selesai'
+          tarikh_selesai?: string | null
+          nota?: string | null
+          dikemaskini_oleh?: string | null
+          dikemaskini_pada?: string
+        }
+        Update: {
+          id?: string
+          subtajuk_id?: string
+          cawangan_id?: string
+          status?: 'Belum' | 'Sedang' | 'Selesai'
+          tarikh_selesai?: string | null
+          nota?: string | null
+          dikemaskini_oleh?: string | null
+          dikemaskini_pada?: string
+        }
+        Relationships: []
+      }
       topik_kategori: {
         Row: {
           id: string

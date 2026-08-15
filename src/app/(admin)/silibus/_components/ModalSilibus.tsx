@@ -8,7 +8,7 @@ import { tarikhTempatan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
 import { CariPelajar, type PelajarCarian } from '@/components/pelajar/CariPelajar'
 import { DialogSah } from '@/components/ui/DialogSah'
-import type { Cawangan, Silibus } from './SilibusKlient'
+import type { Cawangan, Silibus } from './LogHarianKlient'
 
 export function ModalSilibus({
   rekodEdit,
