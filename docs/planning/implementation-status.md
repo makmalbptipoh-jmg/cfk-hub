@@ -1,6 +1,19 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 8 Ogos 2026 (Sesi 18)
+**Dikemaskini:** 15 Ogos 2026 (Sesi 19)
+
+## ⚡ SESI 19 (15 Ogos 2026)
+
+### Silibus Berstruktur — Tajuk Besar → Subtajuk + progress per cawangan (typecheck+lint+build LULUS; BELUM diuji browser)
+Keperluan user: modul `/silibus` dulu log harian rata; user nak kurikulum catur berstruktur — **Tajuk Besar** (cth *"Short & Sweet: Aman Hambleton's London System"*) mengandungi **~20 subtajuk** (bab), trace progress setiap subtajuk **ikut cawangan** (kelas selalu tak habis), + lampiran **PGN (fail/teks), FEN, nota, pautan URL** setiap subtajuk. Keputusan user (via soalan): (1) progress **ikut cawangan** (silibus induk dikongsi, matrix subtajuk × cawangan); (2) **ganti** paparan `/silibus` — log harian lama kekal sebagai **tab kedua**; (3) PGN **upload fail ATAU tampal teks**.
+- ⚠️ **WAJIB run `scripts/sql/silibus-struktur.sql` SEBELUM deploy** — 3 jadual (jadual `silibus` log harian lama KEKAL): `silibus_tajuk` (nama/susunan/nota/status Aktif-Tidak Aktif/dicipta_oleh), `silibus_subtajuk` (tajuk_id CASCADE, nama, susunan, fen, pgn_teks, pgn_path/pgn_nama/pgn_saiz, nota, pautan), `silibus_progress` (subtajuk_id CASCADE, cawangan_id CASCADE, status Belum/Sedang/Selesai, tarikh_selesai, **UNIQUE(subtajuk_id,cawangan_id)** untuk upsert) + index + RLS (baca authenticated, tulis admin `is_admin`). Guna semula bucket **`bahan-pengajaran`** sedia ada untuk fail PGN (path `silibus-pgn/{id}.pgn`) — tiada bucket/polisi baharu. Ada blok ROLLBACK. Progress **sparse**: tiada baris = 'Belum'.
+- **Halaman `/silibus`** kini shell bertab: **Silibus Induk** (default) | **Log Harian**.
+  - `SilibusIndukKlient.tsx` (BARU): dropdown cawangan (`Semua Cawangan (ringkasan)` / spesifik) + akordion Tajuk Besar (bar progress per cawangan). Baris subtajuk: chip petunjuk (FEN/PGN/Pautan/Nota) + kawalan progress (cawangan spesifik → togol 3-status upsert; Semua → bulatan status per-cawangan) + butang Bahan (kembang: FEN salin, PGN Buka Fail signed-URL/Salin teks, nota, pautan klik) + Edit.
+  - `ModalTajuk.tsx` (BARU): CRUD Tajuk Besar (nama/susunan/status/nota, padam 2-klik CASCADE amaran).
+  - `ModalSubtajuk.tsx` (BARU): mod **Satu** (nama/susunan/FEN/PGN togol upload↔teks/nota/pautan) & mod **Tambah Pukal** (tampal senarai — satu baris satu subtajuk → insert banyak sekaligus, susunan auto-berturut; untuk kes 20 bab). Upload guna corak `BahanKlient` + `sahkanFailPgn` (had 2MB, .pgn/.txt).
+- **Diubah:** `src/types/database.ts` (3 blok jenis), `page.tsx` (fetch cawangan+tajuk+subtajuk+progress), `SilibusKlient.tsx` (jadi shell bertab), log harian lama dipindah ke `LogHarianKlient.tsx` (kekal eksport jenis `Cawangan`/`Silibus`; import dalam `ModalSilibus.tsx` dikemaskini). Helper baharu `src/lib/silibus.ts` (STATUS_PROGRES, WARNA_PROGRES, sahkanFailPgn/pathPgn/saizFail, petaProgres/statusSubtajuk/kiraProgresCawangan). Sidebar tiada perubahan (route `/silibus` kekal).
+- **Ujian klik-lalu diperlukan (selepas run SQL):** /silibus → tab Silibus Induk default; Log Harian masih papar rekod lama + PDF. Tambah Tajuk Besar → Tambah Pukal 20 baris → 20 subtajuk ikut urutan; Edit satu subtajuk isi FEN + upload .pgn/tampal teks + pautan + nota. Pilih Klebang → tanda Selesai; Buntong kekal Belum; tukar dropdown sahkan beza per cawangan; refresh kekal. Semua Cawangan → bulatan status + % betul. Detail: Salin FEN, Buka Fail PGN, klik pautan. Padam subtajuk (fail PGN hilang), padam Tajuk Besar (CASCADE). Padam data ujian selepas.
+- **Susulan dicadang (belum dibuat):** PDF kurikulum + progress per cawangan (`LaporanSilibusIndukPDF.tsx`).
 
 ## ⚡ SESI 18 (8 Ogos 2026)
 
