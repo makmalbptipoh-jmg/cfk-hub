@@ -966,6 +966,7 @@ export interface Database {
           nama: string
           susunan: number
           nota: string | null
+          pautan: string | null
           status: 'Aktif' | 'Tidak Aktif'
           dicipta_oleh: string | null
           created_at: string
@@ -975,6 +976,7 @@ export interface Database {
           nama: string
           susunan?: number
           nota?: string | null
+          pautan?: string | null
           status?: 'Aktif' | 'Tidak Aktif'
           dicipta_oleh?: string | null
           created_at?: string
@@ -984,6 +986,7 @@ export interface Database {
           nama?: string
           susunan?: number
           nota?: string | null
+          pautan?: string | null
           status?: 'Aktif' | 'Tidak Aktif'
           dicipta_oleh?: string | null
           created_at?: string

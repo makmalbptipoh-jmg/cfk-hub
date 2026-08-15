@@ -39,7 +39,7 @@ export function SilibusIndukKlient({
   const muatData = useCallback(async () => {
     const supabase = createClient()
     const [rT, rS, rP] = await Promise.all([
-      supabase.from('silibus_tajuk').select('id, nama, susunan, nota, status').order('susunan').order('nama'),
+      supabase.from('silibus_tajuk').select('id, nama, susunan, nota, pautan, status').order('susunan').order('nama'),
       supabase.from('silibus_subtajuk').select('id, tajuk_id, nama, susunan, fen, pgn_teks, pgn_path, pgn_nama, pgn_saiz, nota, pautan').order('susunan'),
       supabase.from('silibus_progress').select('id, subtajuk_id, cawangan_id, status'),
     ])
@@ -238,6 +238,11 @@ export function SilibusIndukKlient({
                       </div>
                     )}
                   </div>
+                  {t.pautan && (
+                    <a href={t.pautan} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} aria-label={`Buka pautan ${t.nama}`} style={{ ...btnKecil, textDecoration: 'none', color: '#2563EB' }}>
+                      <ExternalLink size={13} /> Pautan
+                    </a>
+                  )}
                   <button onClick={() => setModalSub({ tajuk: t, edit: null })} style={btnKecil}>
                     <Plus size={13} /> Subtajuk
                   </button>

@@ -16,6 +16,7 @@ export type TajukBesar = {
   nama: string
   susunan: number
   nota: string | null
+  pautan: string | null
   status: 'Aktif' | 'Tidak Aktif'
 }
 
