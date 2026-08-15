@@ -252,7 +252,7 @@ export function SilibusIndukKlient({
   const chip = (warna: { bg: string; text: string; border: string }, teks: string) => (
     <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', background: warna.bg, color: warna.text, border: `1px solid ${warna.border}` }}>{teks}</span>
   )
-  const btnKecil = { display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: '9px', fontSize: '12px', fontWeight: 600, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' } as const
+  const btnKecil = { display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: '9px', fontSize: '12px', fontWeight: 600, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' } as const
 
   return (
     <div>
@@ -312,11 +312,11 @@ export function SilibusIndukKlient({
             return (
               <div key={t.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', opacity: t.status === 'Tidak Aktif' ? 0.6 : 1 }}>
                 {/* Header Tajuk Besar */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', background: '#F8FAFC', borderBottom: buka ? '1px solid var(--border)' : 'none' }}>
-                  <button onClick={() => toggleKembang(t.id)} aria-label={buka ? 'Kuncup' : 'Kembang'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', background: '#F8FAFC', borderBottom: buka ? '1px solid var(--border)' : 'none', flexWrap: 'wrap' }}>
+                  <button onClick={() => toggleKembang(t.id)} aria-label={buka ? 'Kuncup' : 'Kembang'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', flexShrink: 0 }}>
                     {buka ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                   </button>
-                  <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => toggleKembang(t.id)}>
+                  <div style={{ flex: 1, minWidth: '200px', cursor: 'pointer' }} onClick={() => toggleKembang(t.id)}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text)' }}>{t.nama}</span>
                       {t.status === 'Tidak Aktif' && chip({ bg: '#F1F5F9', text: '#64748B', border: '#E2E8F0' }, 'Tersorok')}
@@ -332,17 +332,19 @@ export function SilibusIndukKlient({
                       </div>
                     )}
                   </div>
-                  {t.pautan && (
-                    <a href={t.pautan} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} aria-label={`Buka pautan ${t.nama}`} style={{ ...btnKecil, textDecoration: 'none', color: '#2563EB' }}>
-                      <ExternalLink size={13} /> Pautan
-                    </a>
-                  )}
-                  <button onClick={() => setModalSub({ tajuk: t, edit: null })} style={btnKecil}>
-                    <Plus size={13} /> Subtajuk
-                  </button>
-                  <button onClick={() => setModalTajuk({ buka: true, edit: t })} aria-label={`Edit ${t.nama}`} style={{ ...btnKecil, padding: '6px 8px' }}>
-                    <Pencil size={13} />
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: 'auto', flexWrap: 'wrap' }}>
+                    {t.pautan && (
+                      <a href={t.pautan} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} aria-label={`Buka pautan ${t.nama}`} style={{ ...btnKecil, textDecoration: 'none', color: '#2563EB' }}>
+                        <ExternalLink size={13} /> Pautan
+                      </a>
+                    )}
+                    <button onClick={() => setModalSub({ tajuk: t, edit: null })} style={btnKecil}>
+                      <Plus size={13} /> Subtajuk
+                    </button>
+                    <button onClick={() => setModalTajuk({ buka: true, edit: t })} aria-label={`Edit ${t.nama}`} style={btnKecil}>
+                      <Pencil size={13} /> Edit
+                    </button>
+                  </div>
                 </div>
 
                 {/* Senarai subtajuk */}
@@ -372,7 +374,7 @@ export function SilibusIndukKlient({
 
                               {/* Kawalan progress */}
                               {cawanganPilih ? (
-                                <div style={{ display: 'flex', gap: '5px' }}>
+                                <div style={{ display: 'flex', gap: '5px', flexShrink: 0 }}>
                                   {STATUS_PROGRES.map((st) => {
                                     const aktif = status === st
                                     const w = WARNA_PROGRES[st]
@@ -385,6 +387,7 @@ export function SilibusIndukKlient({
                                           padding: '5px 11px', borderRadius: '8px', fontSize: '11.5px', fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
                                           background: aktif ? w.bg : 'transparent', color: aktif ? w.text : 'var(--text-muted)',
                                           border: `1.5px solid ${aktif ? w.border : 'var(--border)'}`,
+                                          flexShrink: 0, whiteSpace: 'nowrap',
                                         }}
                                       >
                                         {st}
@@ -411,8 +414,8 @@ export function SilibusIndukKlient({
                               ) : (
                                 <span style={{ width: '1px' }} />
                               )}
-                              <button onClick={() => setModalSub({ tajuk: t, edit: s })} aria-label={`Edit ${s.nama}`} style={{ ...btnKecil, padding: '6px 8px' }}>
-                                <Pencil size={13} />
+                              <button onClick={() => setModalSub({ tajuk: t, edit: s })} aria-label={`Edit ${s.nama}`} style={btnKecil}>
+                                <Pencil size={13} /> Edit
                               </button>
                             </div>
 
