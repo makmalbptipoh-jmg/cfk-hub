@@ -4,6 +4,13 @@
 
 ## ⚡ SESI 19 (15 Ogos 2026)
 
+### Prestasi mobile /login — LCP/TTFB (build LULUS; PERLU uji login di preview — auth-kritikal)
+Keperluan user: PageSpeed mobile lapor **LCP 3.9s** pada `/login` (satu-satunya halaman awam; app sebenar di sebalik auth, PSI tak ukur). PSI API 429 (tiada key) → analisis kod.
+- **Punca:** (1) `middleware.ts` panggil `supabase.auth.getUser()` (round-trip rangkaian) pada SETIAP request sebelum semakan laluan → TTFB; (2) `/login` (client component) import Supabase + react-hook-form + zod secara statik → JS awal besar (TBT).
+- **Fix:** (1) `middleware.ts` — laluan awam (`/auth`, `/api/bayaran`, `/bayaran-selesai`) & `/login` tanpa cookie auth `sb-*-auth-token` pulang SEGERA tanpa cipta klien/`getUser()` (semantik keselamatan dikekalkan: protected routes tetap perlu user; `/login` dengan cookie tetap disahkan+redirect). (2) `/login` — **lazy-load Supabase** (dynamic import dalam handler), **borang kata laluan diasingkan** ke `BorangKataLaluan.tsx` + `next/dynamic ssr:false` (rhf+zod keluar bundle awal). Kesan: `/login` kini **prerender Static (○)** — HTML dari CDN.
+- ⚠️ **Uji di preview dahulu (auth):** login Google + login kata laluan + logout + akses halaman dilindungi tanpa login (redirect ke /login) + pengguna log masuk buka /login (redirect dashboard). Google OAuth mungkin gagal di preview (redirect URL tak whitelist) — uji password di preview, Google di production selepas merge.
+
+
 ### Silibus Pelajar — progress silibus per pelajar (typecheck+lint+build LULUS; BELUM diuji browser)
 Keperluan user: ada pelajar tertinggal kelas, jadi progress per cawangan tak cukup — nak jejak progress silibus SETIAP pelajar; CFK STEP BY STEP wajib semua pelajar. Keputusan user (via soalan): (1) hanya Tajuk Besar ditanda **Wajib** muncul untuk setiap pelajar; (2) paparan **senarai + bar % siap** (kesan tertinggal) → klik untuk rekod; (3) **semua pelajar Aktif** (tapis cawangan).
 - ⚠️ **WAJIB run `scripts/sql/silibus-pelajar.sql` SEBELUM deploy** — `ALTER silibus_tajuk ADD COLUMN wajib BOOLEAN DEFAULT false` + `UPDATE ... SET wajib=true WHERE nama='CFK STEP BY STEP'`; jadual baharu **`silibus_progress_pelajar`** (subtajuk_id CASCADE, pelajar_id CASCADE, status Belum/Sedang/Selesai, tarikh_selesai, **UNIQUE(subtajuk_id,pelajar_id)**) + index + RLS (baca authenticated, tulis admin). Sparse (tiada baris = Belum). Idempotent + ROLLBACK.

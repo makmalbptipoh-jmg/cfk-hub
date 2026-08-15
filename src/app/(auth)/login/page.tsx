@@ -2,18 +2,20 @@
 
 import { Suspense, useState } from 'react'
 import Image from 'next/image'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import dynamic from 'next/dynamic'
+import { useSearchParams } from 'next/navigation'
 
-const schema = z.object({
-  email: z.string().email('Format e-mel tidak sah'),
-  password: z.string().min(6, 'Kata laluan sekurang-kurangnya 6 aksara'),
-})
-
-type FormData = z.infer<typeof schema>
+// Borang kata laluan (sandaran) dimuat secara dinamik — react-hook-form + zod
+// TIDAK masuk bundle awal /login. Muat hanya bila pengguna togol borang.
+const BorangKataLaluan = dynamic(
+  () => import('./BorangKataLaluan').then((m) => m.BorangKataLaluan),
+  {
+    ssr: false,
+    loading: () => (
+      <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)', padding: '8px' }}>Memuatkan...</p>
+    ),
+  }
+)
 
 const MESEJ_RALAT_CALLBACK: Record<string, string> = {
   tiada_akaun:
@@ -34,8 +36,7 @@ const gayaRalat: React.CSSProperties = {
 
 // SATU-SATUNYA bahagian yang perlu useSearchParams — diasingkan dalam Suspense
 // sendiri supaya BAKI UI login (logo, tajuk, butang) dirender di pelayan (SSR)
-// dan terpapar serta-merta. Sebelum ini seluruh kad login berada dalam
-// <Suspense fallback={null}> → tidak wujud dalam HTML awal → LCP lambat di mudah alih.
+// dan terpapar serta-merta (LCP pantas).
 function RalatCallbackBanner() {
   const ralat = useSearchParams().get('ralat')
   const mesej = MESEJ_RALAT_CALLBACK[ralat ?? '']
@@ -46,44 +47,25 @@ function RalatCallbackBanner() {
 function LogoGoogle() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-      <path
-        fill="#EA4335"
-        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-      />
-      <path
-        fill="#4285F4"
-        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-      />
-      <path
-        fill="#34A853"
-        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-      />
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
     </svg>
   )
 }
 
 function LoginContent() {
-  const router = useRouter()
-
   const [authError, setAuthError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [tunjukKataLaluan, setTunjukKataLaluan] = useState(false)
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   const logMasukGoogle = async () => {
     setGoogleLoading(true)
     setAuthError(null)
 
+    // Lazy-load Supabase — @supabase/supabase-js tidak masuk bundle awal /login.
+    const { createClient } = await import('@/lib/supabase/client')
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -100,61 +82,10 @@ function LoginContent() {
     // Jika berjaya, pelayar akan dibawa ke Google — tiada apa lagi perlu dibuat
   }
 
-  const onSubmit = async (data: FormData) => {
-    setLoading(true)
-    setAuthError(null)
-
-    const supabase = createClient()
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    })
-
-    if (error) {
-      setAuthError('E-mel atau kata laluan salah. Sila cuba lagi.')
-      setLoading(false)
-      return
-    }
-
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data: profil } = await supabase
-      .from('pengguna_profil')
-      .select('is_admin, nama')
-      .single()
-
-    // Rekod log masuk untuk audit (jangan halang navigasi jika gagal)
-    if (user) {
-      await supabase.from('log_aktiviti').insert({
-        aksi: 'Log Masuk',
-        jadual: 'auth',
-        pengguna_id: user.id,
-        pengguna_nama: profil?.nama ?? user.email ?? null,
-      })
-    }
-
-    if (profil?.is_admin) {
-      router.push('/dashboard')
-    } else {
-      router.push('/kehadiran')
-    }
-  }
-
   return (
-    <div
-      style={{ background: 'var(--bg)', minHeight: '100vh' }}
-      className="flex items-center justify-center p-4"
-    >
+    <div style={{ background: 'var(--bg)', minHeight: '100vh' }} className="flex items-center justify-center p-4">
       <div
-        style={{
-          background: 'var(--card)',
-          border: '1px solid var(--border)',
-          borderRadius: '20px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-          width: '100%',
-          maxWidth: '400px',
-          padding: '40px 36px',
-        }}
+        style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', width: '100%', maxWidth: '400px', padding: '40px 36px' }}
       >
         {/* Logo */}
         <div className="text-center mb-8">
@@ -163,19 +94,8 @@ function LoginContent() {
                 ruang (elak CLS). Dimensi intrinsik ikut nisbah 400x323. */}
             <Image src="/logo-cfk.png" alt="Logo Chess For Kids" width={109} height={88} priority style={{ display: 'block' }} />
           </div>
-          <h1
-            style={{
-              fontSize: '22px',
-              fontWeight: 700,
-              color: 'var(--primary)',
-              letterSpacing: '-0.5px',
-            }}
-          >
-            CFK HUB
-          </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Sistem Pengurusan Catur
-          </p>
+          <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--primary)', letterSpacing: '-0.5px' }}>CFK HUB</h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>Sistem Pengurusan Catur</p>
         </div>
 
         {/* Ralat dari callback OAuth (?ralat=) — client-only, kecil */}
@@ -183,7 +103,7 @@ function LoginContent() {
           <RalatCallbackBanner />
         </Suspense>
 
-        {/* Ralat auth dari borang log masuk */}
+        {/* Ralat auth dari log masuk Google */}
         {authError && <div style={gayaRalat}>{authError}</div>}
 
         {/* Butang Google — cara utama */}
@@ -191,38 +111,14 @@ function LoginContent() {
           type="button"
           onClick={logMasukGoogle}
           disabled={googleLoading}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
-            padding: '12px',
-            background: '#FFFFFF',
-            color: '#1F2937',
-            border: '1.5px solid var(--border)',
-            borderRadius: '12px',
-            fontSize: '14px',
-            fontWeight: 700,
-            cursor: googleLoading ? 'not-allowed' : 'pointer',
-            opacity: googleLoading ? 0.7 : 1,
-            transition: 'background 0.15s',
-            fontFamily: 'inherit',
-          }}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px', background: '#FFFFFF', color: '#1F2937', border: '1.5px solid var(--border)', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: googleLoading ? 'not-allowed' : 'pointer', opacity: googleLoading ? 0.7 : 1, transition: 'background 0.15s', fontFamily: 'inherit' }}
         >
           <LogoGoogle />
           {googleLoading ? 'Membuka Google...' : 'Log Masuk dengan Google'}
         </button>
 
         {/* Pembahagi */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            margin: '20px 0',
-          }}
-        >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
           <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>atau</span>
           <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
@@ -232,145 +128,12 @@ function LoginContent() {
           <button
             type="button"
             onClick={() => setTunjukKataLaluan(true)}
-            style={{
-              width: '100%',
-              background: 'none',
-              border: 'none',
-              padding: '4px',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: 'var(--primary)',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
+            style={{ width: '100%', background: 'none', border: 'none', padding: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--primary)', cursor: 'pointer', fontFamily: 'inherit' }}
           >
             Log masuk dengan kata laluan
           </button>
         ) : (
-          <>
-            {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} noValidate autoComplete="off">
-              {/* Email */}
-              <div style={{ marginBottom: '16px' }}>
-                <label
-                  htmlFor="email"
-                  style={{
-                    display: 'block',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: 'var(--text-muted)',
-                    marginBottom: '6px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  E-mel
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="off"
-                  placeholder="nama@email.com"
-                  {...register('email')}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    border: errors.email
-                      ? '1.5px solid #EF4444'
-                      : '1.5px solid var(--border)',
-                    borderRadius: '12px',
-                    fontSize: '13.5px',
-                    color: 'var(--text)',
-                    background: 'var(--card)',
-                    outline: 'none',
-                    transition: 'border-color 0.15s',
-                  }}
-                />
-                {errors.email && (
-                  <p style={{ fontSize: '12px', color: '#EF4444', marginTop: '4px' }}>
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Password */}
-              <div style={{ marginBottom: '24px' }}>
-                <label
-                  htmlFor="password"
-                  style={{
-                    display: 'block',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: 'var(--text-muted)',
-                    marginBottom: '6px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  Kata Laluan
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                  {...register('password')}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    border: errors.password
-                      ? '1.5px solid #EF4444'
-                      : '1.5px solid var(--border)',
-                    borderRadius: '12px',
-                    fontSize: '13.5px',
-                    color: 'var(--text)',
-                    background: 'var(--card)',
-                    outline: 'none',
-                    transition: 'border-color 0.15s',
-                  }}
-                />
-                {errors.password && (
-                  <p style={{ fontSize: '12px', color: '#EF4444', marginTop: '4px' }}>
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: loading ? '#94A3B8' : 'var(--accent)',
-                  color: 'var(--accent-text)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  transition: 'background 0.15s',
-                  fontFamily: 'inherit',
-                }}
-              >
-                {loading ? 'Sedang masuk...' : 'Log Masuk'}
-              </button>
-            </form>
-
-            {/* Help */}
-            <p
-              style={{
-                textAlign: 'center',
-                fontSize: '12px',
-                color: 'var(--text-muted)',
-                marginTop: '20px',
-              }}
-            >
-              Terlupa kata laluan?{' '}
-              <span style={{ color: 'var(--primary)', fontWeight: 600 }}>Hubungi Admin.</span>
-            </p>
-          </>
+          <BorangKataLaluan />
         )}
       </div>
     </div>
@@ -378,8 +141,5 @@ function LoginContent() {
 }
 
 export default function LoginPage() {
-  // LoginContent tidak lagi guna useSearchParams secara langsung — ia dirender
-  // di pelayan (SSR) supaya kad login terpapar dalam HTML awal (LCP pantas).
-  // Hanya RalatCallbackBanner (dalam LoginContent) berada di sebalik Suspense.
   return <LoginContent />
 }
