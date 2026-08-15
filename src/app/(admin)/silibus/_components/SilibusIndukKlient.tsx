@@ -40,7 +40,7 @@ export function SilibusIndukKlient({
   const muatData = useCallback(async () => {
     const supabase = createClient()
     const [rT, rS, rP] = await Promise.all([
-      supabase.from('silibus_tajuk').select('id, nama, susunan, nota, pautan, status').order('susunan').order('nama'),
+      supabase.from('silibus_tajuk').select('id, nama, susunan, nota, pautan, wajib, status').order('susunan').order('nama'),
       supabase.from('silibus_subtajuk').select('id, tajuk_id, nama, susunan, fen, pgn_teks, pgn_path, pgn_nama, pgn_saiz, nota, pautan').order('susunan'),
       supabase.from('silibus_progress').select('id, subtajuk_id, cawangan_id, status'),
     ])
@@ -319,6 +319,7 @@ export function SilibusIndukKlient({
                   <div style={{ flex: 1, minWidth: '200px', cursor: 'pointer' }} onClick={() => toggleKembang(t.id)}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text)' }}>{t.nama}</span>
+                      {t.wajib && chip({ bg: '#FEF2F2', text: '#B91C1C', border: '#FECACA' }, 'Wajib')}
                       {t.status === 'Tidak Aktif' && chip({ bg: '#F1F5F9', text: '#64748B', border: '#E2E8F0' }, 'Tersorok')}
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
