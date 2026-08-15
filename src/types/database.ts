@@ -967,6 +967,7 @@ export interface Database {
           susunan: number
           nota: string | null
           pautan: string | null
+          wajib: boolean
           status: 'Aktif' | 'Tidak Aktif'
           dicipta_oleh: string | null
           created_at: string
@@ -977,6 +978,7 @@ export interface Database {
           susunan?: number
           nota?: string | null
           pautan?: string | null
+          wajib?: boolean
           status?: 'Aktif' | 'Tidak Aktif'
           dicipta_oleh?: string | null
           created_at?: string
@@ -987,9 +989,43 @@ export interface Database {
           susunan?: number
           nota?: string | null
           pautan?: string | null
+          wajib?: boolean
           status?: 'Aktif' | 'Tidak Aktif'
           dicipta_oleh?: string | null
           created_at?: string
+        }
+        Relationships: []
+      }
+      silibus_progress_pelajar: {
+        Row: {
+          id: string
+          subtajuk_id: string
+          pelajar_id: string
+          status: 'Belum' | 'Sedang' | 'Selesai'
+          tarikh_selesai: string | null
+          nota: string | null
+          dikemaskini_oleh: string | null
+          dikemaskini_pada: string
+        }
+        Insert: {
+          id?: string
+          subtajuk_id: string
+          pelajar_id: string
+          status?: 'Belum' | 'Sedang' | 'Selesai'
+          tarikh_selesai?: string | null
+          nota?: string | null
+          dikemaskini_oleh?: string | null
+          dikemaskini_pada?: string
+        }
+        Update: {
+          id?: string
+          subtajuk_id?: string
+          pelajar_id?: string
+          status?: 'Belum' | 'Sedang' | 'Selesai'
+          tarikh_selesai?: string | null
+          nota?: string | null
+          dikemaskini_oleh?: string | null
+          dikemaskini_pada?: string
         }
         Relationships: []
       }

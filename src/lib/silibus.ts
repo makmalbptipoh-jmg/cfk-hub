@@ -17,6 +17,7 @@ export type TajukBesar = {
   susunan: number
   nota: string | null
   pautan: string | null
+  wajib: boolean
   status: 'Aktif' | 'Tidak Aktif'
 }
 
@@ -69,6 +70,24 @@ export function petaProgres(rows: ProgresBaris[]): Map<string, Map<string, Statu
   for (const r of rows) {
     if (!peta.has(r.subtajuk_id)) peta.set(r.subtajuk_id, new Map())
     peta.get(r.subtajuk_id)!.set(r.cawangan_id, r.status)
+  }
+  return peta
+}
+
+export type ProgresPelajarBaris = {
+  id: string
+  subtajuk_id: string
+  pelajar_id: string
+  status: StatusProgres
+}
+
+// Peta: subtajuk_id → (pelajar_id → status). Bentuk sama petaProgres —
+// serasi dengan statusSubtajuk() & kiraProgresCawangan() (generik pada kunci ke-2).
+export function petaProgresPelajar(rows: ProgresPelajarBaris[]): Map<string, Map<string, StatusProgres>> {
+  const peta = new Map<string, Map<string, StatusProgres>>()
+  for (const r of rows) {
+    if (!peta.has(r.subtajuk_id)) peta.set(r.subtajuk_id, new Map())
+    peta.get(r.subtajuk_id)!.set(r.pelajar_id, r.status)
   }
   return peta
 }

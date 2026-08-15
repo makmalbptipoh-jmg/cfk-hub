@@ -20,6 +20,7 @@ export function ModalTajuk({
   const [susunan, setSusunan] = useState(String(tajukEdit?.susunan ?? 100))
   const [nota, setNota] = useState(tajukEdit?.nota ?? '')
   const [pautan, setPautan] = useState(tajukEdit?.pautan ?? '')
+  const [wajib, setWajib] = useState(tajukEdit?.wajib ?? false)
   const [status, setStatus] = useState<'Aktif' | 'Tidak Aktif'>(tajukEdit?.status ?? 'Aktif')
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
@@ -36,6 +37,7 @@ export function ModalTajuk({
       susunan: Number(susunan) || 100,
       nota: nota.trim() || null,
       pautan: pautan.trim() || null,
+      wajib,
       status,
     }
     let resp
@@ -126,6 +128,17 @@ export function ModalTajuk({
                 <button type="button" onClick={() => setStatus('Tidak Aktif')} style={togol(status === 'Tidak Aktif')}>Sorok</button>
               </div>
             </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Wajib untuk semua pelajar?</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" onClick={() => setWajib(true)} style={togol(wajib)}>Ya — Wajib</button>
+              <button type="button" onClick={() => setWajib(false)} style={togol(!wajib)}>Tidak</button>
+            </div>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '5px' }}>
+              Jika &quot;Ya&quot;, tajuk ini muncul dalam <strong>Silibus Pelajar</strong> untuk setiap pelajar (jejak progress individu).
+            </p>
           </div>
 
           <div>
