@@ -19,6 +19,7 @@ export function ModalTajuk({
   const [nama, setNama] = useState(tajukEdit?.nama ?? '')
   const [susunan, setSusunan] = useState(String(tajukEdit?.susunan ?? 100))
   const [nota, setNota] = useState(tajukEdit?.nota ?? '')
+  const [pautan, setPautan] = useState(tajukEdit?.pautan ?? '')
   const [status, setStatus] = useState<'Aktif' | 'Tidak Aktif'>(tajukEdit?.status ?? 'Aktif')
   const [loading, setLoading] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
@@ -34,6 +35,7 @@ export function ModalTajuk({
       nama: nama.trim(),
       susunan: Number(susunan) || 100,
       nota: nota.trim() || null,
+      pautan: pautan.trim() || null,
       status,
     }
     let resp
@@ -124,6 +126,17 @@ export function ModalTajuk({
                 <button type="button" onClick={() => setStatus('Tidak Aktif')} style={togol(status === 'Tidak Aktif')}>Sorok</button>
               </div>
             </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Pautan URL (pilihan)</label>
+            <input
+              type="url"
+              value={pautan}
+              onChange={(e) => setPautan(e.target.value)}
+              placeholder="https://www.chessable.com/..."
+              style={modalInput}
+            />
           </div>
 
           <div>

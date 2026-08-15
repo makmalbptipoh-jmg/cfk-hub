@@ -23,10 +23,14 @@ CREATE TABLE IF NOT EXISTS silibus_tajuk (
   nama TEXT NOT NULL,                               -- cth "Short & Sweet: Aman Hambleton's London System"
   susunan SMALLINT NOT NULL DEFAULT 100,            -- kecil dahulu
   nota TEXT,                                        -- keterangan pilihan
+  pautan TEXT,                                      -- URL kursus/sumber (cth Chessable/lichess study)
   status TEXT NOT NULL DEFAULT 'Aktif' CHECK (status IN ('Aktif', 'Tidak Aktif')),
   dicipta_oleh UUID REFERENCES pengguna_profil(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Untuk jadual yang sudah wujud (dari run terdahulu): tambah kolum pautan.
+ALTER TABLE silibus_tajuk ADD COLUMN IF NOT EXISTS pautan TEXT;
 
 COMMENT ON TABLE silibus_tajuk IS 'Tajuk Besar silibus catur (kursus/topik induk). Mengandungi banyak subtajuk.';
 
