@@ -111,7 +111,7 @@ export function TabelPelajar({ pelajar, cawangan, tunggakanCount = {}, tahun }: 
             }}
           >
             <Upload size={14} />
-            Import Google Forms
+            Pendaftaran Baharu
           </Link>
           <Link href="/pelajar/baharu"
             style={{

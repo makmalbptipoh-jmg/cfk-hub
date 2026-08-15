@@ -36,6 +36,19 @@ export function formatTarikhPendek(dateStr: string): string {
   }).format(d)
 }
 
+// Tukar timestamp Google Form 'DD/MM/YYYY HH:MM:SS' → ISO string
+// (atau '' jika tak sah). Client-safe (tiada dependency Node).
+export function parseTimestampSheet(ts: string): string {
+  const m = ts.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?/)
+  if (!m) return ''
+  const [, dd, mm, yyyy, hh = '00', mi = '00', ss = '00'] = m
+  const d = new Date(
+    Number(yyyy), Number(mm) - 1, Number(dd),
+    Number(hh), Number(mi), Number(ss)
+  )
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString()
+}
+
 // Hari terakhir bulan sebagai 'YYYY-MM-DD' TANPA toISOString —
 // toISOString() menukar ke UTC (tolak 8 jam di Malaysia) menyebabkan
 // 31 Jan jadi 30 Jan; rekod hari akhir bulan tercicir dari penapis.
