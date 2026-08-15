@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Plus, Pencil, Printer } from 'lucide-react'
+import { Plus, Pencil, Printer, FileSpreadsheet } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { HARI, hariMinggu, formatTarikh, bulanTempatan, akhirBulan, tarikhTempatan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
@@ -47,6 +47,7 @@ export function LogHarianKlient({ cawanganAwal }: { cawanganAwal: Cawangan[] }) 
   const [senarai, setSenarai] = useState<Silibus[]>([])
   const [loading, setLoading] = useState(true)
   const [pdfLoading, setPdfLoading] = useState(false)
+  const [xlsLoading, setXlsLoading] = useState(false)
   const [modal, setModal] = useState<{ buka: boolean; edit: Silibus | null }>({ buka: false, edit: null })
 
   const muatData = useCallback(async () => {
@@ -116,6 +117,68 @@ export function LogHarianKlient({ cawanganAwal }: { cawanganAwal: Cawangan[] }) 
     }
   }
 
+  const unduhExcel = async () => {
+    if (senarai.length === 0) return
+    setXlsLoading(true)
+    try {
+      const ExcelJS = (await import('exceljs')).default
+      const wb = new ExcelJS.Workbook()
+      wb.creator = 'CFK HUB'
+      wb.created = new Date()
+      const ws = wb.addWorksheet('Log Silibus')
+      ws.columns = [{ width: 14 }, { width: 10 }, { width: 30 }, { width: 12 }, { width: 44 }, { width: 16 }, { width: 30 }]
+
+      ws.mergeCells('A1:G1')
+      ws.getCell('A1').value = 'CHESS FOR KIDS (CFK)'
+      ws.getCell('A1').font = { bold: true, size: 14 }
+      ws.getCell('A1').alignment = { horizontal: 'center' }
+      ws.mergeCells('A2:G2')
+      ws.getCell('A2').value = `Log Silibus Kelas — ${cawanganLabel} — ${labelBulan(bulan)}`
+      ws.getCell('A2').font = { size: 10, italic: true }
+      ws.getCell('A2').alignment = { horizontal: 'center' }
+
+      const head = ws.getRow(4)
+      ;['Tarikh', 'Hari', 'Cawangan / Pelajar', 'Jenis', 'Tajuk / Silibus', 'Muka Surat', 'Nota'].forEach((h, i) => {
+        const cell = head.getCell(i + 1)
+        cell.value = h
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } }
+      })
+
+      let r = 5
+      for (const s of senarai) {
+        const row = ws.getRow(r)
+        row.getCell(1).value = tarikhRingkas(s.tarikh)
+        row.getCell(2).value = HARI[hariMinggu(s.tarikh)] ?? ''
+        row.getCell(3).value = labelKelas(s)
+        row.getCell(4).value = s.jenis
+        row.getCell(5).value = s.tajuk
+        row.getCell(6).value = s.muka_surat ?? ''
+        row.getCell(7).value = s.nota ?? ''
+        r++
+      }
+      r += 1
+      ws.getCell(`A${r}`).value = `${senarai.length} rekod · Dijana oleh CFK HUB pada ${tarikhRingkas(tarikhTempatan())}`
+      ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
+
+      const buffer = await wb.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const bersih = (str: string) => str.replace(/[\\/:*?"<>|—]/g, '-').replace(/\s+/g, '_')
+      a.href = url
+      a.download = `Log_Silibus_${bersih(cawanganLabel)}_${bulan}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Excel log silibus dimuat turun.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Gagal jana Excel. Cuba lagi.')
+    } finally {
+      setXlsLoading(false)
+    }
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
@@ -157,13 +220,22 @@ export function LogHarianKlient({ cawanganAwal }: { cawanganAwal: Cawangan[] }) 
           </select>
         </div>
         {!loading && senarai.length > 0 && (
-          <button
-            onClick={unduhPDF}
-            disabled={pdfLoading}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 14px', background: pdfLoading ? '#94A3B8' : 'var(--primary)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: pdfLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
-          >
-            <Printer size={14} /> {pdfLoading ? 'Menjana...' : 'Muat Turun PDF'}
-          </button>
+          <>
+            <button
+              onClick={unduhPDF}
+              disabled={pdfLoading}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 14px', background: pdfLoading ? '#94A3B8' : 'var(--primary)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: pdfLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+            >
+              <Printer size={14} /> {pdfLoading ? 'Menjana...' : 'PDF'}
+            </button>
+            <button
+              onClick={unduhExcel}
+              disabled={xlsLoading}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 14px', background: xlsLoading ? '#94A3B8' : '#16A34A', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: xlsLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+            >
+              <FileSpreadsheet size={14} /> {xlsLoading ? 'Menjana...' : 'Excel'}
+            </button>
+          </>
         )}
       </div>
 
