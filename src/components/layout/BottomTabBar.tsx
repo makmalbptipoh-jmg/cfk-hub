@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { CalendarCheck, Megaphone, LayoutDashboard, UserCheck, LogOut } from 'lucide-react'
+import { CalendarCheck, Megaphone, LayoutDashboard, UserCheck, LogOut, BookOpen } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const tabs = [
   { href: '/kehadiran', label: 'Kehadiran', icon: CalendarCheck },
   { href: '/kehadiran-saya', label: 'Sesi Saya', icon: UserCheck },
+  { href: '/silibus-pelajar', label: 'Silibus', icon: BookOpen },
   { href: '/makluman', label: 'Makluman', icon: Megaphone },
   { href: '/dashboard-jurulatih', label: 'Dashboard', icon: LayoutDashboard },
 ]
@@ -56,15 +57,15 @@ export function BottomTabBar() {
               flexDirection: 'column',
               alignItems: 'center',
               gap: '4px',
-              padding: '8px 6px',
+              padding: '8px 3px',
               borderRadius: '12px',
               textDecoration: 'none',
               color: active ? 'var(--accent)' : 'var(--sidebar-muted)',
               transition: 'color 0.15s',
-              minWidth: '58px',
+              minWidth: '48px',
             }}
           >
-            <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+            <Icon size={20} strokeWidth={active ? 2.5 : 2} />
             <span
               style={{
                 fontSize: '10px',
@@ -85,17 +86,17 @@ export function BottomTabBar() {
           flexDirection: 'column',
           alignItems: 'center',
           gap: '4px',
-          padding: '8px 6px',
+          padding: '8px 3px',
           borderRadius: '12px',
           border: 'none',
           background: 'transparent',
           color: 'var(--sidebar-muted)',
           cursor: 'pointer',
           fontFamily: 'inherit',
-          minWidth: '54px',
+          minWidth: '44px',
         }}
       >
-        <LogOut size={22} strokeWidth={2} />
+        <LogOut size={20} strokeWidth={2} />
         <span style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.02em' }}>Keluar</span>
       </button>
     </nav>

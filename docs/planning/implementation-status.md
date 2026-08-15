@@ -4,6 +4,14 @@
 
 ## ⚡ SESI 19 (15 Ogos 2026)
 
+### Jurulatih update Silibus Pelajar dari telefon (build LULUS; PERLU run SQL + uji preview auth)
+Keperluan user: jurulatih (yang mengajar) boleh update status silibus wajib pelajar dari telefon. Keputusan user: (1) lalai **cawangan jurulatih sendiri** (tapis boleh tukar); (2) **tab ke-5 "Silibus"** dalam bottom bar jurulatih.
+- ⚠️ **WAJIB run `scripts/sql/silibus-jurulatih.sql` SEBELUM deploy** — 2 polisi RLS baharu pada `silibus_progress_pelajar`: `jurulatih_insert_*` + `jurulatih_update_*` dengan `jurulatih_id_semasa() IS NOT NULL` (INSERT+UPDATE sahaja; polisi admin FOR ALL dikekalkan; jurulatih tak boleh DELETE). Guna semula `jurulatih_id_semasa()`. Idempotent + ROLLBACK. **Tiada jadual baharu** — jadual `silibus_progress_pelajar` dikongsi admin & jurulatih (satu sumber kebenaran).
+- **Route baharu `/silibus-pelajar`** (route group `(jurulatih)` — path BERBEZA dari `/silibus` admin untuk elak langgar): `page.tsx` (server: paut `jurulatih` via `pengguna_id`, empty state jika tak dipaut; fetch cawangan+tajuk wajib+subtajuk+pelajar Aktif+progress) + `_components/JurulatihSilibusKlient.tsx` (mobile ~390px: dropdown "Cawangan Saya"/cawangan lain + carian; overview pelajar + bar % susun tertinggal dahulu; tap → detail togol 3-status + butang "✓≤" Hingga sini; upsert `dikemaskini_oleh=user.id`). Guna semula helper `src/lib/silibus.ts`. Tiada PDF/Excel (ringan telefon).
+- **Diubah:** `BottomTabBar.tsx` (+tab "Silibus" ke-5, kecikkan lebar item supaya muat 6 item). Update jurulatih terus nampak di tab admin Silibus Pelajar.
+- **Ujian (selepas SQL, preview auth jurulatih):** log masuk akaun jurulatih → tab Silibus → pelajar cawangan dia + bar %; tukar dropdown; tap pelajar → tanda Selesai + "✓≤" → % naik, refresh kekal; sahkan admin `/silibus` nampak sama; jurulatih tak dipaut → empty state. Padam data ujian.
+
+
 ### Prestasi mobile /login — LCP/TTFB (build LULUS; PERLU uji login di preview — auth-kritikal)
 Keperluan user: PageSpeed mobile lapor **LCP 3.9s** pada `/login` (satu-satunya halaman awam; app sebenar di sebalik auth, PSI tak ukur). PSI API 429 (tiada key) → analisis kod.
 - **Punca:** (1) `middleware.ts` panggil `supabase.auth.getUser()` (round-trip rangkaian) pada SETIAP request sebelum semakan laluan → TTFB; (2) `/login` (client component) import Supabase + react-hook-form + zod secara statik → JS awal besar (TBT).
