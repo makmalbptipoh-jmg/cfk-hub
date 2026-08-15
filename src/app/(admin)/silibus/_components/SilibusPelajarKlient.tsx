@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronDown, ChevronRight, Search, Check } from 'lucide-react'
+import { ChevronLeft, ChevronDown, ChevronRight, Search, Check, Printer, FileSpreadsheet } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { tarikhTempatan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
@@ -39,6 +39,8 @@ export function SilibusPelajarKlient({
   const [pelajarPilih, setPelajarPilih] = useState<string | null>(null)
   const [kembang, setKembang] = useState<Set<string>>(new Set())
   const [sibuk, setSibuk] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [xlsLoading, setXlsLoading] = useState(false)
 
   const muatData = useCallback(async () => {
     const { data } = await createClient()
@@ -124,6 +126,130 @@ export function SilibusPelajarKlient({
     if (baris.length) tulisProgress(baris)
   }
 
+  const tarikhRingkas = (t: string) => t.split('-').reverse().join('/')
+  const cawanganLabel = cawanganTapis ? (petaCawangan.get(cawanganTapis) ?? 'Cawangan') : 'Semua Cawangan'
+  const tajukLabel = tajukWajib.map((t) => t.nama).join(', ')
+  const bersih = (str: string) => str.replace(/[\\/:*?"<>|—]/g, '-').replace(/\s+/g, '_')
+
+  const unduhPDF = async () => {
+    setPdfLoading(true)
+    try {
+      const { pdf } = await import('@react-pdf/renderer')
+      const { LaporanSilibusPelajarPDF } = await import('@/components/pdf/LaporanSilibusPelajarPDF')
+      const tarikhJana = tarikhRingkas(tarikhTempatan())
+      let blob: Blob
+      let namaFail: string
+      if (pelajarAktif) {
+        const ringkas = kiraProgresCawangan(subWajib, peta, pelajarAktif.id)
+        const tajuk = tajukWajib.map((t) => ({
+          nama: t.nama,
+          subtajuk: (subIkutTajuk.get(t.id) ?? []).map((x) => ({ nama: x.nama, status: statusSubtajuk(peta, x.id, pelajarAktif.id), nota: x.nota ?? '' })),
+        }))
+        blob = await pdf(<LaporanSilibusPelajarPDF mode="pelajar" tajukLabel={tajukLabel} cawanganLabel={cawanganLabel} pelajarNama={pelajarAktif.nama_penuh} ringkas={ringkas} tajuk={tajuk} tarikhJana={tarikhJana} />).toBlob()
+        namaFail = `Silibus_${bersih(pelajarAktif.nama_penuh)}.pdf`
+      } else {
+        const senarai = pelajarTapis.map(({ p, ringkas }) => ({ nama: p.nama_penuh, cawangan: petaCawangan.get(p.cawangan_daftar_id) ?? '—', selesai: ringkas.selesai, jumlah: ringkas.jumlah, peratus: ringkas.peratus }))
+        blob = await pdf(<LaporanSilibusPelajarPDF mode="senarai" tajukLabel={tajukLabel} cawanganLabel={cawanganLabel} senarai={senarai} tarikhJana={tarikhJana} />).toBlob()
+        namaFail = `Silibus_Pelajar_${bersih(cawanganLabel)}.pdf`
+      }
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = namaFail; a.click()
+      URL.revokeObjectURL(url)
+      toast.success('PDF dimuat turun.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Gagal jana PDF. Cuba lagi.')
+    } finally {
+      setPdfLoading(false)
+    }
+  }
+
+  const unduhExcel = async () => {
+    setXlsLoading(true)
+    try {
+      const ExcelJS = (await import('exceljs')).default
+      const WARNA_XLS: Record<StatusProgres, { fill: string; font: string }> = {
+        Selesai: { fill: 'FFDCFCE7', font: 'FF166534' },
+        Sedang: { fill: 'FFFEF9C3', font: 'FF854D0E' },
+        Belum: { fill: 'FFF1F5F9', font: 'FF94A3B8' },
+      }
+      const wb = new ExcelJS.Workbook()
+      wb.creator = 'CFK HUB'
+      wb.created = new Date()
+      const styleHead = (cell: import('exceljs').Cell, align: 'left' | 'center' | 'right' = 'left') => {
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } }
+        cell.alignment = { horizontal: align }
+      }
+      let namaFail: string
+
+      if (pelajarAktif) {
+        const ws = wb.addWorksheet('Silibus Pelajar')
+        ws.columns = [{ width: 40 }, { width: 46 }, { width: 12 }, { width: 14 }]
+        ws.mergeCells('A1:D1'); ws.getCell('A1').value = 'CHESS FOR KIDS (CFK)'; ws.getCell('A1').font = { bold: true, size: 14 }; ws.getCell('A1').alignment = { horizontal: 'center' }
+        ws.mergeCells('A2:D2'); ws.getCell('A2').value = `Silibus Pelajar — ${pelajarAktif.nama_penuh}`; ws.getCell('A2').font = { size: 10, italic: true }; ws.getCell('A2').alignment = { horizontal: 'center' }
+        const head = ws.getRow(4);['Tajuk Besar', 'Subtajuk', 'MS', 'Status'].forEach((h, i) => { head.getCell(i + 1).value = h; styleHead(head.getCell(i + 1), i === 3 ? 'center' : 'left') })
+        let r = 5
+        for (const t of tajukWajib) {
+          for (const sub of subIkutTajuk.get(t.id) ?? []) {
+            const st = statusSubtajuk(peta, sub.id, pelajarAktif.id)
+            const row = ws.getRow(r)
+            row.getCell(1).value = t.nama
+            row.getCell(2).value = sub.nama
+            row.getCell(3).value = sub.nota ?? ''
+            const c = row.getCell(4)
+            c.value = st; c.alignment = { horizontal: 'center' }; c.font = { color: { argb: WARNA_XLS[st].font }, bold: st !== 'Belum' }
+            c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: WARNA_XLS[st].fill } }
+            r++
+          }
+        }
+        namaFail = `Silibus_${bersih(pelajarAktif.nama_penuh)}.xlsx`
+      } else {
+        const ws = wb.addWorksheet('Silibus Pelajar')
+        ws.columns = [{ width: 6 }, { width: 40 }, { width: 22 }, { width: 12 }, { width: 10 }]
+        ws.mergeCells('A1:E1'); ws.getCell('A1').value = 'CHESS FOR KIDS (CFK)'; ws.getCell('A1').font = { bold: true, size: 14 }; ws.getCell('A1').alignment = { horizontal: 'center' }
+        ws.mergeCells('A2:E2'); ws.getCell('A2').value = `Silibus Pelajar — ${cawanganLabel}`; ws.getCell('A2').font = { size: 10, italic: true }; ws.getCell('A2').alignment = { horizontal: 'center' }
+        const head = ws.getRow(4);['No.', 'Pelajar', 'Cawangan', 'Selesai', '%'].forEach((h, i) => { head.getCell(i + 1).value = h; styleHead(head.getCell(i + 1), i === 0 || i >= 3 ? 'center' : 'left') })
+        let r = 5
+        for (const [i, { p, ringkas }] of pelajarTapis.entries()) {
+          const row = ws.getRow(r)
+          row.getCell(1).value = i + 1
+          row.getCell(2).value = p.nama_penuh
+          row.getCell(3).value = petaCawangan.get(p.cawangan_daftar_id) ?? '—'
+          row.getCell(4).value = `${ringkas.selesai}/${ringkas.jumlah}`; row.getCell(4).alignment = { horizontal: 'center' }
+          row.getCell(5).value = ringkas.peratus / 100; row.getCell(5).numFmt = '0%'; row.getCell(5).alignment = { horizontal: 'center' }
+          r++
+        }
+        namaFail = `Silibus_Pelajar_${bersih(cawanganLabel)}.xlsx`
+      }
+
+      const buffer = await wb.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = namaFail; a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Excel dimuat turun.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Gagal jana Excel. Cuba lagi.')
+    } finally {
+      setXlsLoading(false)
+    }
+  }
+
+  const btnPDF = (
+    <button onClick={unduhPDF} disabled={pdfLoading} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', background: pdfLoading ? '#94A3B8' : 'var(--primary)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: pdfLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+      <Printer size={14} /> {pdfLoading ? 'Menjana...' : 'PDF'}
+    </button>
+  )
+  const btnExcel = (
+    <button onClick={unduhExcel} disabled={xlsLoading} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', background: xlsLoading ? '#94A3B8' : '#16A34A', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: xlsLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+      <FileSpreadsheet size={14} /> {xlsLoading ? 'Menjana...' : 'Excel'}
+    </button>
+  )
+
   const btnKecil = { display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 10px', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: '9px', fontSize: '12px', fontWeight: 600, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' } as const
   const chip = (bg: string, text: string, border: string, teks: string) => (
     <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', background: bg, color: text, border: `1px solid ${border}` }}>{teks}</span>
@@ -143,9 +269,12 @@ export function SilibusPelajarKlient({
     const ringkas = kiraProgresCawangan(subWajib, peta, pelajarAktif.id)
     return (
       <div>
-        <button onClick={() => setPelajarPilih(null)} style={{ ...btnKecil, marginBottom: '14px' }}>
-          <ChevronLeft size={14} /> Kembali ke senarai
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
+          <button onClick={() => setPelajarPilih(null)} style={btnKecil}>
+            <ChevronLeft size={14} /> Kembali ke senarai
+          </button>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>{btnPDF}{btnExcel}</div>
+        </div>
 
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -241,9 +370,12 @@ export function SilibusPelajarKlient({
         </div>
       </div>
 
-      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
-        {pelajarTapis.length} pelajar · silibus wajib: {jumlahWajib} subtajuk ({tajukWajib.map((t) => t.nama).join(', ')}). Disusun <strong>paling tertinggal dahulu</strong> — klik nama untuk rekod progress.
-      </p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', flex: 1, minWidth: '240px' }}>
+          {pelajarTapis.length} pelajar · silibus wajib: {jumlahWajib} subtajuk ({tajukWajib.map((t) => t.nama).join(', ')}). Disusun <strong>paling tertinggal dahulu</strong> — klik nama untuk rekod progress.
+        </p>
+        {pelajarTapis.length > 0 && <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>{btnPDF}{btnExcel}</div>}
+      </div>
 
       {pelajarTapis.length === 0 ? (
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '40px', textAlign: 'center', fontSize: '13.5px', color: 'var(--text-muted)' }}>
