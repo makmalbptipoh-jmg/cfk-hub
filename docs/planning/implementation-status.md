@@ -4,7 +4,18 @@
 
 ## ⚡ SESI 19 (15 Ogos 2026)
 
-### Jurulatih update Silibus Pelajar dari telefon (build LULUS; PERLU run SQL + uji preview auth)
+### RINGKASAN SESI 19 — Modul Silibus lengkap + perf login (SEMUA LIVE PRODUCTION)
+Fokus sesi: bina modul **Silibus** penuh dari log-harian rata → sistem kurikulum berstruktur, + optimize prestasi. Semua di-deploy ke production (10 PR merged ke `main`, akhir `a39b198`). SQL semua sudah di-run user di Supabase.
+1. **Silibus Induk** — Tajuk Besar → Subtajuk (mod Tambah Pukal), progress **per cawangan**, bahan PGN(fail/teks)/FEN/nota/pautan, pautan pada Tajuk Besar. Jadual: `silibus_tajuk`, `silibus_subtajuk`, `silibus_progress` (`scripts/sql/silibus-struktur.sql`).
+2. **Seed CFK STEP BY STEP** — 42 bab (`scripts/sql/seed-cfk-step-by-step.sql`), ditanda **Wajib**.
+3. **Silibus Pelajar** (admin) — progress **per pelajar** terhadap tajuk Wajib; overview % (tertinggal dahulu) + butang "Hingga sini". Jadual `silibus_progress_pelajar` (`scripts/sql/silibus-pelajar.sql`).
+4. **PDF + Excel** untuk ketiga-tiga tab (Induk/Pelajar/Log Harian).
+5. **Jurulatih update dari telefon** — tab ke-5 "Silibus" + RLS jurulatih (`scripts/sql/silibus-jurulatih.sql`).
+6. **Perf /login mobile** — LCP 3.9s → **skor PageSpeed 92**: middleware skip `getUser()` laluan awam + lazy-load Supabase/rhf/zod + `/login` prerender Static.
+7. **Fix**: butang Edit terpotong (flexWrap); **Pendaftaran Baharu** (Sesi 17) akhirnya di-commit + deploy (⚠️ perlu env `GOOGLE_*` di Vercel untuk berfungsi).
+- **Tertunggak user:** set env `GOOGLE_*` di Vercel untuk aktifkan `/pelajar/import`. Branch `feat/silibus-struktur` boleh dipadam (semua merged).
+
+### Jurulatih update Silibus Pelajar dari telefon (LIVE production; SQL sudah run)
 Keperluan user: jurulatih (yang mengajar) boleh update status silibus wajib pelajar dari telefon. Keputusan user: (1) lalai **cawangan jurulatih sendiri** (tapis boleh tukar); (2) **tab ke-5 "Silibus"** dalam bottom bar jurulatih.
 - ⚠️ **WAJIB run `scripts/sql/silibus-jurulatih.sql` SEBELUM deploy** — 2 polisi RLS baharu pada `silibus_progress_pelajar`: `jurulatih_insert_*` + `jurulatih_update_*` dengan `jurulatih_id_semasa() IS NOT NULL` (INSERT+UPDATE sahaja; polisi admin FOR ALL dikekalkan; jurulatih tak boleh DELETE). Guna semula `jurulatih_id_semasa()`. Idempotent + ROLLBACK. **Tiada jadual baharu** — jadual `silibus_progress_pelajar` dikongsi admin & jurulatih (satu sumber kebenaran).
 - **Route baharu `/silibus-pelajar`** (route group `(jurulatih)` — path BERBEZA dari `/silibus` admin untuk elak langgar): `page.tsx` (server: paut `jurulatih` via `pengguna_id`, empty state jika tak dipaut; fetch cawangan+tajuk wajib+subtajuk+pelajar Aktif+progress) + `_components/JurulatihSilibusKlient.tsx` (mobile ~390px: dropdown "Cawangan Saya"/cawangan lain + carian; overview pelajar + bar % susun tertinggal dahulu; tap → detail togol 3-status + butang "✓≤" Hingga sini; upsert `dikemaskini_oleh=user.id`). Guna semula helper `src/lib/silibus.ts`. Tiada PDF/Excel (ringan telefon).
