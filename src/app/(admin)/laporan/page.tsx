@@ -7,12 +7,29 @@ import { akhirBulan, HARI } from '@/lib/utils'
 import { CariPelajar, type PelajarCarian } from '@/components/pelajar/CariPelajar'
 import { LaporanKelasKlient } from './_components/LaporanKelasKlient'
 import { toast } from '@/lib/stores/toast-store'
+import {
+  WARNA_PROGRES, petaProgresPelajar, statusSubtajuk,
+  type ProgresPelajarBaris, type StatusProgres,
+} from '@/lib/silibus'
 
 type Rekod = {
   tarikh: string
   status: 'Hadir' | 'Tidak Hadir' | 'Cuti'
   nota: string | null
 }
+
+type SilibusSub = { nama: string; status: StatusProgres; nota: string | null }
+type SilibusTajuk = { nama: string; selesai: number; jumlah: number; peratus: number; subtajuk: SilibusSub[] }
+type SilibusLaporan = {
+  jumlah: number
+  selesai: number
+  sedang: number
+  belum: number
+  peratus: number
+  tajuk: SilibusTajuk[]
+}
+
+const warnaBarSilibus = (p: number) => (p < 34 ? '#EF4444' : p < 67 ? '#F59E0B' : '#10B981')
 
 type DataLaporan = {
   nama_pelajar: string
@@ -27,6 +44,7 @@ type DataLaporan = {
   sudahBayar: boolean
   bulan: string
   tahun: number
+  silibus: SilibusLaporan | null
 }
 
 function bulanMY(input: string) {
@@ -93,6 +111,40 @@ export default function LaporanPage() {
     const sudahBayar = (resit ?? []).length > 0
     const perluBayar = jumlahHadir >= 4 && !sudahBayar
 
+    // ---- Progress Silibus (tajuk wajib: CFK STEP BY STEP dll) untuk pelajar ini ----
+    let silibus: SilibusLaporan | null = null
+    const { data: tajukRows } = await supabase
+      .from('silibus_tajuk')
+      .select('id, nama, susunan')
+      .eq('wajib', true)
+      .eq('status', 'Aktif')
+      .order('susunan')
+    const tajukIds = (tajukRows ?? []).map((t) => t.id)
+    if (tajukIds.length > 0) {
+      const [{ data: subtajukRows }, { data: progRows }] = await Promise.all([
+        supabase.from('silibus_subtajuk').select('id, tajuk_id, nama, susunan, nota').in('tajuk_id', tajukIds).order('susunan'),
+        supabase.from('silibus_progress_pelajar').select('id, subtajuk_id, pelajar_id, status').eq('pelajar_id', pelajar.id),
+      ])
+      const peta = petaProgresPelajar((progRows ?? []) as ProgresPelajarBaris[])
+      const tajuk: SilibusTajuk[] = (tajukRows ?? []).map((t) => {
+        const subtajuk: SilibusSub[] = (subtajukRows ?? [])
+          .filter((x) => x.tajuk_id === t.id)
+          .map((x) => ({ nama: x.nama, status: statusSubtajuk(peta, x.id, pelajar.id), nota: x.nota as string | null }))
+        const selesai = subtajuk.filter((x) => x.status === 'Selesai').length
+        const jumlah = subtajuk.length
+        return { nama: t.nama, selesai, jumlah, peratus: jumlah > 0 ? Math.round((selesai / jumlah) * 100) : 0, subtajuk }
+      })
+      const jumlah = tajuk.reduce((a, t) => a + t.jumlah, 0)
+      const selesai = tajuk.reduce((a, t) => a + t.selesai, 0)
+      const sedang = tajuk.reduce((a, t) => a + t.subtajuk.filter((s) => s.status === 'Sedang').length, 0)
+      silibus = {
+        jumlah, selesai, sedang,
+        belum: jumlah - selesai - sedang,
+        peratus: jumlah > 0 ? Math.round((selesai / jumlah) * 100) : 0,
+        tajuk,
+      }
+    }
+
     setLaporan({
       nama_pelajar: profilR?.nama_penuh ?? pelajar.nama_penuh,
       cawangan: profilR?.cawangan?.nama ?? pelajar.cawangan_nama ?? '—',
@@ -106,6 +158,7 @@ export default function LaporanPage() {
       sudahBayar,
       bulan: b.nama,
       tahun: b.tahun,
+      silibus,
     })
     setLoading(false)
   }
@@ -129,6 +182,7 @@ export default function LaporanPage() {
           jumlahCuti={laporan.jumlahCuti}
           peratus={laporan.peratus}
           perluBayar={laporan.perluBayar}
+          silibus={laporan.silibus}
         />
       ).toBlob()
       const url = URL.createObjectURL(blob)
@@ -329,6 +383,65 @@ export default function LaporanPage() {
                   })}
                 </tbody>
               </table>
+            )}
+          </div>
+
+          {/* Progress Silibus */}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', marginTop: '16px' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)' }}>
+                Progress Silibus (Wajib)
+              </h3>
+              {laporan.silibus && laporan.silibus.jumlah > 0 && (
+                <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text)' }}>
+                  {laporan.silibus.selesai}/{laporan.silibus.jumlah} selesai ({laporan.silibus.peratus}%)
+                </span>
+              )}
+            </div>
+
+            {!laporan.silibus || laporan.silibus.jumlah === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13.5px' }}>
+                Belum ada silibus wajib ditetapkan.
+              </div>
+            ) : (
+              <div style={{ padding: '16px 20px' }}>
+                {/* Bar keseluruhan */}
+                <div style={{ height: '10px', background: '#E2E8F0', borderRadius: '99px', overflow: 'hidden', marginBottom: '8px' }}>
+                  <div style={{ height: '100%', width: `${laporan.silibus.peratus}%`, background: warnaBarSilibus(laporan.silibus.peratus), borderRadius: '99px' }} />
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                  {laporan.silibus.selesai} selesai · {laporan.silibus.sedang} sedang · {laporan.silibus.belum} belum
+                </p>
+
+                {/* Per Tajuk Besar */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {laporan.silibus.tajuk.map((t) => (
+                    <div key={t.nama} style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '10px 14px', background: '#F8FAFC', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{t.nama}</span>
+                        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>{t.selesai}/{t.jumlah} ({t.peratus}%)</span>
+                      </div>
+                      {t.subtajuk.length > 0 && (
+                        <div>
+                          {t.subtajuk.map((sub, i) => {
+                            const w = WARNA_PROGRES[sub.status]
+                            return (
+                              <div key={sub.nama + i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '8px 14px', borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '12.5px', color: 'var(--text)', flex: 1, minWidth: '140px' }}>
+                                  {sub.nama}{sub.nota ? <span style={{ color: 'var(--text-muted)' }}> · {sub.nota}</span> : null}
+                                </span>
+                                <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: w.bg, color: w.text, border: `1px solid ${w.border}`, flexShrink: 0 }}>
+                                  {sub.status}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>

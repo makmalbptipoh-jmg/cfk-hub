@@ -87,6 +87,17 @@ type Rekod = {
   nota: string | null
 }
 
+type SilibusSub = { nama: string; status: 'Belum' | 'Sedang' | 'Selesai'; nota: string | null }
+type SilibusTajuk = { nama: string; selesai: number; jumlah: number; peratus: number; subtajuk: SilibusSub[] }
+type SilibusLaporan = {
+  jumlah: number
+  selesai: number
+  sedang: number
+  belum: number
+  peratus: number
+  tajuk: SilibusTajuk[]
+}
+
 type Props = {
   nama_pelajar: string
   cawangan: string
@@ -99,6 +110,13 @@ type Props = {
   jumlahCuti: number
   peratus: number
   perluBayar: boolean
+  silibus?: SilibusLaporan | null
+}
+
+const WARNA_SILIBUS: Record<SilibusSub['status'], { fg: string }> = {
+  Belum: { fg: '#94A3B8' },
+  Sedang: { fg: '#92400E' },
+  Selesai: { fg: '#166534' },
 }
 
 const HARI_SINGKAT = ['Ahd', 'Isn', 'Sel', 'Rab', 'Kha', 'Jum', 'Sab']
@@ -117,7 +135,7 @@ export function LaporanPDF({
   nama_pelajar, cawangan, jenis_kelas,
   bulan, tahun, rekod,
   jumlahHadir, jumlahTidakHadir, jumlahCuti,
-  peratus, perluBayar,
+  peratus, perluBayar, silibus,
 }: Props) {
   return (
     <Document title={`Laporan Kehadiran — ${nama_pelajar} — ${bulan} ${tahun}`} author="CFK HUB">
@@ -223,6 +241,34 @@ export function LaporanPDF({
             }
           </Text>
         </View>
+
+        {/* Progress Silibus */}
+        {silibus && silibus.jumlah > 0 && (
+          <View style={{ marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }} wrap={false}>
+              <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#1E293B' }}>Progress Silibus (Wajib)</Text>
+              <Text style={{ fontSize: 9, color: '#64748B', fontFamily: 'Helvetica-Bold' }}>
+                {silibus.selesai}/{silibus.jumlah} selesai ({silibus.peratus}%) · {silibus.sedang} sedang · {silibus.belum} belum
+              </Text>
+            </View>
+            {silibus.tajuk.map((t, ti) => (
+              <View key={ti} style={{ marginBottom: 8, border: '1px solid #E2E8F0', borderRadius: 4 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#F1F5F9', padding: '5px 10px' }}>
+                  <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#1E293B' }}>{t.nama}</Text>
+                  <Text style={{ fontSize: 8, color: '#64748B', fontFamily: 'Helvetica-Bold' }}>{t.selesai}/{t.jumlah} ({t.peratus}%)</Text>
+                </View>
+                {t.subtajuk.map((sub, si) => (
+                  <View key={si} style={[{ flexDirection: 'row', justifyContent: 'space-between', padding: '4px 10px' }, si % 2 === 1 ? { backgroundColor: '#F8FAFC' } : {}]}>
+                    <Text style={{ fontSize: 8, color: '#0F172A', flex: 1, paddingRight: 8 }}>
+                      {sub.nama}{sub.nota ? `  ·  ${sub.nota}` : ''}
+                    </Text>
+                    <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: WARNA_SILIBUS[sub.status].fg }}>{sub.status}</Text>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Footer */}
         <View style={s.footer}>

@@ -4,6 +4,12 @@
 
 ## ⚡ SESI 19 (15 Ogos 2026)
 
+### Progress Silibus dalam Laporan Pelajar (typecheck+lint+build LULUS; BELUM diuji browser — TIADA SQL)
+Keperluan user: dalam Laporan Per Pelajar (`/laporan`, bahagian bawah), sertakan juga **progress silibus** pelajar itu. Guna semula data sedia ada — tiada migrasi.
+- **`/laporan/page.tsx`** — fungsi `jana()` kini juga tarik silibus **wajib** (`silibus_tajuk` `wajib=true`+`status=Aktif`) + subtajuknya + `silibus_progress_pelajar` bagi `pelajar.id`. Kira ringkasan keseluruhan (selesai/sedang/belum/%) + pecahan per Tajuk Besar. Guna semula helper `petaProgresPelajar`/`statusSubtajuk` dari `src/lib/silibus.ts`. Kad baharu "Progress Silibus (Wajib)" selepas jadual kehadiran: bar % keseluruhan + senarai setiap Tajuk Besar × subtajuk dengan pill status berwarna. Empty state bila tiada tajuk wajib.
+- **`src/components/pdf/LaporanPDF.tsx`** — prop baharu `silibus?` (opsional); bahagian "Progress Silibus (Wajib)" sebelum footer: ringkasan + jadual per Tajuk Besar (subtajuk + status berwarna, zebra). Boleh pecah antara halaman (tiada `wrap={false}` pada kontena besar).
+- **Ujian klik-lalu (di Vercel preview — dev tempatan blocked):** /laporan → pilih pelajar + bulan → Jana → kad Progress Silibus papar % + senarai bab ikut status; Muat Turun PDF → bahagian silibus muncul. Pelajar tanpa progress → semua "Belum" / "Belum mula". Jika tiada tajuk Wajib → empty state.
+
 ### RINGKASAN SESI 19 — Modul Silibus lengkap + perf login (SEMUA LIVE PRODUCTION)
 Fokus sesi: bina modul **Silibus** penuh dari log-harian rata → sistem kurikulum berstruktur, + optimize prestasi. Semua di-deploy ke production (10 PR merged ke `main`, akhir `a39b198`). SQL semua sudah di-run user di Supabase.
 1. **Silibus Induk** — Tajuk Besar → Subtajuk (mod Tambah Pukal), progress **per cawangan**, bahan PGN(fail/teks)/FEN/nota/pautan, pautan pada Tajuk Besar. Jadual: `silibus_tajuk`, `silibus_subtajuk`, `silibus_progress` (`scripts/sql/silibus-struktur.sql`).
