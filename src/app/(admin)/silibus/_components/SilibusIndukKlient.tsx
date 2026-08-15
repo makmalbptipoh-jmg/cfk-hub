@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { Plus, Pencil, ChevronDown, ChevronRight, Copy, FileText, ExternalLink } from 'lucide-react'
+import { Plus, Pencil, ChevronDown, ChevronRight, Copy, FileText, ExternalLink, Printer } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { tarikhTempatan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
@@ -31,6 +31,7 @@ export function SilibusIndukKlient({
   const [kembang, setKembang] = useState<Set<string>>(new Set(tajukAwal.slice(0, 1).map((t) => t.id)))
   const [detail, setDetail] = useState<string | null>(null)
   const [sibuk, setSibuk] = useState<string | null>(null)
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   const [modalTajuk, setModalTajuk] = useState<{ buka: boolean; edit: TajukBesar | null }>({ buka: false, edit: null })
   const [modalSub, setModalSub] = useState<{ tajuk: TajukBesar; edit: Subtajuk | null } | null>(null)
@@ -118,6 +119,50 @@ export function SilibusIndukKlient({
     return arr.length ? Math.max(...arr.map((s) => s.susunan)) + 1 : 10
   }
 
+  const tarikhRingkas = (t: string) => t.split('-').reverse().join('/')
+
+  const unduhPDF = async () => {
+    setPdfLoading(true)
+    try {
+      const { pdf } = await import('@react-pdf/renderer')
+      const { LaporanSilibusIndukPDF } = await import('@/components/pdf/LaporanSilibusIndukPDF')
+      const kolCaw = cawanganPilih ? cawangan.filter((c) => c.id === cawanganPilih) : cawangan
+      const dataTajuk = tajuks
+        .map((t) => ({
+          nama: t.nama,
+          nota: t.nota ?? '',
+          subtajuk: (subIkutTajuk.get(t.id) ?? []).map((s) => ({
+            nama: s.nama,
+            statuses: kolCaw.map((c) => statusSubtajuk(peta, s.id, c.id)),
+          })),
+        }))
+        .filter((t) => t.subtajuk.length > 0)
+      const cawanganLabel = cawanganPilih ? (kolCaw[0]?.nama ?? 'Cawangan') : 'Semua Cawangan'
+      const blob = await pdf(
+        <LaporanSilibusIndukPDF
+          mode={cawanganPilih ? 'satu' : 'semua'}
+          cawanganLabel={cawanganLabel}
+          cawanganNama={kolCaw.map((c) => c.nama)}
+          tajuk={dataTajuk}
+          tarikhJana={tarikhRingkas(tarikhTempatan())}
+        />
+      ).toBlob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const bersih = (str: string) => str.replace(/[\\/:*?"<>|—]/g, '-').replace(/\s+/g, '_')
+      a.href = url
+      a.download = `Silibus_Kurikulum_${bersih(cawanganLabel)}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('PDF silibus dimuat turun.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Gagal jana PDF. Refresh (Ctrl+Shift+R) dan cuba lagi.')
+    } finally {
+      setPdfLoading(false)
+    }
+  }
+
   // ---- Gaya kongsi ----
   const chip = (warna: { bg: string; text: string; border: string }, teks: string) => (
     <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', background: warna.bg, color: warna.text, border: `1px solid ${warna.border}` }}>{teks}</span>
@@ -141,12 +186,23 @@ export function SilibusIndukKlient({
             {cawangan.map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
           </select>
         </div>
-        <button
-          onClick={() => setModalTajuk({ buka: true, edit: null })}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: 'var(--accent)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-text)', cursor: 'pointer', fontFamily: 'inherit' }}
-        >
-          <Plus size={15} /> Tambah Tajuk Besar
-        </button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {tajuks.length > 0 && (
+            <button
+              onClick={unduhPDF}
+              disabled={pdfLoading}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', background: pdfLoading ? '#94A3B8' : 'var(--primary)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: pdfLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+            >
+              <Printer size={14} /> {pdfLoading ? 'Menjana...' : 'Muat Turun PDF'}
+            </button>
+          )}
+          <button
+            onClick={() => setModalTajuk({ buka: true, edit: null })}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: 'var(--accent)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-text)', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            <Plus size={15} /> Tambah Tajuk Besar
+          </button>
+        </div>
       </div>
 
       {tajuks.length === 0 ? (
