@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { Plus, Pencil, ChevronDown, ChevronRight, Copy, FileText, ExternalLink, Printer } from 'lucide-react'
+import { Plus, Pencil, ChevronDown, ChevronRight, Copy, FileText, ExternalLink, Printer, FileSpreadsheet } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { tarikhTempatan } from '@/lib/utils'
 import { toast } from '@/lib/stores/toast-store'
@@ -32,6 +32,7 @@ export function SilibusIndukKlient({
   const [detail, setDetail] = useState<string | null>(null)
   const [sibuk, setSibuk] = useState<string | null>(null)
   const [pdfLoading, setPdfLoading] = useState(false)
+  const [xlsLoading, setXlsLoading] = useState(false)
 
   const [modalTajuk, setModalTajuk] = useState<{ buka: boolean; edit: TajukBesar | null }>({ buka: false, edit: null })
   const [modalSub, setModalSub] = useState<{ tajuk: TajukBesar; edit: Subtajuk | null } | null>(null)
@@ -163,6 +164,90 @@ export function SilibusIndukKlient({
     }
   }
 
+  const unduhExcel = async () => {
+    setXlsLoading(true)
+    try {
+      const ExcelJS = (await import('exceljs')).default
+      const kolCaw = cawanganPilih ? cawangan.filter((c) => c.id === cawanganPilih) : cawangan
+      const cawanganLabel = cawanganPilih ? (kolCaw[0]?.nama ?? 'Cawangan') : 'Semua Cawangan'
+      const WARNA_XLS: Record<StatusProgres, { fill: string; font: string }> = {
+        Selesai: { fill: 'FFDCFCE7', font: 'FF166534' },
+        Sedang: { fill: 'FFFEF9C3', font: 'FF854D0E' },
+        Belum: { fill: 'FFF1F5F9', font: 'FF94A3B8' },
+      }
+
+      const wb = new ExcelJS.Workbook()
+      wb.creator = 'CFK HUB'
+      wb.created = new Date()
+      const ws = wb.addWorksheet('Silibus Kurikulum')
+      const ncol = 2 + kolCaw.length
+      ws.columns = [{ width: 42 }, { width: 42 }, ...kolCaw.map(() => ({ width: 14 }))]
+
+      ws.mergeCells(1, 1, 1, ncol)
+      ws.getCell('A1').value = 'CHESS FOR KIDS (CFK)'
+      ws.getCell('A1').font = { bold: true, size: 14 }
+      ws.getCell('A1').alignment = { horizontal: 'center' }
+      ws.mergeCells(2, 1, 2, ncol)
+      ws.getCell('A2').value = `Silibus Kurikulum & Progress — ${cawanganLabel}`
+      ws.getCell('A2').font = { size: 10, italic: true }
+      ws.getCell('A2').alignment = { horizontal: 'center' }
+
+      const head = ws.getRow(4)
+      const headers = ['Tajuk Besar', 'Subtajuk', ...kolCaw.map((c) => c.nama)]
+      headers.forEach((h, i) => {
+        const cell = head.getCell(i + 1)
+        cell.value = h
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } }
+        cell.alignment = { horizontal: i < 2 ? 'left' : 'center' }
+      })
+
+      let r = 5
+      for (const t of tajuks) {
+        const subs = subIkutTajuk.get(t.id) ?? []
+        if (subs.length === 0) continue
+        for (const sub of subs) {
+          const row = ws.getRow(r)
+          row.getCell(1).value = t.nama
+          row.getCell(2).value = sub.nama
+          kolCaw.forEach((c, ci) => {
+            const st = statusSubtajuk(peta, sub.id, c.id)
+            const cell = row.getCell(3 + ci)
+            cell.value = st
+            cell.alignment = { horizontal: 'center' }
+            cell.font = { color: { argb: WARNA_XLS[st].font }, bold: st !== 'Belum' }
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: WARNA_XLS[st].fill } }
+          })
+          r++
+        }
+      }
+      if (r === 5) {
+        ws.getCell('A5').value = 'Tiada Tajuk Besar dengan subtajuk untuk dilaporkan.'
+        ws.getCell('A5').font = { italic: true, color: { argb: 'FF94A3B8' } }
+        r++
+      }
+      r += 1
+      ws.getCell(`A${r}`).value = `Dijana oleh CFK HUB pada ${new Date().toLocaleDateString('ms-MY')}`
+      ws.getCell(`A${r}`).font = { size: 9, color: { argb: 'FF64748B' } }
+
+      const buffer = await wb.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const bersih = (str: string) => str.replace(/[\\/:*?"<>|—]/g, '-').replace(/\s+/g, '_')
+      a.href = url
+      a.download = `Silibus_Kurikulum_${bersih(cawanganLabel)}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Excel silibus dimuat turun.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Gagal jana Excel. Cuba lagi.')
+    } finally {
+      setXlsLoading(false)
+    }
+  }
+
   // ---- Gaya kongsi ----
   const chip = (warna: { bg: string; text: string; border: string }, teks: string) => (
     <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', background: warna.bg, color: warna.text, border: `1px solid ${warna.border}` }}>{teks}</span>
@@ -188,13 +273,22 @@ export function SilibusIndukKlient({
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {tajuks.length > 0 && (
-            <button
-              onClick={unduhPDF}
-              disabled={pdfLoading}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', background: pdfLoading ? '#94A3B8' : 'var(--primary)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: pdfLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
-            >
-              <Printer size={14} /> {pdfLoading ? 'Menjana...' : 'Muat Turun PDF'}
-            </button>
+            <>
+              <button
+                onClick={unduhPDF}
+                disabled={pdfLoading}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', background: pdfLoading ? '#94A3B8' : 'var(--primary)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: pdfLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+              >
+                <Printer size={14} /> {pdfLoading ? 'Menjana...' : 'PDF'}
+              </button>
+              <button
+                onClick={unduhExcel}
+                disabled={xlsLoading}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', background: xlsLoading ? '#94A3B8' : '#16A34A', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: xlsLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+              >
+                <FileSpreadsheet size={14} /> {xlsLoading ? 'Menjana...' : 'Excel'}
+              </button>
+            </>
           )}
           <button
             onClick={() => setModalTajuk({ buka: true, edit: null })}
