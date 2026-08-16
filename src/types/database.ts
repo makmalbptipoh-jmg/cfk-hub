@@ -968,6 +968,7 @@ export interface Database {
           nota: string | null
           pautan: string | null
           wajib: boolean
+          jenis: 'Kumpulan' | 'Personal'
           status: 'Aktif' | 'Tidak Aktif'
           dicipta_oleh: string | null
           created_at: string
@@ -979,6 +980,7 @@ export interface Database {
           nota?: string | null
           pautan?: string | null
           wajib?: boolean
+          jenis?: 'Kumpulan' | 'Personal'
           status?: 'Aktif' | 'Tidak Aktif'
           dicipta_oleh?: string | null
           created_at?: string
@@ -990,6 +992,7 @@ export interface Database {
           nota?: string | null
           pautan?: string | null
           wajib?: boolean
+          jenis?: 'Kumpulan' | 'Personal'
           status?: 'Aktif' | 'Tidak Aktif'
           dicipta_oleh?: string | null
           created_at?: string

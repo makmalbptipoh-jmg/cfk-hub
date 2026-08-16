@@ -8,7 +8,7 @@ export default async function SilibusPage() {
 
   const [rCawangan, rTajuk, rSub, rProgress, rPelajar, rProgressPelajar] = await Promise.all([
     supabase.from('cawangan').select('id, nama').eq('status', 'Aktif').order('nama'),
-    supabase.from('silibus_tajuk').select('id, nama, susunan, nota, pautan, wajib, status').order('susunan').order('nama'),
+    supabase.from('silibus_tajuk').select('id, nama, susunan, nota, pautan, wajib, jenis, status').order('susunan').order('nama'),
     supabase.from('silibus_subtajuk').select('id, tajuk_id, nama, susunan, fen, pgn_teks, pgn_path, pgn_nama, pgn_saiz, nota, pautan').order('susunan'),
     supabase.from('silibus_progress').select('id, subtajuk_id, cawangan_id, status'),
     supabase.from('pelajar').select('id, nama_penuh, cawangan_daftar_id, jenis_kelas').eq('status', 'Aktif').order('nama_penuh'),

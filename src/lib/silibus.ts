@@ -18,6 +18,7 @@ export type TajukBesar = {
   nota: string | null
   pautan: string | null
   wajib: boolean
+  jenis: 'Kumpulan' | 'Personal'
   status: 'Aktif' | 'Tidak Aktif'
 }
 

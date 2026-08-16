@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { BookOpen, ListTree, CalendarDays, UserCheck } from 'lucide-react'
+import { BookOpen, ListTree, CalendarDays, UserCheck, UserCog } from 'lucide-react'
 import type { TajukBesar, Subtajuk, ProgresBaris, ProgresPelajarBaris } from '@/lib/silibus'
 import { SilibusIndukKlient } from './SilibusIndukKlient'
 import { SilibusPelajarKlient, type Pelajar } from './SilibusPelajarKlient'
+import { SilibusPersonalKlient } from './SilibusPersonalKlient'
 import { LogHarianKlient, type Cawangan } from './LogHarianKlient'
 
 export function SilibusKlient({
@@ -22,7 +23,7 @@ export function SilibusKlient({
   pelajarAwal: Pelajar[]
   progressPelajarAwal: ProgresPelajarBaris[]
 }) {
-  const [tab, setTab] = useState<'induk' | 'pelajar' | 'log'>('induk')
+  const [tab, setTab] = useState<'induk' | 'pelajar' | 'personal' | 'log'>('induk')
 
   const tabBtn = (aktif: boolean) => ({
     display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 16px', borderRadius: '10px',
@@ -52,6 +53,9 @@ export function SilibusKlient({
         <button onClick={() => setTab('pelajar')} style={tabBtn(tab === 'pelajar')}>
           <UserCheck size={15} /> Silibus Pelajar
         </button>
+        <button onClick={() => setTab('personal')} style={tabBtn(tab === 'personal')}>
+          <UserCog size={15} /> Silibus Personal
+        </button>
         <button onClick={() => setTab('log')} style={tabBtn(tab === 'log')}>
           <CalendarDays size={15} /> Log Harian
         </button>
@@ -66,6 +70,14 @@ export function SilibusKlient({
         />
       ) : tab === 'pelajar' ? (
         <SilibusPelajarKlient
+          cawangan={cawanganAwal}
+          pelajar={pelajarAwal}
+          tajukAwal={tajukAwal}
+          subtajukAwal={subtajukAwal}
+          progressPelajarAwal={progressPelajarAwal}
+        />
+      ) : tab === 'personal' ? (
+        <SilibusPersonalKlient
           cawangan={cawanganAwal}
           pelajar={pelajarAwal}
           tajukAwal={tajukAwal}
