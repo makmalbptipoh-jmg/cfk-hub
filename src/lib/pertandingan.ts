@@ -107,6 +107,26 @@ export function kiraRingkasanPertandingan(rows: BarisKeputusan[]): RingkasanPert
   }
 }
 
+// ---- Siri progres rating (untuk graf) ----
+export type TitikGraf = { label: string; nilai: number; sub: string }
+export type BarisSiri = { kedudukan: number; jumlah_peserta: number; tarikh: string | null }
+
+// Rating terkumpul SELEPAS setiap pertandingan (kronologi) → titik graf progres.
+export function kiraSiriRating(rows: BarisSiri[]): TitikGraf[] {
+  const kron = [...rows].sort((a, b) => ((a.tarikh ?? '') < (b.tarikh ?? '') ? -1 : 1))
+  let delta = 0
+  return kron.map((r, i) => {
+    delta += RATING_K * (kiraMarkahPrestasi(r.kedudukan, r.jumlah_peserta) - 50)
+    const nilai = Math.max(RATING_MIN, Math.round(RATING_ASAS + delta))
+    let label = `#${i + 1}`
+    if (r.tarikh) {
+      const d = new Date(r.tarikh)
+      label = `${d.getDate()}/${d.getMonth() + 1}`
+    }
+    return { label, nilai, sub: `#${r.kedudukan}/${r.jumlah_peserta}` }
+  })
+}
+
 // Papar mata catur ringkas: 7.5 → "7½", 5 → "5", 0.5 → "½".
 export function formatMata(mata: number): string {
   const bulat = Math.floor(mata)

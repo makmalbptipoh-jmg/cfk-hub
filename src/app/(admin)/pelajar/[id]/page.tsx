@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { BukuRujukan, KategoriTopik, TopikPelajar } from '@/lib/progresPelajar'
-import { kiraRingkasanPertandingan, type JenisPingat } from '@/lib/pertandingan'
+import { kiraRingkasanPertandingan, kiraSiriRating, type JenisPingat } from '@/lib/pertandingan'
 import { ProfilPelajarKlient } from './_components/ProfilPelajarKlient'
 
 export default async function ProfilPelajarPage({
@@ -88,7 +88,7 @@ export default async function ProfilPelajarPage({
     // belum dijalankan, query gagal senyap → kad pertandingan tidak dipapar.
     supabase
       .from('pertandingan_keputusan')
-      .select('kedudukan, jumlah_peserta, mata, pingat')
+      .select('kedudukan, jumlah_peserta, mata, pingat, pertandingan:pertandingan_id(tarikh)')
       .eq('pelajar_id', id),
   ])
 
@@ -108,11 +108,14 @@ export default async function ProfilPelajarPage({
   const stat = kiraStatus(kehadiranBulanIni)
   const total = kiraStatus(kehadiranSemua)
 
-  type KeputusanPertBaris = { kedudukan: number; jumlah_peserta: number; mata: number; pingat: JenisPingat | null }
-  const kPert = (keputusanPert ?? []) as KeputusanPertBaris[]
+  type KeputusanPertBaris = { kedudukan: number; jumlah_peserta: number; mata: number; pingat: JenisPingat | null; pertandingan: { tarikh: string } | null }
+  const kPert = (keputusanPert ?? []) as unknown as KeputusanPertBaris[]
   const ratingPertandingan = kPert.length > 0
     ? kiraRingkasanPertandingan(kPert.map((k) => ({ kedudukan: k.kedudukan, jumlah_peserta: k.jumlah_peserta, mata: k.mata, pingat: k.pingat })))
     : null
+  const siriPertandingan = kPert.length > 0
+    ? kiraSiriRating(kPert.map((k) => ({ kedudukan: k.kedudukan, jumlah_peserta: k.jumlah_peserta, tarikh: k.pertandingan?.tarikh ?? null })))
+    : []
 
   return (
     <ProfilPelajarKlient
@@ -133,6 +136,7 @@ export default async function ProfilPelajarPage({
       stat={stat}
       total={total}
       ratingPertandingan={ratingPertandingan}
+      siriPertandingan={siriPertandingan}
       sudahBayarBulanIni={(resitBulanIni ?? []).length > 0}
       kehadiran={kehadiran ?? []}
       resit={resit ?? []}

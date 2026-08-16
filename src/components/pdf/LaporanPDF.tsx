@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet, Svg, Line, Polyline, Circle, G } from '@react-pdf/renderer'
 import { LOGO_CFK } from './logoCfk'
 import { formatMata } from '@/lib/pertandingan'
 
@@ -101,6 +101,7 @@ type SilibusLaporan = {
 
 type PertMedal = 'Emas' | 'Perak' | 'Gangsa'
 type PertRekod = { nama: string; tarikh: string; kedudukan: number; jumlah_peserta: number; mata: number; pingat: PertMedal | null }
+type PertTitik = { label: string; nilai: number }
 type PertLaporan = {
   ringkasan: {
     bilPertandingan: number
@@ -114,6 +115,43 @@ type PertLaporan = {
     taraf: { nama: string; ikon: string; warna: string }
   }
   rekod: PertRekod[]
+  siri: PertTitik[]
+}
+
+// Graf progres rating (SVG dalam PDF).
+function GrafPertandinganPDF({ siri, warna }: { siri: PertTitik[]; warna: string }) {
+  if (!siri || siri.length < 2) return null
+  const W = 500, H = 130, padL = 30, padR = 12, padT = 12, padB = 20
+  const plotW = W - padL - padR, plotH = H - padT - padB
+  const nilai = siri.map((s) => s.nilai)
+  let minY = Math.min(...nilai), maxY = Math.max(...nilai)
+  if (minY === maxY) { minY -= 10; maxY += 10 }
+  const buf = (maxY - minY) * 0.15; minY -= buf; maxY += buf
+  const range = maxY - minY || 1
+  const X = (i: number) => padL + (i / (siri.length - 1)) * plotW
+  const Y = (v: number) => padT + plotH - ((v - minY) / range) * plotH
+  const points = siri.map((s, i) => `${X(i)},${Y(s.nilai)}`).join(' ')
+  const banyak = siri.length > 8
+  const langkah = banyak ? Math.ceil(siri.length / 6) : 1
+  return (
+    <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ marginBottom: 8 }}>
+      {[maxY, (minY + maxY) / 2, minY].map((v, i) => (
+        <G key={`g${i}`}>
+          <Line x1={padL} y1={Y(v)} x2={W - padR} y2={Y(v)} stroke="#E2E8F0" strokeWidth={0.5} />
+          <Text x={padL - 4} y={Y(v) + 3} textAnchor="end" fill="#94A3B8" style={{ fontSize: 7 }}>{Math.round(v)}</Text>
+        </G>
+      ))}
+      <Polyline points={points} fill="none" stroke={warna} strokeWidth={1.5} />
+      {siri.map((s, i) => (
+        <G key={`p${i}`}>
+          <Circle cx={X(i)} cy={Y(s.nilai)} r={2} fill={warna} />
+          {(i === 0 || i === siri.length - 1 || i % langkah === 0) && (
+            <Text x={X(i)} y={H - 6} textAnchor="middle" fill="#94A3B8" style={{ fontSize: 6.5 }}>{s.label}</Text>
+          )}
+        </G>
+      ))}
+    </Svg>
+  )
 }
 
 const WARNA_PINGAT_PDF: Record<PertMedal, string> = {
@@ -305,6 +343,11 @@ export function LaporanPDF({
             <Text style={{ fontSize: 9, color: '#475569', marginBottom: 6 }}>
               {pertandingan.ringkasan.bilPertandingan} pertandingan · Terbaik {pertandingan.ringkasan.kedudukanTerbaik ? `#${pertandingan.ringkasan.kedudukanTerbaik}` : '—'} · Purata #{pertandingan.ringkasan.purataKedudukan ?? '—'} · {formatMata(pertandingan.ringkasan.jumlahMata)} mata · Pingat {pertandingan.ringkasan.emas}E / {pertandingan.ringkasan.perak}P / {pertandingan.ringkasan.gangsa}G
             </Text>
+            {pertandingan.siri.length >= 2 && (
+              <View wrap={false}>
+                <GrafPertandinganPDF siri={pertandingan.siri} warna={pertandingan.ringkasan.taraf.warna} />
+              </View>
+            )}
             <View style={s.tableHeader}>
               <Text style={[s.tableHeaderText, { width: '46%' }]}>Pertandingan</Text>
               <Text style={[s.tableHeaderText, { width: '24%' }]}>Tarikh</Text>

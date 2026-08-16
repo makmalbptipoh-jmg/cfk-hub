@@ -12,9 +12,10 @@ import {
   type ProgresPelajarBaris, type StatusProgres,
 } from '@/lib/silibus'
 import {
-  kiraRingkasanPertandingan, WARNA_PINGAT, formatMata,
-  type RingkasanPertandingan, type JenisPingat,
+  kiraRingkasanPertandingan, kiraSiriRating, WARNA_PINGAT, formatMata,
+  type RingkasanPertandingan, type JenisPingat, type TitikGraf,
 } from '@/lib/pertandingan'
+import { GrafProgres } from '@/components/GrafProgres'
 
 type Rekod = {
   tarikh: string
@@ -36,7 +37,7 @@ type SilibusLaporan = {
 const warnaBarSilibus = (p: number) => (p < 34 ? '#EF4444' : p < 67 ? '#F59E0B' : '#10B981')
 
 type PertandinganRekod = { nama: string; tarikh: string; kedudukan: number; jumlah_peserta: number; mata: number; pingat: JenisPingat | null }
-type PertandinganLaporan = { ringkasan: RingkasanPertandingan; rekod: PertandinganRekod[] }
+type PertandinganLaporan = { ringkasan: RingkasanPertandingan; rekod: PertandinganRekod[]; siri: TitikGraf[] }
 
 type DataLaporan = {
   nama_pelajar: string
@@ -175,7 +176,10 @@ export default function LaporanPage() {
           kedudukan: k.kedudukan, jumlah_peserta: k.jumlah_peserta, mata: k.mata, pingat: k.pingat,
         }))
         .sort((a, b2) => (a.tarikh < b2.tarikh ? 1 : -1))
-      pertandingan = { ringkasan, rekod }
+      const siri = kiraSiriRating(kRows.map((k) => ({
+        kedudukan: k.kedudukan, jumlah_peserta: k.jumlah_peserta, tarikh: k.pertandingan?.tarikh ?? null,
+      })))
+      pertandingan = { ringkasan, rekod, siri }
     }
 
     setLaporan({
@@ -524,6 +528,18 @@ export default function LaporanPage() {
                         </span>
                       )
                     })}
+                  </div>
+                )}
+
+                {/* Graf Progres Rating */}
+                {laporan.pertandingan.siri.length >= 2 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                      Graf Progres Rating
+                    </div>
+                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '8px 10px' }}>
+                      <GrafProgres siri={laporan.pertandingan.siri} warna={laporan.pertandingan.ringkasan.taraf.warna} />
+                    </div>
                   </div>
                 )}
 
