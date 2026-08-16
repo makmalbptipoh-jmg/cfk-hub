@@ -1051,6 +1051,7 @@ CREATE TABLE IF NOT EXISTS pertandingan_keputusan (
   sonneborn NUMERIC(6,2),
   jumlah_peserta SMALLINT NOT NULL DEFAULT 0,
   pingat TEXT CHECK (pingat IN ('Emas', 'Perak', 'Gangsa')),
+  pecah_seri JSONB,  -- semua tie-break ikut label: [{label, nilai}] (scripts/sql/pertandingan-pecah-seri.sql)
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE (pertandingan_id, kedudukan)
 );

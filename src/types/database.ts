@@ -1250,6 +1250,7 @@ export interface Database {
           sonneborn: number | null
           jumlah_peserta: number
           pingat: 'Emas' | 'Perak' | 'Gangsa' | null
+          pecah_seri: Json | null
           created_at: string
         }
         Insert: {
@@ -1265,6 +1266,7 @@ export interface Database {
           sonneborn?: number | null
           jumlah_peserta?: number
           pingat?: 'Emas' | 'Perak' | 'Gangsa' | null
+          pecah_seri?: Json | null
           created_at?: string
         }
         Update: {
@@ -1280,6 +1282,7 @@ export interface Database {
           sonneborn?: number | null
           jumlah_peserta?: number
           pingat?: 'Emas' | 'Perak' | 'Gangsa' | null
+          pecah_seri?: Json | null
           created_at?: string
         }
         Relationships: []

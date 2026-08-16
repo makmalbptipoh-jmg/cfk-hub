@@ -33,6 +33,12 @@ describe('parseRowsRanking', () => {
     expect(tajuk).toBe('PERTANDINGAN MINGGUAN CFK 141225')
     expect(baris).toHaveLength(2)
     expect(baris[0]).toMatchObject({ kedudukan: 1, sno: 8, nama: 'AZIM', fed: 'MAS', mata: 7.5, buchholz: 40.5, sonneborn: 32.75 })
+    // Semua tie-break ditangkap ikut label: BH:GP, SB/C1, PS
+    expect(baris[0].pecahSeri).toEqual([
+      { label: 'BH:GP', nilai: 40.5 },
+      { label: 'SB/C1', nilai: 32.75 },
+      { label: 'PS', nilai: 33.5 },
+    ])
     expect(baris[1].nama).toBe('AZKA')
   })
 
@@ -49,6 +55,8 @@ describe('parseRankingBuffer — fail sebenar Swiss-Manager', () => {
     expect(baris).toHaveLength(27)
     // Juara
     expect(baris[0]).toMatchObject({ kedudukan: 1, nama: 'AZIM', mata: 7.5 })
+    // 3 tie-break ditangkap ikut label sebenar
+    expect(baris[0].pecahSeri.map((t) => t.label)).toEqual(['BH:GP', 'SB/C1', 'PS'])
     // Tempat akhir
     expect(baris[26]).toMatchObject({ kedudukan: 27, nama: 'HANA', mata: 0 })
     // Semua kedudukan unik & berturut 1..27

@@ -13,10 +13,10 @@ const s = StyleSheet.create({
   tableHeaderText: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: 0.8 },
   tableRow: { flexDirection: 'row', padding: '6px 10px', borderBottom: '1px solid #E2E8F0' },
   tableRowAlt: { backgroundColor: '#F8FAFC' },
-  colRank: { width: '10%' },
+  colRank: { width: '8%' },
   colNama: { flex: 1 },
-  colNum: { width: '13%', textAlign: 'center' },
-  colPingat: { width: '16%', textAlign: 'center' },
+  colNum: { width: '12%', textAlign: 'center' },
+  colPingat: { width: '14%', textAlign: 'center' },
   footer: { marginTop: 'auto', paddingTop: 12, borderTop: '1px solid #E2E8F0' },
   footerText: { fontSize: 8, color: '#94A3B8' },
 })
@@ -27,8 +27,7 @@ export type BarisKeputusanPDF = {
   kedudukan: number
   nama: string
   mata: number
-  buchholz: number | null
-  sonneborn: number | null
+  tiebreaks: (number | string | null)[]
   pingat: 'Emas' | 'Perak' | 'Gangsa' | null
 }
 
@@ -36,6 +35,7 @@ type Props = {
   nama: string
   tarikh: string
   cawangan: string | null
+  tiebreakLabels: string[]
   keputusan: BarisKeputusanPDF[]
 }
 
@@ -43,7 +43,7 @@ function formatTarikh(s2: string) {
   return new Date(s2).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-export function KeputusanPertandinganPDF({ nama, tarikh, cawangan, keputusan }: Props) {
+export function KeputusanPertandinganPDF({ nama, tarikh, cawangan, tiebreakLabels, keputusan }: Props) {
   return (
     <Document title={`Keputusan — ${nama}`} author="CFK HUB">
       <Page size="A4" style={s.page}>
@@ -65,8 +65,9 @@ export function KeputusanPertandinganPDF({ nama, tarikh, cawangan, keputusan }: 
           <Text style={[s.tableHeaderText, s.colRank]}>#</Text>
           <Text style={[s.tableHeaderText, s.colNama]}>Nama</Text>
           <Text style={[s.tableHeaderText, s.colNum]}>Mata</Text>
-          <Text style={[s.tableHeaderText, s.colNum]}>BH</Text>
-          <Text style={[s.tableHeaderText, s.colNum]}>SB</Text>
+          {tiebreakLabels.map((label, i) => (
+            <Text key={i} style={[s.tableHeaderText, s.colNum]}>{label}</Text>
+          ))}
           <Text style={[s.tableHeaderText, s.colPingat]}>Pingat</Text>
         </View>
         {keputusan.map((k, i) => (
@@ -74,8 +75,9 @@ export function KeputusanPertandinganPDF({ nama, tarikh, cawangan, keputusan }: 
             <Text style={[{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#0F172A' }, s.colRank]}>{k.kedudukan}</Text>
             <Text style={[{ fontSize: 9, color: '#0F172A' }, s.colNama]}>{k.nama}</Text>
             <Text style={[{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#0F172A' }, s.colNum]}>{formatMata(k.mata)}</Text>
-            <Text style={[{ fontSize: 9, color: '#64748B' }, s.colNum]}>{k.buchholz ?? '—'}</Text>
-            <Text style={[{ fontSize: 9, color: '#64748B' }, s.colNum]}>{k.sonneborn ?? '—'}</Text>
+            {tiebreakLabels.map((_, j) => (
+              <Text key={j} style={[{ fontSize: 9, color: '#64748B' }, s.colNum]}>{k.tiebreaks[j] ?? '—'}</Text>
+            ))}
             <Text style={[{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: k.pingat ? WARNA_PINGAT_PDF[k.pingat] : '#94A3B8' }, s.colPingat]}>{k.pingat ?? '—'}</Text>
           </View>
         ))}

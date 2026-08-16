@@ -23,7 +23,7 @@ export default async function PertandinganDetailPage({ params }: { params: Promi
       .order('nama_ekspot'),
     supabase
       .from('pertandingan_keputusan')
-      .select('id, nama_ranking, kedudukan, sno, mata, buchholz, sonneborn, jumlah_peserta, pingat, pelajar_id, peserta_id')
+      .select('id, nama_ranking, kedudukan, sno, mata, buchholz, sonneborn, pecah_seri, jumlah_peserta, pingat, pelajar_id, peserta_id')
       .eq('pertandingan_id', id)
       .order('kedudukan'),
   ])
