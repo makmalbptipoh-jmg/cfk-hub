@@ -6,6 +6,7 @@ import Link from 'next/link'
 import {
   ArrowLeft, Trophy, Download, Upload, Users, Trash2,
   AlertTriangle, Loader2, CheckCircle2, CalendarDays, MapPin,
+  FileText, FileSpreadsheet,
 } from 'lucide-react'
 import { formatMata, WARNA_PINGAT, type JenisPingat } from '@/lib/pertandingan'
 import { padanKeputusanManual, padamPertandingan } from '@/app/actions/pertandingan'
@@ -55,11 +56,99 @@ export function PertandinganDetailKlient({
   const fileRef = useRef<HTMLInputElement>(null)
   const [tmpl, setTmpl] = useState(false)
   const [upload, setUpload] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [excelLoading, setExcelLoading] = useState(false)
   const [namaFail, setNamaFail] = useState<string | null>(null)
 
   const petaPeserta = new Map(peserta.map((p) => [p.id, p.nama_penuh]))
   const pesertaDiguna = new Set(keputusan.map((k) => k.peserta_id).filter(Boolean) as string[])
   const takPadan = keputusan.filter((k) => !k.pelajar_id)
+
+  const namaFailAsas = `Keputusan_${nama.replace(/[\\/:*?"<>|]/g, '-')}_${tarikh}`
+  const barisEksport = keputusan.map((k) => ({
+    kedudukan: k.kedudukan,
+    nama: (k.peserta_id ? petaPeserta.get(k.peserta_id) : null) ?? k.nama_ranking,
+    mata: k.mata,
+    buchholz: k.buchholz,
+    sonneborn: k.sonneborn,
+    pingat: k.pingat,
+  }))
+
+  const muatTurunPDF = async () => {
+    setPdfLoading(true)
+    try {
+      const { pdf } = await import('@react-pdf/renderer')
+      const { KeputusanPertandinganPDF } = await import('@/components/pdf/KeputusanPertandinganPDF')
+      const blob = await pdf(
+        <KeputusanPertandinganPDF nama={nama} tarikh={tarikh} cawangan={cawanganNama} keputusan={barisEksport} />
+      ).toBlob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${namaFailAsas}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('PDF keputusan dimuat turun.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Gagal jana PDF. Cuba lagi.')
+    } finally {
+      setPdfLoading(false)
+    }
+  }
+
+  const muatTurunExcel = async () => {
+    setExcelLoading(true)
+    try {
+      const ExcelJS = (await import('exceljs')).default
+      const { formatMata } = await import('@/lib/pertandingan')
+      const wb = new ExcelJS.Workbook()
+      wb.creator = 'CFK HUB'
+      const ws = wb.addWorksheet('Keputusan')
+      ws.columns = [{ width: 8 }, { width: 30 }, { width: 10 }, { width: 10 }, { width: 10 }, { width: 12 }]
+
+      ws.mergeCells('A1:F1')
+      ws.getCell('A1').value = nama
+      ws.getCell('A1').font = { bold: true, size: 14 }
+      ws.mergeCells('A2:F2')
+      ws.getCell('A2').value = `${new Date(tarikh).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' })}${cawanganNama ? ` · ${cawanganNama}` : ''} · ${barisEksport.length} pemain`
+      ws.getCell('A2').font = { size: 10, color: { argb: 'FF64748B' } }
+
+      const kepala = ['#', 'Nama', 'Mata', 'BH', 'SB', 'Pingat']
+      const rowKepala = ws.getRow(4)
+      kepala.forEach((label, i) => {
+        const c = rowKepala.getCell(i + 1)
+        c.value = label
+        c.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } }
+      })
+
+      barisEksport.forEach((k, i) => {
+        const row = ws.getRow(5 + i)
+        row.getCell(1).value = k.kedudukan
+        row.getCell(2).value = k.nama
+        row.getCell(3).value = formatMata(k.mata)
+        row.getCell(4).value = k.buchholz ?? '—'
+        row.getCell(5).value = k.sonneborn ?? '—'
+        row.getCell(6).value = k.pingat ?? '—'
+      })
+
+      const buffer = await wb.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${namaFailAsas}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Excel keputusan dimuat turun.')
+    } catch (e) {
+      console.error(e)
+      toast.error('Gagal jana Excel. Cuba lagi.')
+    } finally {
+      setExcelLoading(false)
+    }
+  }
 
   const muatTurunTemplate = async () => {
     if (peserta.length === 0) { toast.warning('Tiada peserta didaftar.'); return }
@@ -224,8 +313,24 @@ export function PertandinganDetailKlient({
       {/* Standings */}
       {keputusan.length > 0 && (
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '18px', overflow: 'hidden', marginBottom: '18px' }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <h2 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)' }}>Kedudukan Akhir ({keputusan.length} pemain)</h2>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={muatTurunPDF}
+                disabled={pdfLoading}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '10px', border: '1.5px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '12.5px', fontWeight: 600, cursor: pdfLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: pdfLoading ? 0.6 : 1 }}
+              >
+                {pdfLoading ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />} PDF
+              </button>
+              <button
+                onClick={muatTurunExcel}
+                disabled={excelLoading}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '10px', border: '1.5px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '12.5px', fontWeight: 600, cursor: excelLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: excelLoading ? 0.6 : 1 }}
+              >
+                {excelLoading ? <Loader2 size={13} className="animate-spin" /> : <FileSpreadsheet size={13} />} Excel
+              </button>
+            </div>
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
