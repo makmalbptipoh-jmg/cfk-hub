@@ -38,22 +38,27 @@ export function BorangPertandinganBaharu({ cawangan }: { cawangan: CawanganPilih
   const [simpan, setSimpan] = useState(false)
 
   useEffect(() => {
-    if (!cawanganId) { setPelajar([]); setDipilih(new Set()); return }
+    if (!cawanganId || !tarikh) { setPelajar([]); setDipilih(new Set()); return }
     setMemuatPelajar(true)
     const supabase = createClient()
+    // Peserta = pelajar yang HADIR pada tarikh ini di kelas (cawangan sesi) ini sahaja.
     supabase
-      .from('pelajar')
-      .select('id, nama_penuh')
-      .eq('cawangan_daftar_id', cawanganId)
-      .eq('status', 'Aktif')
-      .order('nama_penuh')
+      .from('kehadiran')
+      .select('pelajar:pelajar_id(id, nama_penuh)')
+      .eq('cawangan_sesi_id', cawanganId)
+      .eq('tarikh', tarikh)
+      .eq('status', 'Hadir')
       .then(({ data }) => {
-        const senarai = (data ?? []) as Pelajar[]
+        type Baris = { pelajar: { id: string; nama_penuh: string } | null }
+        const senarai = ((data ?? []) as unknown as Baris[])
+          .map((r) => r.pelajar)
+          .filter((p): p is Pelajar => !!p)
+          .sort((a, b) => a.nama_penuh.localeCompare(b.nama_penuh, 'ms'))
         setPelajar(senarai)
         setDipilih(new Set(senarai.map((p) => p.id))) // default: semua dipilih
         setMemuatPelajar(false)
       })
-  }, [cawanganId])
+  }, [cawanganId, tarikh])
 
   const toggle = (id: string) => {
     setDipilih((prev) => {
@@ -111,6 +116,9 @@ export function BorangPertandinganBaharu({ cawangan }: { cawangan: CawanganPilih
             <option value="">— Pilih cawangan —</option>
             {cawangan.map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
           </select>
+          <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '6px' }}>
+            Peserta diambil dari pelajar yang <strong>Hadir</strong> pada tarikh dipilih di kelas ini. Pastikan kehadiran hari itu sudah direkod dahulu.
+          </p>
         </div>
       </div>
 
@@ -131,7 +139,7 @@ export function BorangPertandinganBaharu({ cawangan }: { cawangan: CawanganPilih
           {memuatPelajar ? (
             <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}><Loader2 size={18} className="animate-spin" style={{ display: 'inline' }} /> Memuatkan pelajar...</div>
           ) : pelajar.length === 0 ? (
-            <div style={{ padding: '32px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>Tiada pelajar aktif di cawangan ini.</div>
+            <div style={{ padding: '32px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>Tiada pelajar <strong>Hadir</strong> pada tarikh ini di kelas ini. Rekod kehadiran dahulu, kemudian pilih semula tarikh.</div>
           ) : (
             <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
               {pelajar.map((p, i) => (
