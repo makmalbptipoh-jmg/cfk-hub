@@ -16,7 +16,7 @@ export const LAJUR_TEMPLATE: {
   lebar: number
   nilai: (p: PesertaTemplate) => string | number
 }[] = [
-  { header: 'Name', lebar: 28, nilai: (p) => p.nama_ekspot },
+  { header: 'Name', lebar: 28, nilai: (p) => p.nama_ekspot.toUpperCase() },
   { header: 'Sex', lebar: 6, nilai: () => '' },
   { header: 'Fed', lebar: 8, nilai: () => 'MAS' },
   { header: 'Rtg', lebar: 8, nilai: () => '' },
