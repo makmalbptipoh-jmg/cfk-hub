@@ -6,7 +6,8 @@ import { Edit2, UserX, UserCheck, CalendarCheck, Receipt, Star, Target } from 'l
 import { ModalNyahaktif } from '@/components/pelajar/ModalNyahaktif'
 import { formatTarikh, formatRinggit } from '@/lib/utils'
 import { kiraRating } from '@/lib/rating'
-import { WARNA_PINGAT, formatMata, type RingkasanPertandingan } from '@/lib/pertandingan'
+import { WARNA_PINGAT, formatMata, type RingkasanPertandingan, type TitikGraf } from '@/lib/pertandingan'
+import { GrafProgres } from '@/components/GrafProgres'
 import { adaKelasPersonal, type BukuRujukan, type KategoriTopik, type TopikPelajar } from '@/lib/progresPelajar'
 import { BtnKadPelajar } from '@/components/pdf/BtnKadPelajar'
 import { ProgresPelajarTab, type RekodSilibus } from './ProgresPelajarTab'
@@ -62,6 +63,7 @@ interface ProfilPelajarKlientProps {
   stat: StatKehadiran
   total: StatKehadiran
   ratingPertandingan: RingkasanPertandingan | null
+  siriPertandingan: TitikGraf[]
   sudahBayarBulanIni: boolean
   kehadiran: Kehadiran[]
   resit: Resit[]
@@ -76,7 +78,7 @@ const warnaBadge: Record<string, { bg: string; text: string }> = {
 
 type TabProfil = 'kehadiran' | 'bayaran' | 'progres'
 
-export function ProfilPelajarKlient({ pelajar, stat, total, ratingPertandingan, sudahBayarBulanIni, kehadiran, resit, progres }: ProfilPelajarKlientProps) {
+export function ProfilPelajarKlient({ pelajar, stat, total, ratingPertandingan, siriPertandingan, sudahBayarBulanIni, kehadiran, resit, progres }: ProfilPelajarKlientProps) {
   // Progress pembelajaran hanya untuk pelajar yang ada kelas personal.
   const adaProgres = adaKelasPersonal(pelajar.jenis_kelas)
   const [tab, setTab] = useState<TabProfil>('kehadiran')
@@ -303,6 +305,14 @@ export function ProfilPelajarKlient({ pelajar, stat, total, ratingPertandingan, 
               </div>
             </div>
           </div>
+          {siriPertandingan.length >= 2 && (
+            <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '14px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                Graf Progres Rating
+              </div>
+              <GrafProgres siri={siriPertandingan} warna={ratingPertandingan.taraf.warna} />
+            </div>
+          )}
         </div>
       )}
 
