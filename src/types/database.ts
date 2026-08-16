@@ -1170,6 +1170,120 @@ export interface Database {
         }
         Relationships: []
       }
+      pertandingan: {
+        Row: {
+          id: string
+          nama: string
+          tarikh: string
+          cawangan_id: string | null
+          jurulatih_id: string | null
+          bil_pusingan: number | null
+          status: 'Draf' | 'Selesai'
+          catatan: string | null
+          dicipta_oleh: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nama: string
+          tarikh: string
+          cawangan_id?: string | null
+          jurulatih_id?: string | null
+          bil_pusingan?: number | null
+          status?: 'Draf' | 'Selesai'
+          catatan?: string | null
+          dicipta_oleh?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nama?: string
+          tarikh?: string
+          cawangan_id?: string | null
+          jurulatih_id?: string | null
+          bil_pusingan?: number | null
+          status?: 'Draf' | 'Selesai'
+          catatan?: string | null
+          dicipta_oleh?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      pertandingan_peserta: {
+        Row: {
+          id: string
+          pertandingan_id: string
+          pelajar_id: string
+          nama_ekspot: string
+          sno: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          pertandingan_id: string
+          pelajar_id: string
+          nama_ekspot: string
+          sno?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          pertandingan_id?: string
+          pelajar_id?: string
+          nama_ekspot?: string
+          sno?: number | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      pertandingan_keputusan: {
+        Row: {
+          id: string
+          pertandingan_id: string
+          peserta_id: string | null
+          pelajar_id: string | null
+          nama_ranking: string
+          kedudukan: number
+          sno: number | null
+          mata: number
+          buchholz: number | null
+          sonneborn: number | null
+          jumlah_peserta: number
+          pingat: 'Emas' | 'Perak' | 'Gangsa' | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          pertandingan_id: string
+          peserta_id?: string | null
+          pelajar_id?: string | null
+          nama_ranking: string
+          kedudukan: number
+          sno?: number | null
+          mata?: number
+          buchholz?: number | null
+          sonneborn?: number | null
+          jumlah_peserta?: number
+          pingat?: 'Emas' | 'Perak' | 'Gangsa' | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          pertandingan_id?: string
+          peserta_id?: string | null
+          pelajar_id?: string | null
+          nama_ranking?: string
+          kedudukan?: number
+          sno?: number | null
+          mata?: number
+          buchholz?: number | null
+          sonneborn?: number | null
+          jumlah_peserta?: number
+          pingat?: 'Emas' | 'Perak' | 'Gangsa' | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       pelajar_topik: {
         Row: {
           id: string

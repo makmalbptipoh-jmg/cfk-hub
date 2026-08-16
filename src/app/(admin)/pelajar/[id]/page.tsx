@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { BukuRujukan, KategoriTopik, TopikPelajar } from '@/lib/progresPelajar'
+import { kiraRingkasanPertandingan, type JenisPingat } from '@/lib/pertandingan'
 import { ProfilPelajarKlient } from './_components/ProfilPelajarKlient'
 
 export default async function ProfilPelajarPage({
@@ -27,6 +28,7 @@ export default async function ProfilPelajarPage({
     { data: kategoriTopik },
     { data: buku },
     { data: silibus },
+    { data: keputusanPert },
   ] = await Promise.all([
     supabase
       .from('pelajar')
@@ -82,6 +84,12 @@ export default async function ProfilPelajarPage({
       .select('id, tarikh, tajuk, muka_surat, nota')
       .eq('pelajar_id', id)
       .order('tarikh', { ascending: false }),
+    // Pencapaian pertandingan (rating terkumpul). Jika migrasi pertandingan.sql
+    // belum dijalankan, query gagal senyap → kad pertandingan tidak dipapar.
+    supabase
+      .from('pertandingan_keputusan')
+      .select('kedudukan, jumlah_peserta, mata, pingat')
+      .eq('pelajar_id', id),
   ])
 
   if (error || !pelajarRaw) notFound()
@@ -99,6 +107,12 @@ export default async function ProfilPelajarPage({
   })
   const stat = kiraStatus(kehadiranBulanIni)
   const total = kiraStatus(kehadiranSemua)
+
+  type KeputusanPertBaris = { kedudukan: number; jumlah_peserta: number; mata: number; pingat: JenisPingat | null }
+  const kPert = (keputusanPert ?? []) as KeputusanPertBaris[]
+  const ratingPertandingan = kPert.length > 0
+    ? kiraRingkasanPertandingan(kPert.map((k) => ({ kedudukan: k.kedudukan, jumlah_peserta: k.jumlah_peserta, mata: k.mata, pingat: k.pingat })))
+    : null
 
   return (
     <ProfilPelajarKlient
@@ -118,6 +132,7 @@ export default async function ProfilPelajarPage({
       }}
       stat={stat}
       total={total}
+      ratingPertandingan={ratingPertandingan}
       sudahBayarBulanIni={(resitBulanIni ?? []).length > 0}
       kehadiran={kehadiran ?? []}
       resit={resit ?? []}

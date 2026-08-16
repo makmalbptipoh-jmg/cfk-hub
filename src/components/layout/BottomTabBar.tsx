@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { CalendarCheck, Megaphone, LayoutDashboard, UserCheck, LogOut, BookOpen } from 'lucide-react'
+import { CalendarCheck, Megaphone, LayoutDashboard, UserCheck, LogOut, BookOpen, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const tabs = [
   { href: '/kehadiran', label: 'Kehadiran', icon: CalendarCheck },
   { href: '/kehadiran-saya', label: 'Sesi Saya', icon: UserCheck },
   { href: '/silibus-pelajar', label: 'Silibus', icon: BookOpen },
+  { href: '/pertandingan', label: 'Tanding', icon: Trophy },
   { href: '/makluman', label: 'Makluman', icon: Megaphone },
   { href: '/dashboard-jurulatih', label: 'Dashboard', icon: LayoutDashboard },
 ]

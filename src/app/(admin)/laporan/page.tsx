@@ -11,6 +11,10 @@ import {
   WARNA_PROGRES, petaProgresPelajar, statusSubtajuk,
   type ProgresPelajarBaris, type StatusProgres,
 } from '@/lib/silibus'
+import {
+  kiraRingkasanPertandingan, WARNA_PINGAT, formatMata,
+  type RingkasanPertandingan, type JenisPingat,
+} from '@/lib/pertandingan'
 
 type Rekod = {
   tarikh: string
@@ -31,6 +35,9 @@ type SilibusLaporan = {
 
 const warnaBarSilibus = (p: number) => (p < 34 ? '#EF4444' : p < 67 ? '#F59E0B' : '#10B981')
 
+type PertandinganRekod = { nama: string; tarikh: string; kedudukan: number; jumlah_peserta: number; mata: number; pingat: JenisPingat | null }
+type PertandinganLaporan = { ringkasan: RingkasanPertandingan; rekod: PertandinganRekod[] }
+
 type DataLaporan = {
   nama_pelajar: string
   cawangan: string
@@ -45,6 +52,7 @@ type DataLaporan = {
   bulan: string
   tahun: number
   silibus: SilibusLaporan | null
+  pertandingan: PertandinganLaporan | null
 }
 
 function bulanMY(input: string) {
@@ -145,6 +153,31 @@ export default function LaporanPage() {
       }
     }
 
+    // ---- Pencapaian Pertandingan (rating terkumpul + pingat) untuk pelajar ini ----
+    let pertandingan: PertandinganLaporan | null = null
+    const { data: keputusanRows } = await supabase
+      .from('pertandingan_keputusan')
+      .select('kedudukan, jumlah_peserta, mata, pingat, pertandingan:pertandingan_id(nama, tarikh)')
+      .eq('pelajar_id', pelajar.id)
+    type KeputusanBaris = {
+      kedudukan: number; jumlah_peserta: number; mata: number
+      pingat: JenisPingat | null; pertandingan: { nama: string; tarikh: string } | null
+    }
+    const kRows = (keputusanRows ?? []) as unknown as KeputusanBaris[]
+    if (kRows.length > 0) {
+      const ringkasan = kiraRingkasanPertandingan(kRows.map((k) => ({
+        kedudukan: k.kedudukan, jumlah_peserta: k.jumlah_peserta, mata: k.mata, pingat: k.pingat,
+      })))
+      const rekod: PertandinganRekod[] = kRows
+        .map((k) => ({
+          nama: k.pertandingan?.nama ?? 'Pertandingan',
+          tarikh: k.pertandingan?.tarikh ?? '',
+          kedudukan: k.kedudukan, jumlah_peserta: k.jumlah_peserta, mata: k.mata, pingat: k.pingat,
+        }))
+        .sort((a, b2) => (a.tarikh < b2.tarikh ? 1 : -1))
+      pertandingan = { ringkasan, rekod }
+    }
+
     setLaporan({
       nama_pelajar: profilR?.nama_penuh ?? pelajar.nama_penuh,
       cawangan: profilR?.cawangan?.nama ?? pelajar.cawangan_nama ?? '—',
@@ -159,6 +192,7 @@ export default function LaporanPage() {
       bulan: b.nama,
       tahun: b.tahun,
       silibus,
+      pertandingan,
     })
     setLoading(false)
   }
@@ -183,6 +217,7 @@ export default function LaporanPage() {
           peratus={laporan.peratus}
           perluBayar={laporan.perluBayar}
           silibus={laporan.silibus}
+          pertandingan={laporan.pertandingan}
         />
       ).toBlob()
       const url = URL.createObjectURL(blob)
@@ -440,6 +475,77 @@ export default function LaporanPage() {
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Pencapaian Pertandingan */}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', marginTop: '16px' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)' }}>Pencapaian Pertandingan</h3>
+              {laporan.pertandingan && (
+                <span style={{ fontSize: '12.5px', fontWeight: 700, color: laporan.pertandingan.ringkasan.taraf.warna, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ fontSize: '15px' }}>{laporan.pertandingan.ringkasan.taraf.ikon}</span>
+                  {laporan.pertandingan.ringkasan.taraf.nama} · Rating {laporan.pertandingan.ringkasan.rating}
+                </span>
+              )}
+            </div>
+
+            {!laporan.pertandingan ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13.5px' }}>
+                Belum menyertai sebarang pertandingan.
+              </div>
+            ) : (
+              <div style={{ padding: '16px 20px' }}>
+                {/* Ringkasan */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '16px' }}>
+                  {[
+                    { label: 'Pertandingan', nilai: laporan.pertandingan.ringkasan.bilPertandingan },
+                    { label: 'Terbaik', nilai: laporan.pertandingan.ringkasan.kedudukanTerbaik ? `#${laporan.pertandingan.ringkasan.kedudukanTerbaik}` : '—' },
+                    { label: 'Purata Tempat', nilai: laporan.pertandingan.ringkasan.purataKedudukan ?? '—' },
+                    { label: 'Jumlah Mata', nilai: formatMata(laporan.pertandingan.ringkasan.jumlahMata) },
+                  ].map((s) => (
+                    <div key={s.label} style={{ background: '#F8FAFC', border: '1px solid var(--border)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>{s.nilai}</div>
+                      <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pingat */}
+                {(laporan.pertandingan.ringkasan.emas + laporan.pertandingan.ringkasan.perak + laporan.pertandingan.ringkasan.gangsa) > 0 && (
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    {([['Emas', laporan.pertandingan.ringkasan.emas], ['Perak', laporan.pertandingan.ringkasan.perak], ['Gangsa', laporan.pertandingan.ringkasan.gangsa]] as const).filter(([, n]) => n > 0).map(([jenis, n]) => {
+                      const w = WARNA_PINGAT[jenis]
+                      return (
+                        <span key={jenis} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12.5px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px', background: w.bg, color: w.text, border: `1px solid ${w.border}` }}>
+                          {w.emoji} {n} {jenis}
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* Senarai pertandingan */}
+                <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+                  {laporan.pertandingan.rekod.map((r, i) => {
+                    const w = r.pingat ? WARNA_PINGAT[r.pingat] : null
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '10px 14px', borderTop: i > 0 ? '1px solid var(--border)' : 'none', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: '160px' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{r.nama}</div>
+                          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{r.tarikh ? formatTarikhPanjang(r.tarikh) : '—'}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>{formatMata(r.mata)} mata</span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: w ? w.bg : '#F1F5F9', color: w ? w.text : 'var(--text)', border: w ? `1px solid ${w.border}` : '1px solid var(--border)' }}>
+                            {w ? `${w.emoji} #${r.kedudukan}` : `#${r.kedudukan}`}<span style={{ opacity: 0.6, fontWeight: 500 }}>/{r.jumlah_peserta}</span>
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}

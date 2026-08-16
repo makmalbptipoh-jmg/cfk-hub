@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
 import { LOGO_CFK } from './logoCfk'
+import { formatMata } from '@/lib/pertandingan'
 
 const s = StyleSheet.create({
   page: {
@@ -98,6 +99,27 @@ type SilibusLaporan = {
   tajuk: SilibusTajuk[]
 }
 
+type PertMedal = 'Emas' | 'Perak' | 'Gangsa'
+type PertRekod = { nama: string; tarikh: string; kedudukan: number; jumlah_peserta: number; mata: number; pingat: PertMedal | null }
+type PertLaporan = {
+  ringkasan: {
+    bilPertandingan: number
+    kedudukanTerbaik: number | null
+    purataKedudukan: number | null
+    jumlahMata: number
+    emas: number
+    perak: number
+    gangsa: number
+    rating: number
+    taraf: { nama: string; ikon: string; warna: string }
+  }
+  rekod: PertRekod[]
+}
+
+const WARNA_PINGAT_PDF: Record<PertMedal, string> = {
+  Emas: '#B45309', Perak: '#475569', Gangsa: '#9A3412',
+}
+
 type Props = {
   nama_pelajar: string
   cawangan: string
@@ -111,6 +133,7 @@ type Props = {
   peratus: number
   perluBayar: boolean
   silibus?: SilibusLaporan | null
+  pertandingan?: PertLaporan | null
 }
 
 const WARNA_SILIBUS: Record<SilibusSub['status'], { fg: string }> = {
@@ -135,7 +158,7 @@ export function LaporanPDF({
   nama_pelajar, cawangan, jenis_kelas,
   bulan, tahun, rekod,
   jumlahHadir, jumlahTidakHadir, jumlahCuti,
-  peratus, perluBayar, silibus,
+  peratus, perluBayar, silibus, pertandingan,
 }: Props) {
   return (
     <Document title={`Laporan Kehadiran — ${nama_pelajar} — ${bulan} ${tahun}`} author="CFK HUB">
@@ -265,6 +288,35 @@ export function LaporanPDF({
                     <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: WARNA_SILIBUS[sub.status].fg }}>{sub.status}</Text>
                   </View>
                 ))}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Pencapaian Pertandingan */}
+        {pertandingan && pertandingan.rekod.length > 0 && (
+          <View style={{ marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }} wrap={false}>
+              <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#1E293B' }}>Pencapaian Pertandingan</Text>
+              <Text style={{ fontSize: 9, color: '#64748B', fontFamily: 'Helvetica-Bold' }}>
+                Taraf {pertandingan.ringkasan.taraf.nama} · Rating {pertandingan.ringkasan.rating}
+              </Text>
+            </View>
+            <Text style={{ fontSize: 9, color: '#475569', marginBottom: 6 }}>
+              {pertandingan.ringkasan.bilPertandingan} pertandingan · Terbaik {pertandingan.ringkasan.kedudukanTerbaik ? `#${pertandingan.ringkasan.kedudukanTerbaik}` : '—'} · Purata #{pertandingan.ringkasan.purataKedudukan ?? '—'} · {formatMata(pertandingan.ringkasan.jumlahMata)} mata · Pingat {pertandingan.ringkasan.emas}E / {pertandingan.ringkasan.perak}P / {pertandingan.ringkasan.gangsa}G
+            </Text>
+            <View style={s.tableHeader}>
+              <Text style={[s.tableHeaderText, { width: '46%' }]}>Pertandingan</Text>
+              <Text style={[s.tableHeaderText, { width: '24%' }]}>Tarikh</Text>
+              <Text style={[s.tableHeaderText, { width: '15%' }]}>Tempat</Text>
+              <Text style={[s.tableHeaderText, { width: '15%' }]}>Mata</Text>
+            </View>
+            {pertandingan.rekod.map((r, i) => (
+              <View key={i} style={[s.tableRow, i % 2 === 1 ? s.tableRowAlt : {}]}>
+                <Text style={[{ fontSize: 9, color: '#0F172A' }, { width: '46%' }]}>{r.nama}</Text>
+                <Text style={[{ fontSize: 9, color: '#64748B' }, { width: '24%' }]}>{r.tarikh ? formatTarikhMelayu(r.tarikh) : '—'}</Text>
+                <Text style={[{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: r.pingat ? WARNA_PINGAT_PDF[r.pingat] : '#0F172A' }, { width: '15%' }]}>#{r.kedudukan}/{r.jumlah_peserta}</Text>
+                <Text style={[{ fontSize: 9, color: '#0F172A' }, { width: '15%' }]}>{formatMata(r.mata)}</Text>
               </View>
             ))}
           </View>
