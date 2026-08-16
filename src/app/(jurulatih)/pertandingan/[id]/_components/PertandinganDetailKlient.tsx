@@ -9,6 +9,7 @@ import {
   FileText, FileSpreadsheet,
 } from 'lucide-react'
 import { formatMata, WARNA_PINGAT, type JenisPingat } from '@/lib/pertandingan'
+import type { PecahSeriItem } from '@/lib/pertandingan-parse'
 import { padanKeputusanManual, padamPertandingan } from '@/app/actions/pertandingan'
 import { toast } from '@/lib/stores/toast-store'
 
@@ -30,8 +31,19 @@ export type KeputusanData = {
   sonneborn: number | null
   jumlah_peserta: number
   pingat: JenisPingat | null
+  pecah_seri: PecahSeriItem[] | null
   pelajar_id: string | null
   peserta_id: string | null
+}
+
+// Tie-break satu baris: guna pecah_seri (semua tie-break ikut label) jika ada,
+// jika tidak jatuh balik ke buchholz/sonneborn (data lama).
+function tiebreaksBaris(k: KeputusanData): PecahSeriItem[] {
+  if (Array.isArray(k.pecah_seri) && k.pecah_seri.length > 0) return k.pecah_seri
+  const arr: PecahSeriItem[] = []
+  if (k.buchholz != null) arr.push({ label: 'BH', nilai: k.buchholz })
+  if (k.sonneborn != null) arr.push({ label: 'SB', nilai: k.sonneborn })
+  return arr
 }
 
 type Props = {
@@ -65,14 +77,17 @@ export function PertandinganDetailKlient({
   const takPadan = keputusan.filter((k) => !k.pelajar_id)
 
   const namaFailAsas = `Keputusan_${nama.replace(/[\\/:*?"<>|]/g, '-')}_${tarikh}`
-  const barisEksport = keputusan.map((k) => ({
-    kedudukan: k.kedudukan,
-    nama: (k.peserta_id ? petaPeserta.get(k.peserta_id) : null) ?? k.nama_ranking,
-    mata: k.mata,
-    buchholz: k.buchholz,
-    sonneborn: k.sonneborn,
-    pingat: k.pingat,
-  }))
+  const labelTiebreak = keputusan.length > 0 ? tiebreaksBaris(keputusan[0]).map((t) => t.label) : []
+  const barisEksport = keputusan.map((k) => {
+    const tb = tiebreaksBaris(k)
+    return {
+      kedudukan: k.kedudukan,
+      nama: (k.peserta_id ? petaPeserta.get(k.peserta_id) : null) ?? k.nama_ranking,
+      mata: k.mata,
+      tiebreaks: labelTiebreak.map((_, j) => tb[j]?.nilai ?? null),
+      pingat: k.pingat,
+    }
+  })
 
   const muatTurunPDF = async () => {
     setPdfLoading(true)
@@ -80,7 +95,7 @@ export function PertandinganDetailKlient({
       const { pdf } = await import('@react-pdf/renderer')
       const { KeputusanPertandinganPDF } = await import('@/components/pdf/KeputusanPertandinganPDF')
       const blob = await pdf(
-        <KeputusanPertandinganPDF nama={nama} tarikh={tarikh} cawangan={cawanganNama} keputusan={barisEksport} />
+        <KeputusanPertandinganPDF nama={nama} tarikh={tarikh} cawangan={cawanganNama} tiebreakLabels={labelTiebreak} keputusan={barisEksport} />
       ).toBlob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -105,16 +120,17 @@ export function PertandinganDetailKlient({
       const wb = new ExcelJS.Workbook()
       wb.creator = 'CFK HUB'
       const ws = wb.addWorksheet('Keputusan')
-      ws.columns = [{ width: 8 }, { width: 30 }, { width: 10 }, { width: 10 }, { width: 10 }, { width: 12 }]
+      const kepala = ['#', 'Nama', 'Mata', ...labelTiebreak, 'Pingat']
+      ws.columns = kepala.map((_, i) => ({ width: i === 1 ? 30 : i === 0 ? 8 : 11 }))
+      const lajurAkhir = String.fromCharCode(64 + kepala.length) // cth 'F', 'G'
 
-      ws.mergeCells('A1:F1')
+      ws.mergeCells(`A1:${lajurAkhir}1`)
       ws.getCell('A1').value = nama
       ws.getCell('A1').font = { bold: true, size: 14 }
-      ws.mergeCells('A2:F2')
+      ws.mergeCells(`A2:${lajurAkhir}2`)
       ws.getCell('A2').value = `${new Date(tarikh).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' })}${cawanganNama ? ` · ${cawanganNama}` : ''} · ${barisEksport.length} pemain`
       ws.getCell('A2').font = { size: 10, color: { argb: 'FF64748B' } }
 
-      const kepala = ['#', 'Nama', 'Mata', 'BH', 'SB', 'Pingat']
       const rowKepala = ws.getRow(4)
       kepala.forEach((label, i) => {
         const c = rowKepala.getCell(i + 1)
@@ -128,9 +144,8 @@ export function PertandinganDetailKlient({
         row.getCell(1).value = k.kedudukan
         row.getCell(2).value = k.nama
         row.getCell(3).value = formatMata(k.mata)
-        row.getCell(4).value = k.buchholz ?? '—'
-        row.getCell(5).value = k.sonneborn ?? '—'
-        row.getCell(6).value = k.pingat ?? '—'
+        k.tiebreaks.forEach((v, j) => { row.getCell(4 + j).value = v ?? '—' })
+        row.getCell(4 + labelTiebreak.length).value = k.pingat ?? '—'
       })
 
       const buffer = await wb.xlsx.writeBuffer()
@@ -335,8 +350,8 @@ export function PertandinganDetailKlient({
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                {['#', 'Nama', 'Mata', 'BH', 'SB'].map((h, i) => (
-                  <th key={h} style={{ padding: '9px 16px', textAlign: i >= 2 ? 'center' : 'left', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                {['#', 'Nama', 'Mata', ...labelTiebreak].map((h, i) => (
+                  <th key={h + i} style={{ padding: '9px 16px', textAlign: i >= 2 ? 'center' : 'left', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -356,8 +371,10 @@ export function PertandinganDetailKlient({
                       )}
                     </td>
                     <td style={{ padding: '10px 16px', fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', textAlign: 'center' }}>{formatMata(k.mata)}</td>
-                    <td style={{ padding: '10px 16px', fontSize: '12.5px', color: 'var(--text-muted)', textAlign: 'center' }}>{k.buchholz ?? '—'}</td>
-                    <td style={{ padding: '10px 16px', fontSize: '12.5px', color: 'var(--text-muted)', textAlign: 'center' }}>{k.sonneborn ?? '—'}</td>
+                    {labelTiebreak.map((_, j) => {
+                      const tb = tiebreaksBaris(k)
+                      return <td key={j} style={{ padding: '10px 16px', fontSize: '12.5px', color: 'var(--text-muted)', textAlign: 'center' }}>{tb[j]?.nilai ?? '—'}</td>
+                    })}
                   </tr>
                 )
               })}

@@ -4,6 +4,8 @@
 
 import * as XLSX from 'xlsx'
 
+export type PecahSeriItem = { label: string; nilai: number | string | null }
+
 export type BarisRankingMentah = {
   kedudukan: number
   sno: number | null
@@ -12,6 +14,7 @@ export type BarisRankingMentah = {
   mata: number
   buchholz: number | null
   sonneborn: number | null
+  pecahSeri: PecahSeriItem[]
 }
 
 export type HasilParse = {
@@ -76,6 +79,15 @@ export function parseRowsRanking(rows: unknown[][]): HasilParse {
     throw new Error('Format fail tidak lengkap — lajur "Rank" atau "Name" tidak dijumpai.')
   }
 
+  // Semua lajur tie-break = lajur selepas "Pts" yang ada header (BH:GP, PS, SB, dll).
+  const lajurPecahSeri: { idx: number; label: string }[] = []
+  if (iMata >= 0) {
+    for (let i = iMata + 1; i < header.length; i++) {
+      const label = String(header[i] ?? '').trim()
+      if (label) lajurPecahSeri.push({ idx: i, label })
+    }
+  }
+
   const tajuk = headerIdx > 0 ? String(rows[0]?.[0] ?? '').trim() || null : null
 
   const baris: BarisRankingMentah[] = []
@@ -94,6 +106,10 @@ export function parseRowsRanking(rows: unknown[][]): HasilParse {
       mata: iMata >= 0 ? parseMata(r[iMata]) : 0,
       buchholz: iBuchholz >= 0 ? parseNombor(r[iBuchholz]) : null,
       sonneborn: iSonneborn >= 0 ? parseNombor(r[iSonneborn]) : null,
+      pecahSeri: lajurPecahSeri.map((c) => {
+        const num = parseNombor(r[c.idx])
+        return { label: c.label, nilai: num !== null ? num : (String(r[c.idx] ?? '').trim() || null) }
+      }),
     })
   }
 

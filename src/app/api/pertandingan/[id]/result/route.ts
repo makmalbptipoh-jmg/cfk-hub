@@ -66,6 +66,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         mata: b.mata,
         buchholz: b.buchholz,
         sonneborn: b.sonneborn,
+        pecah_seri: b.pecahSeri,
         jumlah_peserta: jumlahPeserta,
         pingat: pingatUntukKedudukan(b.kedudukan),
       }
