@@ -1,6 +1,18 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 15 Ogos 2026 (Sesi 19)
+**Dikemaskini:** 16 Ogos 2026 (Sesi 20)
+
+## ⚡ SESI 20 (16 Ogos 2026)
+
+### Modul Pertandingan — integrasi Swiss-Manager (typecheck+lint+build LULUS; 32 ujian unit lulus; BELUM diuji browser)
+Keperluan user: setiap kelas/cawangan buat pertandingan catur dalaman guna **Swiss-Manager**, tapi terpaksa taip manual semua pemain. Nak: (1) **jana template pendaftaran** yang boleh terus di-import ke Swiss-Manager; (2) **proses fail result** (Ranking List) yang di-export balik → rekod pencapaian → jadi **rating + pingat** dalam Laporan Pelajar. Keputusan user: peserta **ikut cawangan**; terima fail **.xls terus**; laporan papar **ringkasan+pingat DAN rating berangka**; akses **admin+jurulatih**.
+- ⚠️ **WAJIB run `scripts/sql/pertandingan.sql` SEBELUM deploy** — 3 jadual baharu: `pertandingan`, `pertandingan_peserta` (`nama_ekspot` = kunci padanan), `pertandingan_keputusan` (kedudukan/mata/buchholz/sonneborn/pingat, `pelajar_id` nullable untuk baris tak padan). RLS: baca terbuka; tulis admin ATAU jurulatih berpaut (`jurulatih_id_semasa()`). Idempotent + ROLLBACK.
+- **Dependency baharu:** `xlsx` (SheetJS, dari CDN rasmi) — baca `.xls` BIFF8 **dan** `.xlsx` (exceljs tak baca `.xls`). exceljs dikekal untuk **jana** template.
+- **Lib baharu:** `src/lib/pertandingan.ts` (markah prestasi, pingat Emas/Perak/Gangsa, rating terkumpul gaya-Elo `1000 + 4·Σ(markah−50)` komutatif + taraf catur; `formatMata` 7½), `pertandingan-parse.ts` (parser SheetJS — kesan header Rank/Name, langkau tajuk+footer, tukar simbol ½), `pertandingan-template.ts` (exceljs, `LAJUR_TEMPLATE` mudah ditala). Ujian: `pertandingan.test.ts` + `pertandingan-parse.test.ts` (guna fail sebenar `__fixtures__/ranking-141225.xls`, 27 pemain).
+- **Route baharu `(jurulatih)/pertandingan`** (admin+jurulatih, path `/pertandingan`): senarai, `/baharu` (pilih cawangan → auto-senarai pelajar Aktif + checkbox → cipta+peserta via action), `/[id]` (muat turun template, muat naik result, standings, padan manual nama tak padan, padam). Action `src/app/actions/pertandingan.ts`. API `src/app/api/pertandingan/[id]/result/route.ts` (nodejs runtime: parse→padan `nama_ekspot`→simpan→status Selesai).
+- **Integrasi:** `/laporan/page.tsx` + `LaporanPDF.tsx` — kad/seksyen "Pencapaian Pertandingan" (rating+taraf, ringkasan, pingat, senarai). `pelajar/[id]` profil — kad "Rating Pertandingan". Nav: Sidebar admin (+Pertandingan) & BottomTabBar jurulatih (+Tanding).
+- **Tertunggak user:** (1) beri contoh **template pendaftaran** Swiss-Manager → selaras `LAJUR_TEMPLATE`; (2) beri contoh **template laporan** → selaras susun atur + tala formula rating. Vitest kini guna `vitest.config.ts` tempatan (elak "walk up" ke vite.config luar projek).
+- **Ujian (di Vercel preview — dev tempatan blocked):** run SQL → cipta pertandingan/pilih cawangan/jana template → import SM/export ranking/muat naik → standings padan + status Selesai → Laporan Pelajar peserta papar kad+PDF; profil papar kad rating.
 
 ## ⚡ SESI 19 (15 Ogos 2026)
 

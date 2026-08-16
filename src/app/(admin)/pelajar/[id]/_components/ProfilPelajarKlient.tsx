@@ -6,6 +6,7 @@ import { Edit2, UserX, UserCheck, CalendarCheck, Receipt, Star, Target } from 'l
 import { ModalNyahaktif } from '@/components/pelajar/ModalNyahaktif'
 import { formatTarikh, formatRinggit } from '@/lib/utils'
 import { kiraRating } from '@/lib/rating'
+import { WARNA_PINGAT, formatMata, type RingkasanPertandingan } from '@/lib/pertandingan'
 import { adaKelasPersonal, type BukuRujukan, type KategoriTopik, type TopikPelajar } from '@/lib/progresPelajar'
 import { BtnKadPelajar } from '@/components/pdf/BtnKadPelajar'
 import { ProgresPelajarTab, type RekodSilibus } from './ProgresPelajarTab'
@@ -60,6 +61,7 @@ interface ProfilPelajarKlientProps {
   pelajar: Pelajar
   stat: StatKehadiran
   total: StatKehadiran
+  ratingPertandingan: RingkasanPertandingan | null
   sudahBayarBulanIni: boolean
   kehadiran: Kehadiran[]
   resit: Resit[]
@@ -74,7 +76,7 @@ const warnaBadge: Record<string, { bg: string; text: string }> = {
 
 type TabProfil = 'kehadiran' | 'bayaran' | 'progres'
 
-export function ProfilPelajarKlient({ pelajar, stat, total, sudahBayarBulanIni, kehadiran, resit, progres }: ProfilPelajarKlientProps) {
+export function ProfilPelajarKlient({ pelajar, stat, total, ratingPertandingan, sudahBayarBulanIni, kehadiran, resit, progres }: ProfilPelajarKlientProps) {
   // Progress pembelajaran hanya untuk pelajar yang ada kelas personal.
   const adaProgres = adaKelasPersonal(pelajar.jenis_kelas)
   const [tab, setTab] = useState<TabProfil>('kehadiran')
@@ -260,6 +262,49 @@ export function ProfilPelajarKlient({ pelajar, stat, total, sudahBayarBulanIni, 
           </div>
         </div>
       </div>
+
+      {/* Rating Pertandingan */}
+      {ratingPertandingan && (
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Rating Pertandingan
+            </h2>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '5px 14px', borderRadius: '20px',
+              background: ratingPertandingan.taraf.warna, color: '#FFFFFF', fontSize: '13px', fontWeight: 800,
+            }}>
+              <span style={{ fontSize: '16px', lineHeight: 1 }}>{ratingPertandingan.taraf.ikon}</span> {ratingPertandingan.taraf.nama}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '18px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ flexShrink: 0, textAlign: 'center' }}>
+              <div style={{ fontSize: '40px', fontWeight: 800, lineHeight: 1, color: ratingPertandingan.taraf.warna }}>{ratingPertandingan.rating}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '4px' }}>Rating</div>
+            </div>
+            <div style={{ flex: 1, minWidth: '220px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                {(['Emas', 'Perak', 'Gangsa'] as const).map((jenis) => {
+                  const n = jenis === 'Emas' ? ratingPertandingan.emas : jenis === 'Perak' ? ratingPertandingan.perak : ratingPertandingan.gangsa
+                  if (n === 0) return null
+                  const w = WARNA_PINGAT[jenis]
+                  return (
+                    <span key={jenis} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '20px', background: w.bg, border: `1px solid ${w.border}`, fontSize: '13px', fontWeight: 800, color: w.text }}>
+                      {w.emoji} {n}
+                    </span>
+                  )
+                })}
+              </div>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
+                <strong style={{ color: 'var(--text)' }}>{ratingPertandingan.bilPertandingan}</strong> pertandingan ·
+                kedudukan terbaik <strong style={{ color: 'var(--text)' }}>#{ratingPertandingan.kedudukanTerbaik}</strong> ·
+                purata <strong style={{ color: 'var(--text)' }}>#{ratingPertandingan.purataKedudukan}</strong> ·
+                jumlah <strong style={{ color: 'var(--text)' }}>{formatMata(ratingPertandingan.jumlahMata)}</strong> mata
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab */}
       <div style={{ borderBottom: '2px solid var(--border)', display: 'flex', gap: '0', marginBottom: '20px' }}>

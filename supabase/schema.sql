@@ -1013,6 +1013,54 @@ CREATE POLICY "bukti pendapatan padam"
   USING (bucket_id = 'bukti-pendapatan');
 
 -- ============================================================
+-- MODUL PERTANDINGAN (integrasi Swiss-Manager) — scripts/sql/pertandingan.sql
+-- ============================================================
+CREATE TABLE IF NOT EXISTS pertandingan (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  nama TEXT NOT NULL,
+  tarikh DATE NOT NULL,
+  cawangan_id UUID REFERENCES cawangan(id) ON DELETE SET NULL,
+  jurulatih_id UUID REFERENCES jurulatih(id) ON DELETE SET NULL,
+  bil_pusingan SMALLINT,
+  status TEXT NOT NULL DEFAULT 'Draf' CHECK (status IN ('Draf', 'Selesai')),
+  catatan TEXT,
+  dicipta_oleh UUID REFERENCES pengguna_profil(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pertandingan_peserta (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  pertandingan_id UUID NOT NULL REFERENCES pertandingan(id) ON DELETE CASCADE,
+  pelajar_id UUID NOT NULL REFERENCES pelajar(id) ON DELETE CASCADE,
+  nama_ekspot TEXT NOT NULL,
+  sno SMALLINT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (pertandingan_id, pelajar_id)
+);
+
+CREATE TABLE IF NOT EXISTS pertandingan_keputusan (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  pertandingan_id UUID NOT NULL REFERENCES pertandingan(id) ON DELETE CASCADE,
+  peserta_id UUID REFERENCES pertandingan_peserta(id) ON DELETE SET NULL,
+  pelajar_id UUID REFERENCES pelajar(id) ON DELETE SET NULL,
+  nama_ranking TEXT NOT NULL,
+  kedudukan SMALLINT NOT NULL,
+  sno SMALLINT,
+  mata NUMERIC(5,2) NOT NULL DEFAULT 0,
+  buchholz NUMERIC(6,2),
+  sonneborn NUMERIC(6,2),
+  jumlah_peserta SMALLINT NOT NULL DEFAULT 0,
+  pingat TEXT CHECK (pingat IN ('Emas', 'Perak', 'Gangsa')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (pertandingan_id, kedudukan)
+);
+
+ALTER TABLE pertandingan ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pertandingan_peserta ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pertandingan_keputusan ENABLE ROW LEVEL SECURITY;
+-- RLS: baca terbuka; tulis admin ATAU jurulatih berpaut (lihat scripts/sql/pertandingan.sql).
+
+-- ============================================================
 -- SEED DATA AWAL
 -- ============================================================
 
