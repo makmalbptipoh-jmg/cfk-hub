@@ -9,13 +9,20 @@ import type { TajukBesar } from '@/lib/silibus'
 
 export function ModalTajuk({
   tajukEdit,
+  jenisBaru = 'Kumpulan',
   onTutup,
   onBerjaya,
 }: {
   tajukEdit: TajukBesar | null
+  // Jenis untuk rekod BAHARU (diabaikan bila edit — jenis sedia ada dikekalkan).
+  jenisBaru?: 'Kumpulan' | 'Personal'
   onTutup: () => void
   onBerjaya: () => void
 }) {
+  // Personal: penanda "wajib" tak relevan (semua tajuk Personal dijejak untuk
+  // setiap pelajar Personal). Sorok togol wajib dalam konteks Personal.
+  const jenis = tajukEdit?.jenis ?? jenisBaru
+  const isPersonal = jenis === 'Personal'
   const [nama, setNama] = useState(tajukEdit?.nama ?? '')
   const [susunan, setSusunan] = useState(String(tajukEdit?.susunan ?? 100))
   const [nota, setNota] = useState(tajukEdit?.nota ?? '')
@@ -37,7 +44,7 @@ export function ModalTajuk({
       susunan: Number(susunan) || 100,
       nota: nota.trim() || null,
       pautan: pautan.trim() || null,
-      wajib,
+      wajib: isPersonal ? false : wajib,
       status,
     }
     let resp
@@ -45,7 +52,7 @@ export function ModalTajuk({
       resp = await supabase.from('silibus_tajuk').update(rekod).eq('id', tajukEdit.id)
     } else {
       const { data: { user } } = await supabase.auth.getUser()
-      resp = await supabase.from('silibus_tajuk').insert({ ...rekod, dicipta_oleh: user?.id ?? null })
+      resp = await supabase.from('silibus_tajuk').insert({ ...rekod, jenis, dicipta_oleh: user?.id ?? null })
     }
     const { error } = resp
     setLoading(false)
@@ -97,6 +104,7 @@ export function ModalTajuk({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
           <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text)' }}>
             {tajukEdit ? 'Edit Tajuk Besar' : 'Tambah Tajuk Besar'}
+            {isPersonal && <span style={{ fontSize: '12px', fontWeight: 700, marginLeft: '8px', padding: '2px 8px', borderRadius: '6px', background: '#EEF2FF', color: '#4338CA', border: '1px solid #C7D2FE' }}>Personal</span>}
           </h2>
           <button onClick={onTutup} aria-label="Tutup" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
             <X size={18} />
@@ -130,16 +138,18 @@ export function ModalTajuk({
             </div>
           </div>
 
-          <div>
-            <label style={labelStyle}>Wajib untuk semua pelajar?</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="button" onClick={() => setWajib(true)} style={togol(wajib)}>Ya — Wajib</button>
-              <button type="button" onClick={() => setWajib(false)} style={togol(!wajib)}>Tidak</button>
+          {!isPersonal && (
+            <div>
+              <label style={labelStyle}>Wajib untuk semua pelajar?</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="button" onClick={() => setWajib(true)} style={togol(wajib)}>Ya — Wajib</button>
+                <button type="button" onClick={() => setWajib(false)} style={togol(!wajib)}>Tidak</button>
+              </div>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '5px' }}>
+                Jika &quot;Ya&quot;, tajuk ini muncul dalam <strong>Silibus Pelajar</strong> untuk setiap pelajar (jejak progress individu).
+              </p>
             </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '5px' }}>
-              Jika &quot;Ya&quot;, tajuk ini muncul dalam <strong>Silibus Pelajar</strong> untuk setiap pelajar (jejak progress individu).
-            </p>
-          </div>
+          )}
 
           <div>
             <label style={labelStyle}>Pautan URL (pilihan)</label>

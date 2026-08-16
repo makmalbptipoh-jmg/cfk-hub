@@ -24,11 +24,13 @@ export function SilibusIndukKlient({
   subtajukAwal: Subtajuk[]
   progressAwal: ProgresBaris[]
 }) {
-  const [tajuks, setTajuks] = useState<TajukBesar[]>(tajukAwal)
+  // Silibus Induk = kurikulum Kumpulan (kelas biasa). Kurikulum Personal
+  // diuruskan berasingan dalam tab "Silibus Personal".
+  const [tajuks, setTajuks] = useState<TajukBesar[]>(tajukAwal.filter((t) => t.jenis !== 'Personal'))
   const [subtajuks, setSubtajuks] = useState<Subtajuk[]>(subtajukAwal)
   const [progress, setProgress] = useState<ProgresBaris[]>(progressAwal)
   const [cawanganPilih, setCawanganPilih] = useState('') // '' = Semua Cawangan (ringkasan)
-  const [kembang, setKembang] = useState<Set<string>>(new Set(tajukAwal.slice(0, 1).map((t) => t.id)))
+  const [kembang, setKembang] = useState<Set<string>>(new Set(tajukAwal.filter((t) => t.jenis !== 'Personal').slice(0, 1).map((t) => t.id)))
   const [detail, setDetail] = useState<string | null>(null)
   const [sibuk, setSibuk] = useState<string | null>(null)
   const [pdfLoading, setPdfLoading] = useState(false)
@@ -40,11 +42,11 @@ export function SilibusIndukKlient({
   const muatData = useCallback(async () => {
     const supabase = createClient()
     const [rT, rS, rP] = await Promise.all([
-      supabase.from('silibus_tajuk').select('id, nama, susunan, nota, pautan, wajib, status').order('susunan').order('nama'),
+      supabase.from('silibus_tajuk').select('id, nama, susunan, nota, pautan, wajib, jenis, status').order('susunan').order('nama'),
       supabase.from('silibus_subtajuk').select('id, tajuk_id, nama, susunan, fen, pgn_teks, pgn_path, pgn_nama, pgn_saiz, nota, pautan').order('susunan'),
       supabase.from('silibus_progress').select('id, subtajuk_id, cawangan_id, status'),
     ])
-    if (rT.data) setTajuks(rT.data as TajukBesar[])
+    if (rT.data) setTajuks((rT.data as TajukBesar[]).filter((t) => t.jenis !== 'Personal'))
     if (rS.data) setSubtajuks(rS.data as Subtajuk[])
     if (rP.data) setProgress(rP.data as ProgresBaris[])
   }, [])

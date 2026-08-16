@@ -1,6 +1,15 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 16 Ogos 2026 (Sesi 20)
+**Dikemaskini:** 16 Ogos 2026 (Sesi 21)
+
+## ⚡ SESI 21 (16 Ogos 2026)
+
+### Silibus Personal — template silibus khas pelajar Personal (typecheck+lint+build LULUS; BELUM diuji browser)
+Keperluan user: dalam bahagian Silibus, bina **template silibus khas untuk semua pelajar Personal**, sama macam kelas biasa. Keputusan user (via soalan): (1) **kurikulum berasingan** khas Personal (Tajuk Besar → Subtajuk sendiri, berbeza dari CFK STEP BY STEP kumpulan); (2) dijejak **per pelajar** (individu — kelas 1-ke-1); (3) **tab baru "Silibus Personal"** dalam /silibus.
+- ⚠️ **WAJIB run `scripts/sql/silibus-personal.sql` SEBELUM deploy** — `ALTER silibus_tajuk ADD COLUMN jenis TEXT NOT NULL DEFAULT 'Kumpulan'` + CHECK `jenis IN ('Kumpulan','Personal')` (idempotent via `pg_constraint`) + `idx_silibus_tajuk_jenis`. **TIADA jadual baharu** — progress guna semula `silibus_progress_pelajar` (subtajuk_id+pelajar_id, sudah generik). **TIADA RLS baharu** — tulis admin (silibus_tajuk/subtajuk) + admin/jurulatih (progress_pelajar) dikekalkan. Ada ROLLBACK. Rekod sedia ada kekal 'Kumpulan'.
+- **Tab ke-4 `/silibus` "Silibus Personal"** (`SilibusPersonalKlient.tsx` BARU, ikon `UserCog`): gabungan urus kurikulum + jejak per pelajar. **Overview:** tapis cawangan + carian; senarai pelajar Personal (`jenis_kelas` mengandungi 'Personal') + bar % siap terhadap subtajuk Personal (susun tertinggal dahulu), klik → detail; bawah senarai = seksyen **"Template Kurikulum Personal"** (akordion Tajuk Besar → Subtajuk, +Tambah Tajuk Besar/+Subtajuk/Edit + bahan FEN/PGN/nota/pautan, tiada togol progress). **Detail pelajar:** kad ringkasan % + akordion togol 3-status setiap subtajuk (upsert `silibus_progress_pelajar`, optimistik) + "Hingga sini". PDF + Excel guna semula `LaporanSilibusPelajarPDF` (mode pelajar/senarai).
+- **Diubah:** `database.ts` (+`jenis` pada silibus_tajuk Row/Insert/Update), `lib/silibus.ts` (+`jenis` pada TajukBesar), select `silibus_tajuk` di 3 tempat (+`jenis`: admin page, SilibusIndukKlient muatData, jurulatih silibus-pelajar page). **SilibusIndukKlient kini tapis `jenis !== 'Personal'`** (Induk = Kumpulan sahaja). **ModalTajuk** +prop `jenisBaru` (insert `jenis`; sorok togol Wajib + chip "Personal" bila konteks Personal). Guna semula ModalSubtajuk tanpa perubahan. SilibusKlient +tab. **Silibus Pelajar (wajib) kekal** — Personal tajuk default bukan wajib jadi tak bertindih.
+- **Ujian klik-lalu (selepas run SQL, di Vercel preview — dev tempatan blocked):** /silibus → tab Silibus Personal → Tambah Tajuk Besar (chip Personal, tiada togol Wajib) → +Subtajuk (Satu/Tambah Pukal) + FEN/PGN/nota; senarai pelajar Personal muncul (Kumpulan sahaja tak muncul); klik pelajar → togol Selesai + "Hingga sini" → % naik, refresh kekal; PDF/Excel pelajar & senarai; sahkan tab Silibus Induk TIDAK papar tajuk Personal & sebaliknya. Padam data ujian.
 
 ## ⚡ SESI 20 (16 Ogos 2026)
 
