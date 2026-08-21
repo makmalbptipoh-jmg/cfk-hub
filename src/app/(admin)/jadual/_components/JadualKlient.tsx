@@ -151,13 +151,24 @@ export function JadualKlient({
     setVersi((v) => v + 1)
   }, [])
 
+  // Slot milik cawangan yang sudah "Tidak Aktif" disembunyikan — cawanganAwal
+  // hanya senarai cawangan Aktif. Slot tanpa cawangan (cth. Personal merata)
+  // sentiasa dipapar.
+  const idCawanganAktif = useMemo(() => new Set(cawanganAwal.map((c) => c.id)), [cawanganAwal])
+  const slotCawanganAktif = slot.filter((s) => !s.cawangan_id || idCawanganAktif.has(s.cawangan_id))
+
   // Penapis cawangan menapis slot Kumpulan sahaja — slot Personal sentiasa
   // dipapar kerana pelajar personal boleh hadir di mana-mana cawangan.
   const slotDipapar = cawanganTapis
-    ? slot.filter((s) => s.jenis === 'Personal' || s.cawangan_id === cawanganTapis)
-    : slot
+    ? slotCawanganAktif.filter((s) => s.jenis === 'Personal' || s.cawangan_id === cawanganTapis)
+    : slotCawanganAktif
 
-  const aktivitiDipapar = aktiviti.filter((a) => a.status === 'Aktif')
+  // Aktiviti milik cawangan Tidak Aktif turut disembunyikan (aktiviti tanpa
+  // cawangan sentiasa dipapar).
+  const aktivitiDipapar = aktiviti.filter(
+    (a) => a.status === 'Aktif' && (!a.cawangan_id || idCawanganAktif.has(a.cawangan_id))
+  )
+  const aktivitiTempohDipapar = aktivitiTempoh.filter((a) => !a.cawangan_id || idCawanganAktif.has(a.cawangan_id))
 
   const bukaEditSlot = (s: Slot) => setModalSlot({ buka: true, edit: s })
   const bukaEditAktiviti = (a: Aktiviti) => setModalAktiviti({ buka: true, edit: a })
@@ -226,7 +237,7 @@ export function JadualKlient({
           tarikh={tarikhPilih}
           onUbahTarikh={setTarikhPilih}
           slot={slotDipapar}
-          aktiviti={aktivitiTempoh}
+          aktiviti={aktivitiTempohDipapar}
           batal={batalTempoh}
           namaJurulatih={namaJurulatih}
           onEditSlot={bukaEditSlot}
@@ -239,7 +250,7 @@ export function JadualKlient({
           mingguMula={mingguMula}
           onUbahMinggu={setMingguMula}
           slot={slotDipapar}
-          aktiviti={aktivitiTempoh}
+          aktiviti={aktivitiTempohDipapar}
           batal={batalTempoh}
           namaJurulatih={namaJurulatih}
           cawanganLabel={cawanganAwal.find((c) => c.id === cawanganTapis)?.nama ?? 'Semua Cawangan'}
@@ -253,7 +264,7 @@ export function JadualKlient({
           bulan={bulanPilih}
           onUbahBulan={setBulanPilih}
           slot={slotDipapar}
-          aktiviti={aktivitiTempoh}
+          aktiviti={aktivitiTempohDipapar}
           batal={batalTempoh}
           onPilihTarikh={(t) => {
             setTarikhPilih(t)
