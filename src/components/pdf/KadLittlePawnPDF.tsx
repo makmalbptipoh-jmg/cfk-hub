@@ -1,5 +1,23 @@
-import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet, Svg, Polygon } from '@react-pdf/renderer'
 import { LOGO_CFK } from './logoCfk'
+
+// Bintang SVG (Helvetica tiada glyph ★). Titik bintang 5-mata.
+function titikBintang(cx: number, cy: number, R: number, r: number) {
+  const p: string[] = []
+  for (let i = 0; i < 10; i++) {
+    const rad = (i % 2 === 0 ? R : r)
+    const ang = (-90 + i * 36) * (Math.PI / 180)
+    p.push(`${cx + rad * Math.cos(ang)},${cy + rad * Math.sin(ang)}`)
+  }
+  return p.join(' ')
+}
+function Bintang({ isi }: { isi: boolean }) {
+  return (
+    <Svg width={26} height={26} style={{ marginHorizontal: 3 }}>
+      <Polygon points={titikBintang(13, 13, 12, 5)} fill={isi ? '#F5C400' : '#E2E8F0'} stroke={isi ? '#D4A800' : '#CBD5E1'} strokeWidth={0.8} />
+    </Svg>
+  )
+}
 
 const s = StyleSheet.create({
   page: { fontFamily: 'Helvetica', fontSize: 11, padding: '40px 48px', color: '#0F172A', backgroundColor: '#FFFFFF' },
@@ -52,9 +70,7 @@ export function KadLittlePawnPDF({ nama, cawangan, kitaranNama, bintang, items, 
         <Text style={s.meta}>{cawangan ? `${cawangan} · ` : ''}Laporan Perkembangan</Text>
 
         <View style={s.bintangBaris}>
-          {[1, 2, 3].map((b) => (
-            <Text key={b} style={{ fontSize: 28, color: b <= bintang ? '#F5C400' : '#E2E8F0' }}>★</Text>
-          ))}
+          {[1, 2, 3].map((b) => <Bintang key={b} isi={b <= bintang} />)}
         </View>
 
         {kumpulan.map((grp) => (
@@ -79,7 +95,7 @@ export function KadLittlePawnPDF({ nama, cawangan, kitaranNama, bintang, items, 
             <Text style={s.seksyenTajuk}>Fokus Bulan Depan</Text>
             {fokus.map((f, i) => (
               <Text key={i} style={{ fontSize: 10, color: '#334155', marginBottom: 3 }}>
-                • {f.label}{f.aktiviti ? `  —  cuba aktiviti: ${f.aktiviti}` : ''}
+                - {f.label}{f.aktiviti ? `  (cuba aktiviti: ${f.aktiviti})` : ''}
               </Text>
             ))}
           </>
