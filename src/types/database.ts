@@ -1290,6 +1290,231 @@ export interface Database {
         }
         Relationships: []
       }
+      gred_kitaran: {
+        Row: {
+          id: string
+          nama: string
+          tarikh_mula: string
+          tarikh_tamat: string
+          status: 'Dibuka' | 'Ditutup'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nama: string
+          tarikh_mula: string
+          tarikh_tamat: string
+          status?: 'Dibuka' | 'Ditutup'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nama?: string
+          tarikh_mula?: string
+          tarikh_tamat?: string
+          status?: 'Dibuka' | 'Ditutup'
+          created_at?: string
+        }
+        Relationships: []
+      }
+      gred_penilaian: {
+        Row: {
+          id: string
+          pelajar_id: string
+          kitaran_id: string
+          cawangan_id: string | null
+          level_mula: number
+          band_umur: 'junior' | 'inter' | 'senior' | null
+          theory_raw: number | null
+          theory_max: number | null
+          puzzle_raw: number | null
+          puzzle_max: number | null
+          club_points: number
+          tournament_points: number
+          sesi_hadir: number
+          sesi_jumlah: number
+          att_hormat: number
+          att_fokus: number
+          att_sportsmanship: number
+          att_usaha: number
+          rating_mula: number | null
+          rating_tamat: number | null
+          bonus_helper: number
+          annotate_game: string | null
+          nota_coach: string | null
+          skor_akhir: number | null
+          gred: 'A' | 'B' | 'C' | 'D' | 'E' | null
+          naik_level: boolean
+          status: 'Draf' | 'Selesai'
+          dinilai_oleh: string | null
+          dinilai_pada: string | null
+          created_at: string
+          dikemaskini_pada: string
+        }
+        Insert: {
+          id?: string
+          pelajar_id: string
+          kitaran_id: string
+          cawangan_id?: string | null
+          level_mula?: number
+          band_umur?: 'junior' | 'inter' | 'senior' | null
+          theory_raw?: number | null
+          theory_max?: number | null
+          puzzle_raw?: number | null
+          puzzle_max?: number | null
+          club_points?: number
+          tournament_points?: number
+          sesi_hadir?: number
+          sesi_jumlah?: number
+          att_hormat?: number
+          att_fokus?: number
+          att_sportsmanship?: number
+          att_usaha?: number
+          rating_mula?: number | null
+          rating_tamat?: number | null
+          bonus_helper?: number
+          annotate_game?: string | null
+          nota_coach?: string | null
+          skor_akhir?: number | null
+          gred?: 'A' | 'B' | 'C' | 'D' | 'E' | null
+          naik_level?: boolean
+          status?: 'Draf' | 'Selesai'
+          dinilai_oleh?: string | null
+          dinilai_pada?: string | null
+          created_at?: string
+          dikemaskini_pada?: string
+        }
+        Update: {
+          id?: string
+          pelajar_id?: string
+          kitaran_id?: string
+          cawangan_id?: string | null
+          level_mula?: number
+          band_umur?: 'junior' | 'inter' | 'senior' | null
+          theory_raw?: number | null
+          theory_max?: number | null
+          puzzle_raw?: number | null
+          puzzle_max?: number | null
+          club_points?: number
+          tournament_points?: number
+          sesi_hadir?: number
+          sesi_jumlah?: number
+          att_hormat?: number
+          att_fokus?: number
+          att_sportsmanship?: number
+          att_usaha?: number
+          rating_mula?: number | null
+          rating_tamat?: number | null
+          bonus_helper?: number
+          annotate_game?: string | null
+          nota_coach?: string | null
+          skor_akhir?: number | null
+          gred?: 'A' | 'B' | 'C' | 'D' | 'E' | null
+          naik_level?: boolean
+          status?: 'Draf' | 'Selesai'
+          dinilai_oleh?: string | null
+          dinilai_pada?: string | null
+          created_at?: string
+          dikemaskini_pada?: string
+        }
+        Relationships: []
+      }
+      gred_little_pawn: {
+        Row: {
+          id: string
+          pelajar_id: string
+          kitaran_id: string
+          cawangan_id: string | null
+          i01: number
+          i02: number
+          i03: number
+          i04: number
+          i05: number
+          i06: number
+          i07: number
+          i08: number
+          i09: number
+          i10: number
+          i11: number
+          i12: number
+          sesi_hadir: number
+          sesi_jumlah: number
+          skor_sikap: number
+          minigame_selesai: boolean
+          peringkat: number
+          graduasi: boolean
+          skor_akhir: number | null
+          nota_coach: string | null
+          status: 'Draf' | 'Selesai'
+          dinilai_oleh: string | null
+          dinilai_pada: string | null
+          created_at: string
+          dikemaskini_pada: string
+        }
+        Insert: {
+          id?: string
+          pelajar_id: string
+          kitaran_id: string
+          cawangan_id?: string | null
+          i01?: number
+          i02?: number
+          i03?: number
+          i04?: number
+          i05?: number
+          i06?: number
+          i07?: number
+          i08?: number
+          i09?: number
+          i10?: number
+          i11?: number
+          i12?: number
+          sesi_hadir?: number
+          sesi_jumlah?: number
+          skor_sikap?: number
+          minigame_selesai?: boolean
+          peringkat?: number
+          graduasi?: boolean
+          skor_akhir?: number | null
+          nota_coach?: string | null
+          status?: 'Draf' | 'Selesai'
+          dinilai_oleh?: string | null
+          dinilai_pada?: string | null
+          created_at?: string
+          dikemaskini_pada?: string
+        }
+        Update: {
+          id?: string
+          pelajar_id?: string
+          kitaran_id?: string
+          cawangan_id?: string | null
+          i01?: number
+          i02?: number
+          i03?: number
+          i04?: number
+          i05?: number
+          i06?: number
+          i07?: number
+          i08?: number
+          i09?: number
+          i10?: number
+          i11?: number
+          i12?: number
+          sesi_hadir?: number
+          sesi_jumlah?: number
+          skor_sikap?: number
+          minigame_selesai?: boolean
+          peringkat?: number
+          graduasi?: boolean
+          skor_akhir?: number | null
+          nota_coach?: string | null
+          status?: 'Draf' | 'Selesai'
+          dinilai_oleh?: string | null
+          dinilai_pada?: string | null
+          created_at?: string
+          dikemaskini_pada?: string
+        }
+        Relationships: []
+      }
       pelajar_topik: {
         Row: {
           id: string
