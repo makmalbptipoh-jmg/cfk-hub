@@ -33,7 +33,7 @@ export function SijilPawnPDF({ nama, cawangan, kitaranNama }: Props) {
           <Image src={LOGO_CFK} style={s.logo} />
           <Text style={s.akademi}>CHESS FOR KIDS (CFK)</Text>
           <Text style={s.tajuk}>PAWN PROMOTION</Text>
-          <Text style={s.subtajuk}>Sijil Kenaikan Little Pawn → Pawn</Text>
+          <Text style={s.subtajuk}>Sijil Kenaikan Little Pawn ke Pawn</Text>
           <Text style={s.diberi}>Dengan bangganya dianugerahkan kepada</Text>
           <Text style={s.nama}>{nama}</Text>
           <Text style={s.teks}>

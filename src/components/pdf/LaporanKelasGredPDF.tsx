@@ -20,6 +20,8 @@ const s = StyleSheet.create({
   footerText: { fontSize: 7.5, color: '#94A3B8' },
 })
 
+// Helvetica tiada glyph catur (♞ dll) → buang untuk PDF, papar nama sahaja.
+const bersih = (t: string) => t.replace(/[^\x20-\x7E]/g, '').trim()
 const GRED_ROW_FILL: Record<string, string> = { A: '#F0FDF4', B: '#EFF6FF', C: '#FFFBEB', D: '#FFF7ED', E: '#FFF7ED' }
 const WARNA_GRED_PDF: Record<string, { solid: string; text: string; bg: string }> = {
   A: { solid: '#84CC16', text: '#166534', bg: '#F0FDF4' }, B: { solid: '#2563EB', text: '#1E40AF', bg: '#EFF6FF' },
@@ -110,7 +112,7 @@ export function LaporanKelasGredPDF({ cawanganNama, kitaranNama, pelajar }: Prop
             </View>
 
             <Text style={{ fontSize: 16, fontFamily: 'Helvetica-Bold', color: '#1E293B' }}>{p.nama}</Text>
-            <Text style={{ fontSize: 9, color: '#64748B', marginBottom: 14 }}>{p.umur != null ? `${p.umur} tahun · ` : ''}Tahap Silibus: {p.levelNama}</Text>
+            <Text style={{ fontSize: 9, color: '#64748B', marginBottom: 14 }}>{p.umur != null ? `${p.umur} tahun · ` : ''}Tahap Silibus: {bersih(p.levelNama)}</Text>
 
             <View style={{ flexDirection: 'row', gap: 18 }}>
               <View style={{ flex: 1 }}>
@@ -133,7 +135,7 @@ export function LaporanKelasGredPDF({ cawanganNama, kitaranNama, pelajar }: Prop
             </View>
 
             <View style={{ backgroundColor: p.naikLevel ? '#F0FDF4' : '#F8FAFC', borderRadius: 6, padding: '8px 10px', marginTop: 12, borderLeft: `3px solid ${p.naikLevel ? '#84CC16' : '#94A3B8'}` }}>
-              <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: p.naikLevel ? '#166534' : '#475569' }}>{p.naikLevel ? `NAIK KE ${p.levelBaru.toUpperCase()}` : `KEKAL DI ${p.levelNama.toUpperCase()}`}</Text>
+              <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: p.naikLevel ? '#166534' : '#475569' }}>{p.naikLevel ? `NAIK KE ${bersih(p.levelBaru).toUpperCase()}` : `KEKAL DI ${bersih(p.levelNama).toUpperCase()}`}</Text>
             </View>
 
             <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#1E293B', marginTop: 12 }}>Komen Coach</Text>
