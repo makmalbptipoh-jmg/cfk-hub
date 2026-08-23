@@ -85,6 +85,10 @@ export function KadGredPDF({
   naikLevel, levelBaru, ratingMula, ratingTamat, komenCoach, fokus,
 }: Props) {
   const wg = WARNA_GRED_PDF[gred]
+  // Helvetica (font lalai react-pdf) tiada glyph catur (♞ dll) → buang, papar nama sahaja.
+  const bersih = (t: string) => t.replace(/[^\x20-\x7E]/g, '').trim()
+  const levelBersih = bersih(levelNama)
+  const levelBaruBersih = bersih(levelBaru)
   return (
     <Document title={`Laporan Gred — ${nama}`} author="CFK HUB">
       <Page size="A4" style={s.page}>
@@ -105,7 +109,7 @@ export function KadGredPDF({
         <View style={s.infoBar}>
           <Text style={s.infoItem}><Text style={s.infoLabel}>Nama: </Text>{nama}</Text>
           {umur != null && <Text style={s.infoItem}><Text style={s.infoLabel}>Umur: </Text>{umur} tahun</Text>}
-          <Text style={s.infoItem}><Text style={s.infoLabel}>Tahap Silibus: </Text>{levelNama}</Text>
+          <Text style={s.infoItem}><Text style={s.infoLabel}>Tahap Silibus: </Text>{levelBersih}</Text>
         </View>
 
         <View style={{ flexDirection: 'row', gap: 20, marginBottom: 16 }}>
@@ -142,10 +146,10 @@ export function KadGredPDF({
         {/* Status naik/kekal */}
         <View style={{ backgroundColor: naikLevel ? '#F0FDF4' : '#F8FAFC', borderRadius: 6, padding: '9px 12px', marginBottom: 12, borderLeft: `3px solid ${naikLevel ? '#84CC16' : '#94A3B8'}` }}>
           <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: naikLevel ? '#166534' : '#475569' }}>
-            {naikLevel ? `NAIK KE ${levelBaru.toUpperCase()}` : `KEKAL DI ${levelNama.toUpperCase()}`}
+            {naikLevel ? `NAIK KE ${levelBaruBersih.toUpperCase()}` : `KEKAL DI ${levelBersih.toUpperCase()}`}
           </Text>
           {ratingMula != null && ratingTamat != null && (
-            <Text style={{ fontSize: 8.5, color: '#64748B', marginTop: 2 }}>Rating Pertandingan: {ratingMula} → {ratingTamat} ({ratingTamat - ratingMula >= 0 ? '+' : ''}{ratingTamat - ratingMula})</Text>
+            <Text style={{ fontSize: 8.5, color: '#64748B', marginTop: 2 }}>Rating Pertandingan: {ratingMula} -&gt; {ratingTamat} ({ratingTamat - ratingMula >= 0 ? '+' : ''}{ratingTamat - ratingMula})</Text>
           )}
         </View>
 

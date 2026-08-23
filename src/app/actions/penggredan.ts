@@ -5,6 +5,10 @@ import { createClient } from '@/lib/supabase/server'
 import { kiraPenilaian, type InputPenilaian, type BandUmur } from '@/lib/grading'
 import { kiraLittlePawn, KUNCI_ITEM } from '@/lib/gradingLittlePawn'
 
+// Jepit nilai ke julat sah CHECK constraint DB (elak 23514 semasa upsert).
+const jepit = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(v || 0)))
+const takNegatif = (v: number | null) => (v == null ? null : Math.max(0, v))
+
 export type InputSimpanPenilaian = {
   pelajar_id: string
   kitaran_id: string
@@ -66,23 +70,23 @@ export async function simpanPenilaian(input: InputSimpanPenilaian): Promise<{ ra
     pelajar_id: input.pelajar_id,
     kitaran_id: input.kitaran_id,
     cawangan_id: input.cawangan_id,
-    level_mula: input.level_mula,
+    level_mula: jepit(input.level_mula, 1, 6),
     band_umur: input.band_umur,
-    theory_raw: input.theory_raw,
-    theory_max: input.theory_max,
-    puzzle_raw: input.puzzle_raw,
-    puzzle_max: input.puzzle_max,
-    club_points: input.club_points,
-    tournament_points: input.tournament_points,
-    sesi_hadir: input.sesi_hadir,
-    sesi_jumlah: input.sesi_jumlah,
-    att_hormat: input.att_hormat,
-    att_fokus: input.att_fokus,
-    att_sportsmanship: input.att_sportsmanship,
-    att_usaha: input.att_usaha,
+    theory_raw: takNegatif(input.theory_raw),
+    theory_max: takNegatif(input.theory_max),
+    puzzle_raw: takNegatif(input.puzzle_raw),
+    puzzle_max: takNegatif(input.puzzle_max),
+    club_points: jepit(input.club_points, 0, 15),
+    tournament_points: jepit(input.tournament_points, 0, 10),
+    sesi_hadir: Math.max(0, Math.round(input.sesi_hadir || 0)),
+    sesi_jumlah: Math.max(0, Math.round(input.sesi_jumlah || 0)),
+    att_hormat: jepit(input.att_hormat, 0, 5),
+    att_fokus: jepit(input.att_fokus, 0, 5),
+    att_sportsmanship: jepit(input.att_sportsmanship, 0, 5),
+    att_usaha: jepit(input.att_usaha, 0, 5),
     rating_mula: input.rating_mula,
     rating_tamat: input.rating_tamat,
-    bonus_helper: input.bonus_helper,
+    bonus_helper: jepit(input.bonus_helper, 0, 5),
     annotate_game: input.annotate_game,
     nota_coach: input.nota_coach,
     skor_akhir: hasil.skorAkhir,
@@ -94,7 +98,7 @@ export async function simpanPenilaian(input: InputSimpanPenilaian): Promise<{ ra
     dikemaskini_pada: new Date().toISOString(),
   }, { onConflict: 'pelajar_id,kitaran_id' })
 
-  if (error) return { ralat: 'Gagal simpan penilaian. Anda mungkin tiada kebenaran (semak RLS).' }
+  if (error) return { ralat: `Gagal simpan: ${error.message}${error.code ? ` [${error.code}]` : ''}` }
 
   revalidatePath('/penggredan')
   return { ralat: null }
@@ -124,12 +128,12 @@ export async function simpanBatch(rows: InputSimpanPenilaian[]): Promise<{ ralat
     })
     return {
       pelajar_id: input.pelajar_id, kitaran_id: input.kitaran_id, cawangan_id: input.cawangan_id,
-      level_mula: input.level_mula, band_umur: input.band_umur,
-      theory_raw: input.theory_raw, theory_max: input.theory_max, puzzle_raw: input.puzzle_raw, puzzle_max: input.puzzle_max,
-      club_points: input.club_points, tournament_points: input.tournament_points,
-      sesi_hadir: input.sesi_hadir, sesi_jumlah: input.sesi_jumlah,
-      att_hormat: input.att_hormat, att_fokus: input.att_fokus, att_sportsmanship: input.att_sportsmanship, att_usaha: input.att_usaha,
-      rating_mula: input.rating_mula, rating_tamat: input.rating_tamat, bonus_helper: input.bonus_helper,
+      level_mula: jepit(input.level_mula, 1, 6), band_umur: input.band_umur,
+      theory_raw: takNegatif(input.theory_raw), theory_max: takNegatif(input.theory_max), puzzle_raw: takNegatif(input.puzzle_raw), puzzle_max: takNegatif(input.puzzle_max),
+      club_points: jepit(input.club_points, 0, 15), tournament_points: jepit(input.tournament_points, 0, 10),
+      sesi_hadir: Math.max(0, Math.round(input.sesi_hadir || 0)), sesi_jumlah: Math.max(0, Math.round(input.sesi_jumlah || 0)),
+      att_hormat: jepit(input.att_hormat, 0, 5), att_fokus: jepit(input.att_fokus, 0, 5), att_sportsmanship: jepit(input.att_sportsmanship, 0, 5), att_usaha: jepit(input.att_usaha, 0, 5),
+      rating_mula: input.rating_mula, rating_tamat: input.rating_tamat, bonus_helper: jepit(input.bonus_helper, 0, 5),
       annotate_game: input.annotate_game, nota_coach: input.nota_coach,
       skor_akhir: hasil.skorAkhir, gred: hasil.gred, naik_level: hasil.naikLevel,
       status: input.status, dinilai_oleh: user.id,
@@ -138,7 +142,7 @@ export async function simpanBatch(rows: InputSimpanPenilaian[]): Promise<{ ralat
   })
 
   const { error } = await supabase.from('gred_penilaian').upsert(baris, { onConflict: 'pelajar_id,kitaran_id' })
-  if (error) return { ralat: 'Gagal simpan sebahagian data. Semak RLS/kebenaran.', bil: 0 }
+  if (error) return { ralat: `Gagal simpan batch: ${error.message}${error.code ? ` [${error.code}]` : ''}`, bil: 0 }
 
   revalidatePath('/penggredan')
   return { ralat: null, bil: baris.length }
@@ -176,16 +180,16 @@ export async function simpanLittlePawn(input: InputSimpanLittlePawn): Promise<{ 
   })
 
   const barisItem: Record<string, number> = {}
-  KUNCI_ITEM.forEach((k, i) => { barisItem[k] = input.items[i] ?? 0 })
+  KUNCI_ITEM.forEach((k, i) => { barisItem[k] = jepit(input.items[i] ?? 0, 0, 2) })
 
   const { error } = await supabase.from('gred_little_pawn').upsert({
     pelajar_id: input.pelajar_id,
     kitaran_id: input.kitaran_id,
     cawangan_id: input.cawangan_id,
     ...barisItem,
-    sesi_hadir: input.sesi_hadir,
-    sesi_jumlah: input.sesi_jumlah,
-    skor_sikap: input.skor_sikap,
+    sesi_hadir: Math.max(0, Math.round(input.sesi_hadir || 0)),
+    sesi_jumlah: Math.max(0, Math.round(input.sesi_jumlah || 0)),
+    skor_sikap: jepit(input.skor_sikap, 0, 5),
     minigame_selesai: input.minigame_selesai,
     peringkat: hasil.peringkat === 'graduated' ? 3 : hasil.peringkat,
     graduasi: hasil.graduasi,
@@ -197,7 +201,7 @@ export async function simpanLittlePawn(input: InputSimpanLittlePawn): Promise<{ 
     dikemaskini_pada: new Date().toISOString(),
   }, { onConflict: 'pelajar_id,kitaran_id' })
 
-  if (error) return { ralat: 'Gagal simpan checklist. Anda mungkin tiada kebenaran (semak RLS).' }
+  if (error) return { ralat: `Gagal simpan checklist: ${error.message}${error.code ? ` [${error.code}]` : ''}` }
 
   revalidatePath('/penggredan')
   return { ralat: null }

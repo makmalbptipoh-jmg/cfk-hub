@@ -56,6 +56,51 @@ export async function ciptaPertandingan(input: {
   return { ralat: null, id: pt.id }
 }
 
+// Tambah peserta ke pertandingan sedia ada (boleh dari cawangan lain).
+// Guna UNIQUE(pertandingan_id, pelajar_id) untuk elak pendua.
+export async function tambahPeserta(
+  pertandinganId: string,
+  pelajar: PelajarPilihan[]
+): Promise<{ ralat: string | null; ditambah: number }> {
+  if (pelajar.length === 0) return { ralat: 'Tiada pelajar dipilih.', ditambah: 0 }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ralat: 'Sila log masuk semula.', ditambah: 0 }
+
+  // Buang pelajar yang sudah menjadi peserta (elak ralat/pendua).
+  const { data: sedia } = await supabase
+    .from('pertandingan_peserta')
+    .select('pelajar_id')
+    .eq('pertandingan_id', pertandinganId)
+  const adaSet = new Set((sedia ?? []).map((r) => r.pelajar_id))
+  const baharu = pelajar.filter((p) => !adaSet.has(p.id))
+  if (baharu.length === 0) return { ralat: 'Semua pelajar dipilih sudah menjadi peserta.', ditambah: 0 }
+
+  const baris = baharu.map((p) => ({
+    pertandingan_id: pertandinganId,
+    pelajar_id: p.id,
+    nama_ekspot: p.nama_penuh.trim(),
+  }))
+  const { error } = await supabase.from('pertandingan_peserta').insert(baris)
+  if (error) return { ralat: `Gagal tambah peserta: ${error.message}`, ditambah: 0 }
+
+  revalidatePath(`/pertandingan/${pertandinganId}`)
+  return { ralat: null, ditambah: baharu.length }
+}
+
+// Buang seorang peserta dari pertandingan.
+export async function buangPeserta(
+  pesertaId: string,
+  pertandinganId: string
+): Promise<{ ralat: string | null }> {
+  const supabase = await createClient()
+  const { error } = await supabase.from('pertandingan_peserta').delete().eq('id', pesertaId)
+  if (error) return { ralat: `Gagal buang peserta: ${error.message}` }
+  revalidatePath(`/pertandingan/${pertandinganId}`)
+  return { ralat: null }
+}
+
 // Padan manual satu baris keputusan (yang gagal auto-padan) kepada seorang peserta.
 export async function padanKeputusanManual(
   keputusanId: string,

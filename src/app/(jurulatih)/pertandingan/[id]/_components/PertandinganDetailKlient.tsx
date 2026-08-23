@@ -6,11 +6,12 @@ import Link from 'next/link'
 import {
   ArrowLeft, Trophy, Download, Upload, Users, Trash2,
   AlertTriangle, Loader2, CheckCircle2, CalendarDays, MapPin,
-  FileText, FileSpreadsheet,
+  FileText, FileSpreadsheet, UserPlus, Search, X,
 } from 'lucide-react'
 import { formatMata, WARNA_PINGAT, type JenisPingat } from '@/lib/pertandingan'
 import type { PecahSeriItem } from '@/lib/pertandingan-parse'
-import { padanKeputusanManual, padamPertandingan } from '@/app/actions/pertandingan'
+import { createClient } from '@/lib/supabase/client'
+import { padanKeputusanManual, padamPertandingan, tambahPeserta, buangPeserta } from '@/app/actions/pertandingan'
 import { toast } from '@/lib/stores/toast-store'
 
 export type PesertaData = {
@@ -19,6 +20,7 @@ export type PesertaData = {
   nama_ekspot: string
   nama_penuh: string
   tarikh_lahir: string | null
+  cawangan_nama: string | null
 }
 
 export type KeputusanData = {
@@ -46,6 +48,9 @@ function tiebreaksBaris(k: KeputusanData): PecahSeriItem[] {
   return arr
 }
 
+type CawanganPilihan = { id: string; nama: string }
+type PelajarCari = { id: string; nama_penuh: string; cawangan_nama: string | null }
+
 type Props = {
   id: string
   nama: string
@@ -55,6 +60,7 @@ type Props = {
   cawanganNama: string | null
   peserta: PesertaData[]
   keputusan: KeputusanData[]
+  cawanganSenarai: CawanganPilihan[]
 }
 
 function formatTarikh(s: string) {
@@ -62,7 +68,7 @@ function formatTarikh(s: string) {
 }
 
 export function PertandinganDetailKlient({
-  id, nama, tarikh, status, bilPusingan, cawanganNama, peserta, keputusan,
+  id, nama, tarikh, status, bilPusingan, cawanganNama, peserta, keputusan, cawanganSenarai,
 }: Props) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -71,6 +77,81 @@ export function PertandinganDetailKlient({
   const [pdfLoading, setPdfLoading] = useState(false)
   const [excelLoading, setExcelLoading] = useState(false)
   const [namaFail, setNamaFail] = useState<string | null>(null)
+
+  // — Tambah peserta (ikut kehadiran + carian nama) —
+  const [tambahCawangan, setTambahCawangan] = useState('')
+  const [tambahTarikh, setTambahTarikh] = useState(tarikh)
+  const [calonHadir, setCalonHadir] = useState<PelajarCari[]>([])
+  const [pilihHadir, setPilihHadir] = useState<Set<string>>(new Set())
+  const [memuatHadir, setMemuatHadir] = useState(false)
+  const [cari, setCari] = useState('')
+  const [hasilCari, setHasilCari] = useState<PelajarCari[]>([])
+  const [memuatCari, setMemuatCari] = useState(false)
+  const [menyimpan, setMenyimpan] = useState(false)
+
+  const idPelajarSediaAda = new Set(peserta.map((p) => p.pelajar_id))
+
+  const muatHadir = async (cawanganId: string, tkh: string) => {
+    if (!cawanganId || !tkh) { setCalonHadir([]); setPilihHadir(new Set()); return }
+    setMemuatHadir(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('kehadiran')
+      .select('pelajar:pelajar_id(id, nama_penuh, cawangan:cawangan_daftar_id(nama))')
+      .eq('cawangan_sesi_id', cawanganId)
+      .eq('tarikh', tkh)
+      .eq('status', 'Hadir')
+    type Baris = { pelajar: { id: string; nama_penuh: string; cawangan: { nama: string } | null } | null }
+    const senarai = ((data ?? []) as unknown as Baris[])
+      .map((r) => r.pelajar)
+      .filter((p): p is { id: string; nama_penuh: string; cawangan: { nama: string } | null } => !!p)
+      .filter((p) => !idPelajarSediaAda.has(p.id)) // buang yang sudah peserta
+      .map((p) => ({ id: p.id, nama_penuh: p.nama_penuh, cawangan_nama: p.cawangan?.nama ?? null }))
+      .sort((a, b) => a.nama_penuh.localeCompare(b.nama_penuh, 'ms'))
+    setCalonHadir(senarai)
+    setPilihHadir(new Set(senarai.map((p) => p.id))) // default: semua dipilih
+    setMemuatHadir(false)
+  }
+
+  const cariPelajar = async (q: string) => {
+    setCari(q)
+    if (q.trim().length < 2) { setHasilCari([]); return }
+    setMemuatCari(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('pelajar')
+      .select('id, nama_penuh, cawangan:cawangan_daftar_id(nama)')
+      .eq('status', 'Aktif')
+      .ilike('nama_penuh', `%${q.trim()}%`)
+      .order('nama_penuh')
+      .limit(20)
+    type Baris = { id: string; nama_penuh: string; cawangan: { nama: string } | null }
+    const senarai = ((data ?? []) as unknown as Baris[])
+      .filter((p) => !idPelajarSediaAda.has(p.id))
+      .map((p) => ({ id: p.id, nama_penuh: p.nama_penuh, cawangan_nama: p.cawangan?.nama ?? null }))
+    setHasilCari(senarai)
+    setMemuatCari(false)
+  }
+
+  const simpanTambah = async (pelajar: PelajarCari[]) => {
+    if (pelajar.length === 0) { toast.warning('Tiada pelajar dipilih.'); return }
+    setMenyimpan(true)
+    const { ralat, ditambah } = await tambahPeserta(id, pelajar.map((p) => ({ id: p.id, nama_penuh: p.nama_penuh })))
+    setMenyimpan(false)
+    if (ralat) { toast.error(ralat); return }
+    toast.success(`${ditambah} peserta ditambah.`)
+    setCalonHadir([]); setPilihHadir(new Set()); setTambahCawangan('')
+    setCari(''); setHasilCari([])
+    router.refresh()
+  }
+
+  const buang = async (pesertaId: string, namaP: string) => {
+    if (!confirm(`Buang ${namaP} dari pertandingan?`)) return
+    const { ralat } = await buangPeserta(pesertaId, id)
+    if (ralat) { toast.error(ralat); return }
+    toast.success('Peserta dibuang.')
+    router.refresh()
+  }
 
   const petaPeserta = new Map(peserta.map((p) => [p.id, p.nama_penuh]))
   const pesertaDiguna = new Set(keputusan.map((k) => k.peserta_id).filter(Boolean) as string[])
@@ -171,7 +252,7 @@ export function PertandinganDetailKlient({
     try {
       const { binaBlobPendaftaran, namaFailTemplate } = await import('@/lib/pertandingan-template')
       const blob = await binaBlobPendaftaran(
-        peserta.map((p) => ({ nama_ekspot: p.nama_ekspot, tarikh_lahir: p.tarikh_lahir, cawangan_nama: cawanganNama }))
+        peserta.map((p) => ({ nama_ekspot: p.nama_ekspot, tarikh_lahir: p.tarikh_lahir, cawangan_nama: p.cawangan_nama ?? cawanganNama }))
       )
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -281,10 +362,132 @@ export function PertandinganDetailKlient({
         {peserta.length > 0 && (
           <div style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
             {peserta.map((p) => (
-              <span key={p.id} style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '8px', background: '#F1F5F9', color: 'var(--text)' }}>{p.nama_penuh}</span>
+              <span key={p.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '4px 6px 4px 10px', borderRadius: '8px', background: '#F1F5F9', color: 'var(--text)' }}>
+                {p.nama_penuh}
+                {p.cawangan_nama && <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>· {p.cawangan_nama}</span>}
+                <button
+                  onClick={() => buang(p.id, p.nama_penuh)}
+                  title="Buang peserta"
+                  style={{ display: 'inline-flex', alignItems: 'center', border: 'none', background: 'transparent', color: '#94A3B8', cursor: 'pointer', padding: '2px', borderRadius: '6px' }}
+                >
+                  <X size={13} />
+                </button>
+              </span>
             ))}
           </div>
         )}
+      </div>
+
+      {/* Tambah peserta (kehadiran + carian nama) */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '18px', padding: '20px 22px', marginBottom: '18px' }}>
+        <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <UserPlus size={16} /> Tambah Peserta
+        </h2>
+        <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+          Tambah pelajar dari <strong>mana-mana cawangan</strong> — ikut kehadiran pada satu tarikh, atau cari terus dengan nama.
+        </p>
+
+        {/* Ikut kehadiran */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 150px', gap: '10px', marginBottom: '10px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Cawangan / Kelas</label>
+            <select
+              value={tambahCawangan}
+              onChange={(e) => { setTambahCawangan(e.target.value); muatHadir(e.target.value, tambahTarikh) }}
+              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: '10px', fontSize: '13px', background: 'var(--card)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box' }}
+            >
+              <option value="">— Pilih cawangan —</option>
+              {cawanganSenarai.map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Tarikh</label>
+            <input
+              type="date"
+              value={tambahTarikh}
+              onChange={(e) => { setTambahTarikh(e.target.value); muatHadir(tambahCawangan, e.target.value) }}
+              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: '10px', fontSize: '13px', background: 'var(--card)', color: 'var(--text)', fontFamily: 'inherit', boxSizing: 'border-box' }}
+            />
+          </div>
+        </div>
+
+        {tambahCawangan && (
+          memuatHadir ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}><Loader2 size={16} className="animate-spin" style={{ display: 'inline' }} /> Memuatkan…</div>
+          ) : calonHadir.length === 0 ? (
+            <div style={{ padding: '16px', textAlign: 'center', fontSize: '12.5px', color: 'var(--text-muted)', background: 'var(--bg)', borderRadius: '10px' }}>Tiada pelajar <strong>Hadir</strong> yang belum menjadi peserta pada tarikh ini.</div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>{pilihHadir.size}/{calonHadir.length} dipilih</span>
+                <button
+                  onClick={() => setPilihHadir(pilihHadir.size === calonHadir.length ? new Set() : new Set(calonHadir.map((p) => p.id)))}
+                  style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  {pilihHadir.size === calonHadir.length ? 'Nyahpilih semua' : 'Pilih semua'}
+                </button>
+              </div>
+              <div style={{ maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '10px', marginBottom: '10px' }}>
+                {calonHadir.map((p, i) => (
+                  <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 14px', borderTop: i > 0 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={pilihHadir.has(p.id)}
+                      onChange={() => setPilihHadir((prev) => { const s = new Set(prev); if (s.has(p.id)) s.delete(p.id); else s.add(p.id); return s })}
+                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                    />
+                    <span style={{ fontSize: '13px', color: 'var(--text)' }}>{p.nama_penuh}</span>
+                    {p.cawangan_nama && <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>{p.cawangan_nama}</span>}
+                  </label>
+                ))}
+              </div>
+              <button
+                onClick={() => simpanTambah(calonHadir.filter((p) => pilihHadir.has(p.id)))}
+                disabled={menyimpan || pilihHadir.size === 0}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '11px', border: 'none', background: menyimpan || pilihHadir.size === 0 ? '#94A3B8' : 'var(--primary)', color: '#FFFFFF', fontSize: '13px', fontWeight: 700, cursor: menyimpan || pilihHadir.size === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+              >
+                {menyimpan ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+                Tambah {pilihHadir.size} dipilih
+              </button>
+            </>
+          )
+        )}
+
+        {/* Carian nama */}
+        <div style={{ marginTop: '18px', paddingTop: '16px', borderTop: '1px dashed var(--border)' }}>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Atau cari nama (semua cawangan)</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: '10px', background: 'var(--card)' }}>
+            <Search size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+            <input
+              value={cari}
+              onChange={(e) => cariPelajar(e.target.value)}
+              placeholder="Taip sekurang-kurangnya 2 aksara…"
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '13px', color: 'var(--text)', fontFamily: 'inherit' }}
+            />
+            {memuatCari && <Loader2 size={14} className="animate-spin" style={{ color: 'var(--text-muted)' }} />}
+          </div>
+          {cari.trim().length >= 2 && !memuatCari && (
+            hasilCari.length === 0 ? (
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>Tiada pelajar Aktif ditemui (atau semua sudah menjadi peserta).</p>
+            ) : (
+              <div style={{ marginTop: '8px', border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
+                {hasilCari.map((p, i) => (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 14px', borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}>
+                    <span style={{ fontSize: '13px', color: 'var(--text)' }}>{p.nama_penuh}</span>
+                    {p.cawangan_nama && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>· {p.cawangan_nama}</span>}
+                    <button
+                      onClick={() => simpanTambah([p])}
+                      disabled={menyimpan}
+                      style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '9px', border: 'none', background: 'var(--primary)', color: '#FFFFFF', fontSize: '12px', fontWeight: 700, cursor: menyimpan ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: menyimpan ? 0.6 : 1 }}
+                    >
+                      <UserPlus size={13} /> Tambah
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+        </div>
       </div>
 
       {/* Langkah 2 — Upload result */}

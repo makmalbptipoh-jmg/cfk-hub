@@ -1,6 +1,15 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 22 Ogos 2026 (Sesi 22)
+**Dikemaskini:** 23 Ogos 2026 (Sesi 23)
+
+## ⚡ SESI 23 (23 Ogos 2026)
+
+### Modul Pertandingan — tambah peserta lintas-cawangan (typecheck+lint+build LULUS; TIADA SQL; BELUM diuji browser)
+Keperluan user: dalam satu pertandingan, boleh masukkan semua pelajar yang **hadir walaupun dari cawangan berbeza**, dan boleh tambah pelajar dari cawangan lain dengan senang terus dalam halaman detail.
+- **Penemuan:** skema DB **sudah menyokong lintas-cawangan** — `pertandingan_peserta` cuma simpan `pertandingan_id + pelajar_id + nama_ekspot` (UNIQUE per pertandingan+pelajar), peserta = mana-mana pelajar, `pertandingan.cawangan_id` cuma label tuan rumah. **Tiada migration SQL.** Had sebenar hanya UI: (1) skrin cipta paksa 1 cawangan; (2) detail tiada butang tambah peserta selepas cipta; (3) template lajur Club salah label (guna cawangan tuan rumah untuk semua).
+- Keputusan user (via soalan): cara tambah = **kehadiran + carian nama**; lajur Club = **cawangan sebenar pelajar**.
+- **Diubah:** `src/app/actions/pertandingan.ts` (+`tambahPeserta` guna UNIQUE elak pendua + dedah `error.message`; +`buangPeserta`). `(jurulatih)/pertandingan/[id]/page.tsx` (join `pelajar→cawangan_daftar_id(nama)` per peserta + fetch senarai cawangan Aktif → prop `cawanganSenarai`). `PertandinganDetailKlient.tsx` (+`cawangan_nama` pada PesertaData; seksyen **Tambah Peserta**: pilih cawangan+tarikh → papar pelajar Hadir belum-peserta checkbox + carian nama merentas semua cawangan `ilike`; chip peserta papar cawangan + butang buang ✕; template Club kini `p.cawangan_nama`).
+- **Ujian (Vercel preview — dev tempatan blocked):** buka pertandingan sedia ada → Tambah Peserta → pilih cawangan lain + tarikh → checkbox pelajar Hadir → Tambah; carian nama → Tambah satu-satu; sahkan pelajar lintas-cawangan muncul dlm senarai + template Club ikut cawangan masing-masing; buang peserta ✕; muat naik result masih padan `nama_ekspot`.
 
 ## ⚡ SESI 22 (22 Ogos 2026)
 
@@ -52,6 +61,13 @@ Semua const-driven (`AKTIVITI_LITTLE_PAWN`/`SESI_LITTLE_PAWN`/`JADUAL_LITTLE_PAW
 - **Diubah:** `PenggredanDashboardKlient.tsx` (+butang Batch Entry, Laporan Kelas PDF, di sebelah Excel), `KadPenilaianPreview.tsx` (+Sejarah), `actions/penggredan.ts` (+`simpanBatch`).
 - **RINGKASAN MODUL:** 10 route + 6 komponen PDF + 1 Excel + 2 lib (41 ujian) + 1 SQL (3 jadual, RLS disahkan live). Aliran penuh kedua-dua sistem: Dashboard → Nilai/Checklist → Kad+PDF/Sijil → Sejarah; eksport Excel 5-sheet + Laporan Kelas PDF + Batch; modul coach (Sesi/Aktiviti/Jadual) + nav overflow. **Tertunggak sahaja:** E5 zip (JSZip), seed SMK STAR cawangan ke-5 (data, luar kod), line chart rating 4-kitaran dalam kad PDF individu (S5 sudah ada versi skrin).
 - **Ujian (preview):** dashboard → Batch Entry (isi grid, gred langsung, Simpan) → kembali dashboard status Selesai; Kad L1-6 → Sejarah (2+ kitaran → line chart); dashboard → Laporan Kelas PDF (muka depan+jadual+kad per pelajar).
+
+### Modul Penggredan — DEPLOY PRODUCTION + 2 HOTFIX (22 Ogos)
+- **PR #20 merged ke `main` → LIVE production** (`cfk-hub.vercel.app/penggredan`, commit `ada4b8c`). SQL `penggredan.sql` sudah di-run + audit RLS 0 baris. User perlu **seed `gred_kitaran`** untuk guna.
+- **PR #21 (fix/penggredan-simpan-check) — 2 hotfix, PENDING MERGE:**
+  1. **"Gagal simpan ... RLS" walau admin** — punca sebenar: medan bebas (club_points/tournament_points/bonus_helper) lebih had **CHECK constraint** → upsert gagal `23514`, mesej generik tersalah tuding RLS. Fix: **jepit nilai server-side** ke julat sah (club 0-15, tournament 0-10, bonus 0-5, att/sikap 0-5, level 1-6, item 0-2) + **dedah mesej ralat DB sebenar** (message+code) dalam `actions/penggredan.ts` (ketiga-tiga action).
+  2. **Glyph PDF rosak** — react-pdf font lalai **Helvetica tiada glyph catur (♞♝…), ★, →** → render "^"/kotak (skrin OK). Fix: buang glyph catur dari nama tahap PDF (papar "Knight" sahaja), bintang ★ → **SVG Polygon**, "→" → "->"/"ke". Fail: `KadGredPDF`, `KadLittlePawnPDF`, `LaporanKelasGredPDF`, `SijilPawnPDF`.
+- **Nota auto-kehadiran:** borang S2/S6 auto-tarik `sesi_hadir/jumlah` dari `kehadiran` dalam julat tarikh kitaran (Hadir; jumlah=Hadir+Tidak Hadir; boleh override). Jika kitaran ditetapkan pada masa depan (cth Q4 Okt-Dis semasa Ogos), auto=0/0 (bukan bug) — guna kitaran yang liputi tarikh kehadiran sebenar untuk uji.
 - **Ujian (di Vercel preview — dev tempatan blocked; SELEPAS run SQL + seed kitaran):** /penggredan → pilih kitaran/cawangan → stat+carta+jadual; klik Nilai (L1-6) → isi markah, live gred, amaran promosi bila theory<60%, auto-save draf, Selesai; klik Nilai (umur<6/Level 0) → checklist 3-status, bintang, popup aktiviti, graduasi bila 12/12; sahkan jurulatih nampak cawangan sendiri sahaja. Padam data ujian.
 
 ## ⚡ SESI 21 (16 Ogos 2026)
