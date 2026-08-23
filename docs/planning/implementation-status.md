@@ -4,7 +4,9 @@
 
 ## ⚡ SESI 23 (23 Ogos 2026)
 
-### Modul Pertandingan — tambah peserta lintas-cawangan (typecheck+lint+build LULUS; TIADA SQL; BELUM diuji browser)
+### Modul Pertandingan — tambah peserta lintas-cawangan (DEPLOY PRODUCTION via PR #22 → `main` ff31060; typecheck+lint+build LULUS; TIADA SQL; BELUM diuji browser)
+> **Nota deploy:** PR #22 dicabang dari `fix/penggredan-simpan-check`, jadi merge ke `main` turut bawa masuk **PR #21** (2 hotfix penggredan: jepit CHECK + glyph PDF) yang dahulu PENDING — kini kedua-duanya LIVE. Tiada PR terbuka tertinggal.
+
 Keperluan user: dalam satu pertandingan, boleh masukkan semua pelajar yang **hadir walaupun dari cawangan berbeza**, dan boleh tambah pelajar dari cawangan lain dengan senang terus dalam halaman detail.
 - **Penemuan:** skema DB **sudah menyokong lintas-cawangan** — `pertandingan_peserta` cuma simpan `pertandingan_id + pelajar_id + nama_ekspot` (UNIQUE per pertandingan+pelajar), peserta = mana-mana pelajar, `pertandingan.cawangan_id` cuma label tuan rumah. **Tiada migration SQL.** Had sebenar hanya UI: (1) skrin cipta paksa 1 cawangan; (2) detail tiada butang tambah peserta selepas cipta; (3) template lajur Club salah label (guna cawangan tuan rumah untuk semua).
 - Keputusan user (via soalan): cara tambah = **kehadiran + carian nama**; lajur Club = **cawangan sebenar pelajar**.
