@@ -15,10 +15,10 @@ export default async function PertandinganDetailPage({ params }: { params: Promi
     .single()
   if (!pt) notFound()
 
-  const [{ data: pesertaRaw }, { data: keputusanRaw }] = await Promise.all([
+  const [{ data: pesertaRaw }, { data: keputusanRaw }, { data: cawanganRaw }] = await Promise.all([
     supabase
       .from('pertandingan_peserta')
-      .select('id, pelajar_id, nama_ekspot, pelajar:pelajar_id(nama_penuh, tarikh_lahir)')
+      .select('id, pelajar_id, nama_ekspot, pelajar:pelajar_id(nama_penuh, tarikh_lahir, cawangan:cawangan_daftar_id(nama))')
       .eq('pertandingan_id', id)
       .order('nama_ekspot'),
     supabase
@@ -26,15 +26,21 @@ export default async function PertandinganDetailPage({ params }: { params: Promi
       .select('id, nama_ranking, kedudukan, sno, mata, buchholz, sonneborn, pecah_seri, jumlah_peserta, pingat, pelajar_id, peserta_id')
       .eq('pertandingan_id', id)
       .order('kedudukan'),
+    supabase
+      .from('cawangan')
+      .select('id, nama')
+      .eq('status', 'Aktif')
+      .order('nama'),
   ])
 
-  type PesertaBaris = { id: string; pelajar_id: string; nama_ekspot: string; pelajar: { nama_penuh: string; tarikh_lahir: string | null } | null }
+  type PesertaBaris = { id: string; pelajar_id: string; nama_ekspot: string; pelajar: { nama_penuh: string; tarikh_lahir: string | null; cawangan: { nama: string } | null } | null }
   const peserta: PesertaData[] = ((pesertaRaw ?? []) as unknown as PesertaBaris[]).map((p) => ({
     id: p.id,
     pelajar_id: p.pelajar_id,
     nama_ekspot: p.nama_ekspot,
     nama_penuh: p.pelajar?.nama_penuh ?? p.nama_ekspot,
     tarikh_lahir: p.pelajar?.tarikh_lahir ?? null,
+    cawangan_nama: p.pelajar?.cawangan?.nama ?? null,
   }))
 
   const cawanganNama = (pt as unknown as { cawangan: { nama: string } | null }).cawangan?.nama ?? null
@@ -49,6 +55,7 @@ export default async function PertandinganDetailPage({ params }: { params: Promi
       cawanganNama={cawanganNama}
       peserta={peserta}
       keputusan={(keputusanRaw ?? []) as KeputusanData[]}
+      cawanganSenarai={(cawanganRaw ?? []) as { id: string; nama: string }[]}
     />
   )
 }

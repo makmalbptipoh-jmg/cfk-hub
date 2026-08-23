@@ -1,6 +1,15 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 22 Ogos 2026 (Sesi 22)
+**Dikemaskini:** 23 Ogos 2026 (Sesi 23)
+
+## ⚡ SESI 23 (23 Ogos 2026)
+
+### Modul Pertandingan — tambah peserta lintas-cawangan (typecheck+lint+build LULUS; TIADA SQL; BELUM diuji browser)
+Keperluan user: dalam satu pertandingan, boleh masukkan semua pelajar yang **hadir walaupun dari cawangan berbeza**, dan boleh tambah pelajar dari cawangan lain dengan senang terus dalam halaman detail.
+- **Penemuan:** skema DB **sudah menyokong lintas-cawangan** — `pertandingan_peserta` cuma simpan `pertandingan_id + pelajar_id + nama_ekspot` (UNIQUE per pertandingan+pelajar), peserta = mana-mana pelajar, `pertandingan.cawangan_id` cuma label tuan rumah. **Tiada migration SQL.** Had sebenar hanya UI: (1) skrin cipta paksa 1 cawangan; (2) detail tiada butang tambah peserta selepas cipta; (3) template lajur Club salah label (guna cawangan tuan rumah untuk semua).
+- Keputusan user (via soalan): cara tambah = **kehadiran + carian nama**; lajur Club = **cawangan sebenar pelajar**.
+- **Diubah:** `src/app/actions/pertandingan.ts` (+`tambahPeserta` guna UNIQUE elak pendua + dedah `error.message`; +`buangPeserta`). `(jurulatih)/pertandingan/[id]/page.tsx` (join `pelajar→cawangan_daftar_id(nama)` per peserta + fetch senarai cawangan Aktif → prop `cawanganSenarai`). `PertandinganDetailKlient.tsx` (+`cawangan_nama` pada PesertaData; seksyen **Tambah Peserta**: pilih cawangan+tarikh → papar pelajar Hadir belum-peserta checkbox + carian nama merentas semua cawangan `ilike`; chip peserta papar cawangan + butang buang ✕; template Club kini `p.cawangan_nama`).
+- **Ujian (Vercel preview — dev tempatan blocked):** buka pertandingan sedia ada → Tambah Peserta → pilih cawangan lain + tarikh → checkbox pelajar Hadir → Tambah; carian nama → Tambah satu-satu; sahkan pelajar lintas-cawangan muncul dlm senarai + template Club ikut cawangan masing-masing; buang peserta ✕; muat naik result masih padan `nama_ekspot`.
 
 ## ⚡ SESI 22 (22 Ogos 2026)
 
