@@ -50,8 +50,8 @@ with expected(tbl, pol) as (
     ('cawangan','baca'),('cawangan','tulis_admin'),
     ('resit','baca'),('resit','tulis_admin'),
     ('jurulatih','baca'),('jurulatih','tulis_admin'),
-    ('bayaran_jurulatih','baca'),('bayaran_jurulatih','tulis_admin'),
-    ('kewangan_perbelanjaan','baca'),('kewangan_perbelanjaan','tulis_admin'),
+    ('bayaran_jurulatih','tulis_admin'), -- 'baca' dibuang: rls-kewangan-admin-sahaja.sql
+    ('kewangan_perbelanjaan','tulis_admin'), -- 'baca' dibuang: rls-kewangan-admin-sahaja.sql
     ('aset','baca'),('aset','tulis_admin'),
     ('import_antrian','baca'),('import_antrian','tulis_admin'),
     -- silibus-*.sql (silibus-jurulatih dibetulkan 2026-08-21)
