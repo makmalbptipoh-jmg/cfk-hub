@@ -62,7 +62,7 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, 
   const sesiBelumDibayarBulanIni = Math.max(0, bilSesiHadirBulanIni - sesiSudahDibayarBulanIni)
 
   return (
-    <div style={{ maxWidth: '720px' }}>
+    <div style={{ maxWidth: '1120px' }}>
       {/* Breadcrumb */}
       <Link href={`/jurulatih/${jurulatih.id}`} style={{ fontSize: '13px', color: 'var(--text-muted)', textDecoration: 'none', display: 'block', marginBottom: '8px' }}>
         ← {jurulatih.nama_penuh}
@@ -72,7 +72,7 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, 
       </h1>
 
       {/* Ringkasan + CTA Bulan Ini */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', marginBottom: '20px', alignItems: 'stretch' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', marginBottom: '20px', alignItems: 'stretch', maxWidth: '720px' }}>
         <div style={{
           background: sudahRekodBulanIni ? 'var(--hadir-bg)' : '#FFF7ED',
           border: `1px solid ${sudahRekodBulanIni ? '#BBF7D0' : '#FED7AA'}`,
@@ -133,6 +133,7 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, 
         background: 'var(--card)', border: '1px solid var(--border)',
         borderRadius: '12px', padding: '14px 20px', marginBottom: '16px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        maxWidth: '720px',
       }}>
         <div>
           <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Jumlah Keseluruhan Dibayar (Bersih)</div>
@@ -169,11 +170,12 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, 
             <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>Klik &quot;Rekod Bayaran Bulan Ini&quot; untuk mula.</p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '980px' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
                 {['Bulan', 'Sesi', 'Kadar', 'Kasar', 'Potongan', 'Bersih', 'Kaedah', 'Tarikh Bayar', 'Status', ''].map((h) => (
-                  <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                  <th key={h} style={{ padding: '11px 16px', textAlign: 'left', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -182,30 +184,30 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, 
                 <tr key={b.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = '#FAFBFC' }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
-                  <td style={{ padding: '10px 14px', fontSize: '13.5px', fontWeight: 700, color: 'var(--text)' }}>{b.bulan_bayaran} {b.tahun_bayaran}</td>
-                  <td style={{ padding: '10px 14px', fontSize: '13px', color: 'var(--text)' }}>{b.bilangan_sesi}</td>
-                  <td style={{ padding: '10px 14px', fontSize: '13px', color: 'var(--text-muted)' }}>{formatRinggit(b.kadar_per_sesi)}</td>
-                  <td style={{ padding: '10px 14px', fontSize: '13px', color: 'var(--text)' }}>{formatRinggit(b.jumlah)}</td>
-                  <td style={{ padding: '10px 14px', fontSize: '13px', color: (b.potongan_advance ?? 0) > 0 ? '#C2410C' : 'var(--text-muted)' }}>
+                  <td style={{ padding: '13px 16px', fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>{b.bulan_bayaran} {b.tahun_bayaran}</td>
+                  <td style={{ padding: '13px 16px', fontSize: '13px', color: 'var(--text)', whiteSpace: 'nowrap' }}>{b.bilangan_sesi}</td>
+                  <td style={{ padding: '13px 16px', fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatRinggit(b.kadar_per_sesi)}</td>
+                  <td style={{ padding: '13px 16px', fontSize: '13px', color: 'var(--text)', whiteSpace: 'nowrap' }}>{formatRinggit(b.jumlah)}</td>
+                  <td style={{ padding: '13px 16px', fontSize: '13px', color: (b.potongan_advance ?? 0) > 0 ? '#C2410C' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                     {(b.potongan_advance ?? 0) > 0 ? `- ${formatRinggit(b.potongan_advance)}` : '—'}
                   </td>
-                  <td style={{ padding: '10px 14px', fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>
+                  <td style={{ padding: '13px 16px', fontSize: '14px', fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap' }}>
                     {formatRinggit(b.jumlah - (b.potongan_advance ?? 0))}
                   </td>
-                  <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>{b.kaedah_bayaran ?? '—'}</td>
-                  <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-muted)' }}>
+                  <td style={{ padding: '13px 16px', fontSize: '12.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{b.kaedah_bayaran ?? '—'}</td>
+                  <td style={{ padding: '13px 16px', fontSize: '12.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                     {b.tarikh_bayar ? formatTarikh(b.tarikh_bayar) : '—'}
                   </td>
-                  <td style={{ padding: '10px 14px' }}>
+                  <td style={{ padding: '13px 16px' }}>
                     <span style={{
-                      fontSize: '11.5px', padding: '3px 10px', borderRadius: '20px', fontWeight: 600,
+                      fontSize: '11.5px', padding: '3px 10px', borderRadius: '20px', fontWeight: 600, whiteSpace: 'nowrap',
                       background: b.status === 'Sudah Bayar' ? 'var(--hadir-bg)' : '#FFF7ED',
                       color: b.status === 'Sudah Bayar' ? 'var(--hadir-text)' : '#C2410C',
                     }}>
                       {b.status}
                     </span>
                   </td>
-                  <td style={{ padding: '10px 14px' }}>
+                  <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
                     <BtnSlipGaji
                       data={{
                         nama_jurulatih: jurulatih.nama_penuh,
@@ -227,6 +229,7 @@ export function BayaranJurulatihKlient({ jurulatih, bayaran, advanceTertunggak, 
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

@@ -11,6 +11,13 @@ Keperluan user: di `/laporan` (laporan per pelajar) tambah paparan **keseluruhan
 - **Ujian (Vercel preview):** /laporan → pilih pelajar → Keseluruhan → Jana → semak jadual bulan + % + yuran; Lihat → laporan bulan itu; tukar tab Silibus/Pertandingan; Muat Turun PDF dalam kedua-dua mod.
 
 
+### Audit keselamatan (checklist 7 perkara) — PR #24
+- **KRITIKAL dibaiki:** 4 server action `actions/pengguna.ts` (reset kata laluan, tambah akaun, kemaskini profil/peranan, status) guna service role TANPA semak pemanggil → jurulatih log masuk boleh jadi admin. Kini `sahAdmin()` wajib.
+- `CariPelajar`: input disanitasi sebelum `.or()` PostgREST.
+- RLS: 36/36 jadual `rowsecurity = true` (disahkan user). `pengguna_profil` selamat (tulis admin sahaja). **SQL `rls-kewangan-admin-sahaja.sql` SUDAH di-run user (24 Okt)** — buang policy `baca` (qual true) pada `kewangan_perbelanjaan` & `bayaran_jurulatih`; audit `_semakan-policy-audit.sql` dikemas kini.
+- Rahsia (service role, ToyyibPay) server sahaja ✅; anon key sahaja di frontend ✅; rate-limit login = Supabase Auth; **billing cap Vercel/Supabase perlu disemak user sendiri**.
+- Baki terbuka: `resit` & `jurulatih` masih SELECT true (diperlukan oleh skrin jurulatih); `jurulatih.kadar_bayaran` terdedah — pertimbang view.
+
 ## ⚡ SESI 23 (23 Ogos 2026)
 
 ### Modul Pertandingan — tambah peserta lintas-cawangan (DEPLOY PRODUCTION via PR #22 → `main` ff31060; typecheck+lint+build LULUS; TIADA SQL; BELUM diuji browser)
