@@ -1,6 +1,23 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
+
+const AKSES_DITOLAK = { ralat: 'Akses ditolak. Hanya admin boleh urus pengguna.' }
+
+// Server action ialah endpoint POST awam — WAJIB sahkan pemanggil ialah admin
+// sebelum guna service role (yang memintas RLS).
+async function sahAdmin(): Promise<boolean> {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  const { data: profil } = await supabase
+    .from('pengguna_profil')
+    .select('is_admin')
+    .eq('id', user.id)
+    .maybeSingle()
+  return !!profil?.is_admin
+}
 
 function adminClient() {
   return createClient(
@@ -11,6 +28,7 @@ function adminClient() {
 }
 
 export async function resetKataLaluan(penggunaId: string, kataLaluanBaharu: string) {
+  if (!(await sahAdmin())) return AKSES_DITOLAK
   if (kataLaluanBaharu.length < 6) {
     return { ralat: 'Kata laluan sekurang-kurangnya 6 aksara.' }
   }
@@ -29,6 +47,7 @@ export async function tambahAkaun(data: {
   isAdmin: boolean
   cawanganId?: string
 }) {
+  if (!(await sahAdmin())) return AKSES_DITOLAK
   if (!data.emel || !data.kataLaluan || !data.nama) {
     return { ralat: 'Semua medan wajib diisi.' }
   }
@@ -64,6 +83,7 @@ export async function kemaskiniMaklumatPengguna(data: {
   cawanganId?: string | null
   emel?: string
 }) {
+  if (!(await sahAdmin())) return AKSES_DITOLAK
   if (!data.nama.trim()) return { ralat: 'Nama wajib diisi.' }
   const supabase = adminClient()
 
@@ -91,6 +111,7 @@ export async function kemaskiniMaklumatPengguna(data: {
 }
 
 export async function kemaskiniStatusPengguna(penggunaId: string, aktif: boolean) {
+  if (!(await sahAdmin())) return AKSES_DITOLAK
   const supabase = adminClient()
   const { error } = await supabase.auth.admin.updateUserById(penggunaId, {
     ban_duration: aktif ? 'none' : '876000h',

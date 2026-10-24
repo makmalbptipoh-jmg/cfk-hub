@@ -32,11 +32,13 @@ export function CariPelajar({ onPilih, placeholder = 'Cari nama atau telefon pel
     }
 
     const timer = setTimeout(async () => {
+      // Buang aksara sintaks penapis PostgREST supaya input tidak boleh ubah struktur .or()
+      const bersih = query.replace(/[,()*\:]/g, ' ').trim()
       const supabase = createClient()
       const { data } = await supabase
         .from('pelajar')
         .select('id, nama_penuh, no_telefon, status, cawangan:cawangan_daftar_id(nama)')
-        .or(`nama_penuh.ilike.%${query}%,no_telefon.ilike.%${query}%`)
+        .or(`nama_penuh.ilike.%${bersih}%,no_telefon.ilike.%${bersih}%`)
         .limit(8)
 
       type BarisCarian = { id: string; nama_penuh: string; no_telefon: string; status: string; cawangan: { nama: string } | null }
