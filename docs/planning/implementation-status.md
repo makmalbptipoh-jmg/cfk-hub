@@ -1,6 +1,15 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 23 Ogos 2026 (Sesi 23)
+**Dikemaskini:** 24 Oktober 2026 (Sesi 24)
+
+## ⚡ SESI 24 (24 Oktober 2026)
+
+### Laporan Pelajar — mod Keseluruhan + tab Kehadiran/Silibus/Pertandingan (typecheck+lint+build LULUS; TIADA SQL; BELUM commit/deploy, BELUM diuji browser)
+Keperluan user: di `/laporan` (laporan per pelajar) tambah paparan **keseluruhan bulan** untuk pantau prestasi, dan **butang untuk asingkan** silibus & pencapaian pertandingan.
+- **Diubah:** `src/app/(admin)/laporan/page.tsx` — togol **Bulanan / Keseluruhan** dalam borang; mod Keseluruhan tarik SEMUA `kehadiran` + `resit` Aktif pelajar, kumpul per bulan (`BulanRingkasan`: hadir/tidak hadir/cuti/%/status yuran), jadual prestasi ikut bulan (bar % berwarna merah<50/kuning<75/hijau) + butang **Lihat** (lompat ke laporan bulanan bulan itu) + kotak yuran tertunggak (senarai bulan ≥4 hadir tanpa resit). Hasil laporan kini ada **tab: Kehadiran | Silibus | Pencapaian Pertandingan** (statistik header kekal di atas). `src/components/pdf/LaporanPDF.tsx` — prop pilihan `ringkasanBulan` + `tempoh`: jadual per bulan ganti rekod harian, ringkasan yuran tertunggak; nama fail `Laporan_[Nama]_Keseluruhan.pdf`. PDF masih mengandungi semua bahagian.
+- **Dokumen produk baharu** `docs/product/` (README semakan relevan 10 jenis dokumen): 01 Roadmap, 02 Design System (+Art Direction), 03 PRD as-built, 04 Content Spec, 05 Onboarding, 06 UI Kit, 07 QA Plan. Market Research & Growth Strategy ditolak (sistem dalaman, DR-004).
+- **Ujian (Vercel preview):** /laporan → pilih pelajar → Keseluruhan → Jana → semak jadual bulan + % + yuran; Lihat → laporan bulan itu; tukar tab Silibus/Pertandingan; Muat Turun PDF dalam kedua-dua mod.
+
 
 ## ⚡ SESI 23 (23 Ogos 2026)
 

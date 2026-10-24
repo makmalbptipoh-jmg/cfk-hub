@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Download } from 'lucide-react'
+import { FileText, Download, CalendarCheck, BookOpen, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { akhirBulan, HARI } from '@/lib/utils'
 import { CariPelajar, type PelajarCarian } from '@/components/pelajar/CariPelajar'
@@ -39,6 +39,22 @@ const warnaBarSilibus = (p: number) => (p < 34 ? '#EF4444' : p < 67 ? '#F59E0B' 
 type PertandinganRekod = { nama: string; tarikh: string; kedudukan: number; jumlah_peserta: number; mata: number; pingat: JenisPingat | null }
 type PertandinganLaporan = { ringkasan: RingkasanPertandingan; rekod: PertandinganRekod[]; siri: TitikGraf[] }
 
+// Ringkasan kehadiran satu bulan — untuk mod Keseluruhan (semua bulan)
+type BulanRingkasan = {
+  kunci: string // YYYY-MM
+  nama: string
+  tahun: number
+  hadir: number
+  tidakHadir: number
+  cuti: number
+  peratus: number
+  sudahBayar: boolean
+  perluBayar: boolean
+}
+
+type ModLaporan = 'bulan' | 'keseluruhan'
+type TabLaporan = 'kehadiran' | 'silibus' | 'pertandingan'
+
 type DataLaporan = {
   nama_pelajar: string
   cawangan: string
@@ -54,6 +70,16 @@ type DataLaporan = {
   tahun: number
   silibus: SilibusLaporan | null
   pertandingan: PertandinganLaporan | null
+  // null = mod Bulanan; berisi = mod Keseluruhan (susun terbaru dahulu)
+  ringkasanBulan: BulanRingkasan[] | null
+  tempoh: string
+}
+
+const warnaPeratus = (p: number) => (p < 50 ? '#EF4444' : p < 75 ? '#F59E0B' : '#10B981')
+
+function namaBulanPendek(kunci: string) {
+  const [yr, mo] = kunci.split('-')
+  return new Date(parseInt(yr), parseInt(mo) - 1, 1).toLocaleString('ms-MY', { month: 'short', year: 'numeric' })
 }
 
 function bulanMY(input: string) {
@@ -83,14 +109,24 @@ export default function LaporanPage() {
   const [laporan, setLaporan] = useState<DataLaporan | null>(null)
   const [loading, setLoading] = useState(false)
   const [unduhLoading, setUnduhLoading] = useState(false)
+  const [mod, setMod] = useState<ModLaporan>('bulan')
+  const [tab, setTab] = useState<TabLaporan>('kehadiran')
 
-  const jana = async () => {
+  const jana = async (modJana: ModLaporan = mod, bulanJana: string = bulanInput) => {
     if (!pelajar) return
     setLoading(true)
     setLaporan(null)
 
     const supabase = createClient()
-    const b = bulanMY(bulanInput)
+    const b = bulanMY(bulanJana)
+    const semua = modJana === 'keseluruhan'
+
+    let qKehadiran = supabase.from('kehadiran').select('tarikh, status, nota').eq('pelajar_id', pelajar.id)
+    let qResit = supabase.from('resit').select('bulan_bayaran, tahun_bayaran').eq('pelajar_id', pelajar.id).eq('status', 'Aktif')
+    if (!semua) {
+      qKehadiran = qKehadiran.gte('tarikh', b.mula).lte('tarikh', b.akhir)
+      qResit = qResit.eq('bulan_bayaran', b.nama).eq('tahun_bayaran', b.tahun)
+    }
 
     const [
       { data: profil },
@@ -98,8 +134,8 @@ export default function LaporanPage() {
       { data: resit },
     ] = await Promise.all([
       supabase.from('pelajar').select('nama_penuh, jenis_kelas, cawangan:cawangan_daftar_id(nama)').eq('id', pelajar.id).single(),
-      supabase.from('kehadiran').select('tarikh, status, nota').eq('pelajar_id', pelajar.id).gte('tarikh', b.mula).lte('tarikh', b.akhir).order('tarikh'),
-      supabase.from('resit').select('id').eq('pelajar_id', pelajar.id).eq('bulan_bayaran', b.nama).eq('tahun_bayaran', b.tahun).eq('status', 'Aktif'),
+      qKehadiran.order('tarikh'),
+      qResit,
     ])
 
     // Relasi `cawangan:cawangan_daftar_id(nama)` tiada jenis dijana Supabase
@@ -118,7 +154,41 @@ export default function LaporanPage() {
     const jumlahSesi = rekod.length
     const peratus = jumlahSesi > 0 ? Math.round((jumlahHadir / jumlahSesi) * 100) : 0
     const sudahBayar = (resit ?? []).length > 0
-    const perluBayar = jumlahHadir >= 4 && !sudahBayar
+    const perluBayar = !semua && jumlahHadir >= 4 && !sudahBayar
+
+    // ---- Mod Keseluruhan: pecahan kehadiran + yuran per bulan ----
+    let ringkasanBulan: BulanRingkasan[] | null = null
+    if (semua) {
+      const resitSet = new Set((resit ?? []).map((r) => `${r.bulan_bayaran} ${r.tahun_bayaran}`))
+      const kumpulan = new Map<string, Rekod[]>()
+      for (const r of rekod) {
+        const kunci = r.tarikh.slice(0, 7)
+        const senarai = kumpulan.get(kunci)
+        if (senarai) senarai.push(r)
+        else kumpulan.set(kunci, [r])
+      }
+      ringkasanBulan = [...kumpulan.entries()]
+        .sort(([a], [b2]) => (a < b2 ? 1 : -1))
+        .map(([kunci, senarai]) => {
+          const info = bulanMY(kunci)
+          const hadir = senarai.filter((r) => r.status === 'Hadir').length
+          const bayar = resitSet.has(`${info.nama} ${info.tahun}`)
+          return {
+            kunci, nama: info.nama, tahun: info.tahun,
+            hadir,
+            tidakHadir: senarai.filter((r) => r.status === 'Tidak Hadir').length,
+            cuti: senarai.filter((r) => r.status === 'Cuti').length,
+            peratus: Math.round((hadir / senarai.length) * 100),
+            sudahBayar: bayar,
+            perluBayar: hadir >= 4 && !bayar,
+          }
+        })
+    }
+    const tempoh = !semua
+      ? `${b.nama} ${b.tahun}`
+      : ringkasanBulan && ringkasanBulan.length > 0
+        ? `Keseluruhan (${namaBulanPendek(ringkasanBulan[ringkasanBulan.length - 1].kunci)} – ${namaBulanPendek(ringkasanBulan[0].kunci)})`
+        : 'Keseluruhan'
 
     // ---- Progress Silibus (tajuk wajib: CFK STEP BY STEP dll) untuk pelajar ini ----
     let silibus: SilibusLaporan | null = null
@@ -197,6 +267,8 @@ export default function LaporanPage() {
       tahun: b.tahun,
       silibus,
       pertandingan,
+      ringkasanBulan,
+      tempoh,
     })
     setLoading(false)
   }
@@ -222,12 +294,15 @@ export default function LaporanPage() {
           perluBayar={laporan.perluBayar}
           silibus={laporan.silibus}
           pertandingan={laporan.pertandingan}
+          ringkasanBulan={laporan.ringkasanBulan}
+          tempoh={laporan.tempoh}
         />
       ).toBlob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `Laporan_${laporan.nama_pelajar.replace(/[\\/:*?"<>|]/g, '-')}_${laporan.bulan}_${laporan.tahun}.pdf`
+      const akhiran = laporan.ringkasanBulan ? 'Keseluruhan' : `${laporan.bulan}_${laporan.tahun}`
+      a.download = `Laporan_${laporan.nama_pelajar.replace(/[\\/:*?"<>|]/g, '-')}_${akhiran}.pdf`
       a.click()
       URL.revokeObjectURL(url)
       toast.success('PDF laporan kehadiran dimuat turun — semak folder Downloads.')
@@ -256,9 +331,29 @@ export default function LaporanPage() {
 
       {/* Borang Jana (Per Pelajar) */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '24px', marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginBottom: '20px' }}>Pilih Pelajar & Bulan</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>Pilih Pelajar & Tempoh</h2>
+          {/* Togol mod: satu bulan vs keseluruhan bulan */}
+          <div style={{ display: 'inline-flex', background: '#F1F5F9', borderRadius: '10px', padding: '3px' }}>
+            {([['bulan', 'Bulanan'], ['keseluruhan', 'Keseluruhan']] as const).map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => setMod(k)}
+                style={{
+                  padding: '6px 14px', border: 'none', borderRadius: '8px',
+                  fontSize: '12.5px', fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+                  background: mod === k ? 'var(--card)' : 'transparent',
+                  color: mod === k ? 'var(--text)' : 'var(--text-muted)',
+                  boxShadow: mod === k ? '0 1px 3px rgba(15,23,42,0.12)' : 'none',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'end' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', alignItems: 'end' }}>
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Pelajar
@@ -269,23 +364,32 @@ export default function LaporanPage() {
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Bulan
             </label>
-            <input
-              type="month"
-              value={bulanInput}
-              onChange={(e) => setBulanInput(e.target.value)}
-              style={{
-                width: '100%', padding: '10px 14px',
-                border: '1.5px solid var(--border)', borderRadius: '12px',
-                fontSize: '13.5px', color: 'var(--text)',
-                background: 'var(--card)', outline: 'none', fontFamily: 'inherit',
-                boxSizing: 'border-box',
-              }}
-            />
+            {mod === 'bulan' ? (
+              <input
+                type="month"
+                value={bulanInput}
+                onChange={(e) => setBulanInput(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px 14px',
+                  border: '1.5px solid var(--border)', borderRadius: '12px',
+                  fontSize: '13.5px', color: 'var(--text)',
+                  background: 'var(--card)', outline: 'none', fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                }}
+              />
+            ) : (
+              <div style={{
+                padding: '10px 14px', border: '1.5px dashed var(--border)', borderRadius: '12px',
+                fontSize: '13px', color: 'var(--text-muted)', background: '#F8FAFC',
+              }}>
+                Semua bulan — pecahan prestasi ikut bulan
+              </div>
+            )}
           </div>
         </div>
 
         <button
-          onClick={jana}
+          onClick={() => jana()}
           disabled={!pelajar || loading}
           style={{
             marginTop: '16px', padding: '11px 24px',
@@ -318,7 +422,7 @@ export default function LaporanPage() {
                   {laporan.nama_pelajar}
                 </h2>
                 <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.7)' }}>
-                  {laporan.cawangan} · {laporan.jenis_kelas} · {laporan.bulan} {laporan.tahun}
+                  {laporan.cawangan} · {laporan.jenis_kelas} · {laporan.tempoh}
                 </p>
               </div>
               <button
@@ -360,7 +464,52 @@ export default function LaporanPage() {
             </div>
           </div>
 
+          {/* Tab: asingkan Kehadiran / Silibus / Pertandingan */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+            {([
+              ['kehadiran', 'Kehadiran', CalendarCheck],
+              ['silibus', 'Silibus', BookOpen],
+              ['pertandingan', 'Pencapaian Pertandingan', Trophy],
+            ] as const).map(([k, label, Ikon]) => {
+              const aktif = tab === k
+              return (
+                <button
+                  key={k}
+                  onClick={() => setTab(k)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '9px 16px', borderRadius: '12px', cursor: 'pointer',
+                    fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
+                    border: aktif ? '1.5px solid var(--primary)' : '1.5px solid var(--border)',
+                    background: aktif ? 'var(--primary)' : 'var(--card)',
+                    color: aktif ? '#FFFFFF' : 'var(--text)',
+                  }}
+                >
+                  <Ikon size={14} />
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+
+          {tab === 'kehadiran' && (<>
           {/* Status Yuran */}
+          {laporan.ringkasanBulan ? (() => {
+            const tertunggak = laporan.ringkasanBulan.filter((m) => m.perluBayar)
+            return (
+              <div style={{
+                background: tertunggak.length > 0 ? '#FFF7ED' : 'var(--hadir-bg)',
+                border: `1px solid ${tertunggak.length > 0 ? '#FED7AA' : '#BBF7D0'}`,
+                borderRadius: '14px', padding: '14px 20px', marginBottom: '16px',
+              }}>
+                <p style={{ fontSize: '13.5px', fontWeight: 700, color: tertunggak.length > 0 ? '#C2410C' : 'var(--hadir-text)' }}>
+                  {tertunggak.length > 0
+                    ? `⚠ ${tertunggak.length} bulan yuran belum dijelaskan: ${tertunggak.map((m) => `${m.nama} ${m.tahun}`).join(', ')}`
+                    : `✓ Tiada yuran tertunggak (${laporan.ringkasanBulan.length} bulan direkod)`}
+                </p>
+              </div>
+            )
+          })() : (
           <div style={{
             background: laporan.perluBayar ? '#FFF7ED' : laporan.sudahBayar ? 'var(--hadir-bg)' : '#F8FAFC',
             border: `1px solid ${laporan.perluBayar ? '#FED7AA' : laporan.sudahBayar ? '#BBF7D0' : 'var(--border)'}`,
@@ -379,15 +528,63 @@ export default function LaporanPage() {
               }
             </p>
           </div>
+          )}
 
           {/* Jadual Rekod */}
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
               <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)' }}>
-                Rekod Kehadiran — {laporan.bulan} {laporan.tahun}
+                {laporan.ringkasanBulan ? 'Prestasi Kehadiran Ikut Bulan' : `Rekod Kehadiran — ${laporan.bulan} ${laporan.tahun}`}
               </h3>
             </div>
-            {laporan.rekod.length === 0 ? (
+            {laporan.ringkasanBulan ? (
+              laporan.ringkasanBulan.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13.5px' }}>
+                  Tiada rekod kehadiran lagi untuk pelajar ini.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '560px' }}>
+                    <thead>
+                      <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
+                        {['Bulan', 'Hadir', 'T. Hadir', 'Cuti', 'Kehadiran', 'Yuran', ''].map((h, i) => (
+                          <th key={h + i} style={{ padding: '9px 12px', textAlign: i === 0 || i === 4 ? 'left' : 'center', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {laporan.ringkasanBulan.map((m, i) => (
+                        <tr key={m.kunci} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none', background: i % 2 === 1 ? '#FAFBFC' : 'transparent' }}>
+                          <td style={{ padding: '10px 12px', fontSize: '13.5px', color: 'var(--text)', fontWeight: 600, whiteSpace: 'nowrap' }}>{m.nama} {m.tahun}</td>
+                          <td style={{ padding: '10px 12px', fontSize: '13px', textAlign: 'center', color: 'var(--hadir-text)', fontWeight: 700 }}>{m.hadir}</td>
+                          <td style={{ padding: '10px 12px', fontSize: '13px', textAlign: 'center', color: 'var(--tidak-hadir-text)', fontWeight: 700 }}>{m.tidakHadir}</td>
+                          <td style={{ padding: '10px 12px', fontSize: '13px', textAlign: 'center', color: 'var(--cuti-text)', fontWeight: 700 }}>{m.cuti}</td>
+                          <td style={{ padding: '10px 12px', minWidth: '130px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ flex: 1, height: '8px', background: '#E2E8F0', borderRadius: '99px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${m.peratus}%`, background: warnaPeratus(m.peratus), borderRadius: '99px' }} />
+                              </div>
+                              <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text)', minWidth: '36px', textAlign: 'right' }}>{m.peratus}%</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', color: m.sudahBayar ? 'var(--hadir-text)' : m.perluBayar ? '#C2410C' : 'var(--text-muted)' }}>
+                            {m.sudahBayar ? '✓ Bayar' : m.perluBayar ? '⚠ Belum' : '—'}
+                          </td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                            <button
+                              onClick={() => { setMod('bulan'); setBulanInput(m.kunci); jana('bulan', m.kunci) }}
+                              style={{ padding: '5px 10px', fontSize: '12px', fontWeight: 600, border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--card)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                            >
+                              Lihat
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            ) : laporan.rekod.length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13.5px' }}>
                 Tiada rekod kehadiran untuk bulan ini.
               </div>
@@ -424,9 +621,11 @@ export default function LaporanPage() {
               </table>
             )}
           </div>
+          </>)}
 
           {/* Progress Silibus */}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', marginTop: '16px' }}>
+          {tab === 'silibus' && (
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)' }}>
                 Progress Silibus (Wajib)
@@ -483,9 +682,11 @@ export default function LaporanPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* Pencapaian Pertandingan */}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', marginTop: '16px' }}>
+          {tab === 'pertandingan' && (
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)' }}>Pencapaian Pertandingan</h3>
               {laporan.pertandingan && (
@@ -566,6 +767,7 @@ export default function LaporanPage() {
               </div>
             )}
           </div>
+          )}
         </div>
       )}
     </div>
