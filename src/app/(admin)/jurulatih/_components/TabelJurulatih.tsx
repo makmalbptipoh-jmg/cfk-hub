@@ -124,13 +124,14 @@ export function TabelJurulatih({ jurulatih, stat }: Props) {
             </p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '980px' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
                 {['Nama', 'Cawangan', 'Kadar/Sesi', 'Sesi Bln Ini', 'Belum Bayar', 'Point', 'Gaji Dibayar', 'Bayaran Terkini', 'Status', ''].map((h) => (
                   <th key={h} style={{
                     padding: '11px 16px', textAlign: 'left',
-                    fontSize: '11px', fontWeight: 700,
+                    fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap',
                     color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em',
                   }}>{h}</th>
                 ))}
@@ -209,7 +210,7 @@ export function TabelJurulatih({ jurulatih, stat }: Props) {
                         padding: '6px 12px',
                         background: 'var(--bg)', border: '1px solid var(--border)',
                         borderRadius: '8px', fontSize: '12px', fontWeight: 600,
-                        color: 'var(--text)', textDecoration: 'none',
+                        color: 'var(--text)', textDecoration: 'none', whiteSpace: 'nowrap',
                       }}
                     >
                       <Eye size={12} />
@@ -220,6 +221,7 @@ export function TabelJurulatih({ jurulatih, stat }: Props) {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
