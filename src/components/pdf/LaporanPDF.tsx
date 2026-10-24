@@ -172,6 +172,21 @@ type Props = {
   perluBayar: boolean
   silibus?: SilibusLaporan | null
   pertandingan?: PertLaporan | null
+  // Mod Keseluruhan: jadual pecahan per bulan menggantikan rekod harian
+  ringkasanBulan?: BulanRingkasan[] | null
+  tempoh?: string
+}
+
+type BulanRingkasan = {
+  kunci: string
+  nama: string
+  tahun: number
+  hadir: number
+  tidakHadir: number
+  cuti: number
+  peratus: number
+  sudahBayar: boolean
+  perluBayar: boolean
 }
 
 const WARNA_SILIBUS: Record<SilibusSub['status'], { fg: string }> = {
@@ -197,9 +212,12 @@ export function LaporanPDF({
   bulan, tahun, rekod,
   jumlahHadir, jumlahTidakHadir, jumlahCuti,
   peratus, perluBayar, silibus, pertandingan,
+  ringkasanBulan, tempoh,
 }: Props) {
+  const labelTempoh = tempoh ?? `${bulan} ${tahun}`
+  const tertunggak = ringkasanBulan ? ringkasanBulan.filter((m) => m.perluBayar) : []
   return (
-    <Document title={`Laporan Kehadiran — ${nama_pelajar} — ${bulan} ${tahun}`} author="CFK HUB">
+    <Document title={`Laporan Kehadiran — ${nama_pelajar} — ${labelTempoh}`} author="CFK HUB">
       <Page size="A4" style={s.page}>
         {/* Header */}
         <View style={s.header}>
@@ -212,7 +230,7 @@ export function LaporanPDF({
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={s.tajuk}>Laporan Kehadiran</Text>
-            <Text style={s.subjudul}>{bulan} {tahun}</Text>
+            <Text style={s.subjudul}>{labelTempoh}</Text>
           </View>
         </View>
 
@@ -233,7 +251,35 @@ export function LaporanPDF({
         </View>
 
         {/* Jadual Rekod */}
-        {rekod.length > 0 ? (
+        {ringkasanBulan ? (
+          <View style={{ marginBottom: 4 }}>
+            <View style={s.tableHeader}>
+              <Text style={[s.tableHeaderText, { width: '24%' }]}>Bulan</Text>
+              <Text style={[s.tableHeaderText, { width: '13%', textAlign: 'center' }]}>Hadir</Text>
+              <Text style={[s.tableHeaderText, { width: '15%', textAlign: 'center' }]}>T. Hadir</Text>
+              <Text style={[s.tableHeaderText, { width: '12%', textAlign: 'center' }]}>Cuti</Text>
+              <Text style={[s.tableHeaderText, { width: '18%', textAlign: 'center' }]}>Kehadiran</Text>
+              <Text style={[s.tableHeaderText, { flex: 1, textAlign: 'center' }]}>Yuran</Text>
+            </View>
+            {ringkasanBulan.map((m, i) => (
+              <View key={m.kunci} style={[s.tableRow, i % 2 === 1 ? s.tableRowAlt : {}]}>
+                <Text style={{ fontSize: 9, color: '#0F172A', fontFamily: 'Helvetica-Bold', width: '24%' }}>{m.nama} {m.tahun}</Text>
+                <Text style={[{ fontSize: 9, width: '13%', textAlign: 'center' }, s.badgeHadir]}>{m.hadir}</Text>
+                <Text style={[{ fontSize: 9, width: '15%', textAlign: 'center' }, s.badgeTidak]}>{m.tidakHadir}</Text>
+                <Text style={[{ fontSize: 9, width: '12%', textAlign: 'center' }, s.badgeCuti]}>{m.cuti}</Text>
+                <Text style={{ fontSize: 9, width: '18%', textAlign: 'center', fontFamily: 'Helvetica-Bold', color: m.peratus < 50 ? '#B91C1C' : m.peratus < 75 ? '#B45309' : '#166534' }}>{m.peratus}%</Text>
+                <Text style={{ fontSize: 9, flex: 1, textAlign: 'center', fontFamily: 'Helvetica-Bold', color: m.sudahBayar ? '#166534' : m.perluBayar ? '#C2410C' : '#94A3B8' }}>
+                  {m.sudahBayar ? 'Dibayar' : m.perluBayar ? 'Belum' : '-'}
+                </Text>
+              </View>
+            ))}
+            {ringkasanBulan.length === 0 && (
+              <View style={{ padding: '20px', textAlign: 'center' }}>
+                <Text style={{ fontSize: 10, color: '#64748B' }}>Tiada rekod kehadiran lagi.</Text>
+              </View>
+            )}
+          </View>
+        ) : rekod.length > 0 ? (
           <View style={{ marginBottom: 4 }}>
             <View style={s.tableHeader}>
               <Text style={[s.tableHeaderText, s.colTarikh]}>Tarikh</Text>
@@ -286,6 +332,18 @@ export function LaporanPDF({
         </View>
 
         {/* Status Yuran */}
+        {ringkasanBulan ? (
+          <View style={[s.statusBox, {
+            backgroundColor: tertunggak.length > 0 ? '#FFF7ED' : '#F0FDF4',
+            border: `1px solid ${tertunggak.length > 0 ? '#FED7AA' : '#BBF7D0'}`,
+          }]}>
+            <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: tertunggak.length > 0 ? '#C2410C' : '#166534' }}>
+              {tertunggak.length > 0
+                ? `${tertunggak.length} bulan yuran belum dijelaskan: ${tertunggak.map((m) => `${m.nama} ${m.tahun}`).join(', ')}.`
+                : `Tiada yuran tertunggak (${ringkasanBulan.length} bulan direkod).`}
+            </Text>
+          </View>
+        ) : (
         <View style={[s.statusBox, {
           backgroundColor: perluBayar ? '#FFF7ED' : '#F0FDF4',
           border: `1px solid ${perluBayar ? '#FED7AA' : '#BBF7D0'}`,
@@ -302,6 +360,7 @@ export function LaporanPDF({
             }
           </Text>
         </View>
+        )}
 
         {/* Progress Silibus */}
         {silibus && silibus.jumlah > 0 && (
