@@ -16,17 +16,24 @@
 -- Idempotent: selamat run lebih sekali.
 -- ============================================================
 
--- 1) SEMAK DULU — bilangan rekod yang akan diarkib
-select 'pelajar_topik' as jadual, count(*) from public.pelajar_topik
-union all select 'topik_kategori', count(*) from public.topik_kategori
-union all select 'silibus (log harian)', count(*) from public.silibus
-union all select 'permintaan_bayaran', count(*) from public.permintaan_bayaran;
--- Permintaan ToyyibPay yang masih Menunggu — jika ada, semak di toyyibpay.com
--- dahulu; bayaran yang masuk SELEPAS ini TIDAK akan auto-jana resit lagi.
-select bill_code, nama_pelajar, bulan_bayaran, tahun_bayaran, jumlah, created_at
-from public.permintaan_bayaran
-where status = 'Menunggu'
-order by created_at desc;
+-- 1) SEMAK DULU — lokasi & bilangan rekod (selamat walaupun jadual tiada)
+select t as jadual,
+       to_regclass('public.' || t) is not null as di_public,
+       to_regclass('arkib.' || t) is not null as di_arkib,
+       case when to_regclass('public.' || t) is not null then
+         (xpath('/row/c/text()', query_to_xml(
+           format('select count(*) as c from public.%I', t), false, true, '')))[1]::text::int
+       end as bil_rekod,
+       case when t = 'permintaan_bayaran' and to_regclass('public.permintaan_bayaran') is not null then
+         (xpath('/row/c/text()', query_to_xml(
+           'select count(*) as c from public.permintaan_bayaran where status = ''Menunggu''',
+           false, true, '')))[1]::text::int
+       end as bil_menunggu
+from unnest(array['pelajar_topik', 'topik_kategori', 'silibus', 'permintaan_bayaran']) as t;
+-- Jika bil_menunggu > 0, semak di toyyibpay.com dahulu (bayaran yang masuk
+-- SELEPAS ini TIDAK akan auto-jana resit lagi). Senarai penuh:
+--   select bill_code, nama_pelajar, bulan_bayaran, tahun_bayaran, jumlah, created_at
+--   from public.permintaan_bayaran where status = 'Menunggu' order by created_at desc;
 
 -- 2) ARKIB
 create schema if not exists arkib;
