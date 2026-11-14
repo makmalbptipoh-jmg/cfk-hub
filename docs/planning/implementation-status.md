@@ -4,7 +4,7 @@
 
 ## ⚡ SESI 25 (14 November 2026)
 
-### Buang ciri bertindih/tak relevan + tutup cawangan Sri Iskandar (typecheck+lint+68 ujian+build LULUS; BELUM commit/deploy, BELUM diuji browser)
+### Buang ciri bertindih/tak relevan + tutup cawangan Sri Iskandar (DEPLOY PRODUCTION via PR #25 → `main` 6d82372; SQL arkib + Sri Iskandar SUDAH di-run user; BELUM diuji browser)
 Branch `chore/buang-ciri-bertindih` (dari `main`). Keputusan user (via soalan): **buang ToyyibPay**, **KEKAL Import Google Sheets** (env GOOGLE_* memang di-set di Vercel), Sri Iskandar = **cawangan + jadual sahaja** (pelajar urus manual).
 - **Kewangan digabung:** `/laporan/kewangan` DIBUANG → pecahan Jenis/Kategori + Senarai Transaksi + Eksport CSV kini dalam `/kewangan` (Ringkasan, ikut tempoh bulan/tahun). `/laporan/pendapatan` DIPINDAH → `/kewangan/yuran` (tab "Pendapatan Yuran"). Tab Laporan kini: Kehadiran | Tunggakan | Bil. Kelas.
 - **Progress Pembelajaran lama DIBUANG** (`pelajar_topik`/`topik_kategori`, `ProgresPelajarTab`, `ModalTopik`, `LaporanProgresPDF`, `/tetapan/kategori`) — diganti tab Silibus Personal. Profil pelajar Personal kini ada butang ke `/silibus?tab=personal` (page /silibus terima `?tab=induk|pelajar|personal`). `lib/progresPelajar.ts` → `lib/bahan.ts` (utiliti fail /bahan sahaja).
@@ -16,6 +16,8 @@ Branch `chore/buang-ciri-bertindih` (dari `main`). Keputusan user (via soalan): 
 - ⚠️ **SQL (run manual SELEPAS deploy):** `scripts/sql/arkib-ciri-lama.sql` — PINDAH (bukan padam) `pelajar_topik`, `topik_kategori`, `silibus`, `permintaan_bayaran` ke skema `arkib`; ada PULIH + PADAM KEKAL (dikomen). Semak permintaan ToyyibPay 'Menunggu' dulu. `scripts/sql/tutup-cawangan-sri-iskandar.sql` — cawangan + slot jadual Aktif → Tidak Aktif. `_semakan-policy-audit.sql` dikemas (buang 4 jadual arkib).
 - **Tertunggak user:** env `TOYYIBPAY_*` di Vercel boleh dipadam. `src/types/database.ts` masih ada jenis 4 jadual arkib (tak menjejaskan build; jana semula bila sesuai).
 - **Ujian (Vercel preview):** /kewangan (bulan & Semua Bulan) → pecahan + transaksi + CSV; /kewangan/yuran PDF/Excel; /laporan tab; profil pelajar (Personal → butang Silibus Personal; Kad Pelajar PDF); /silibus 3 tab + `?tab=personal`; /bayaran/baharu (Tunai/Transfer sahaja); URL lama redirect; sidebar; selepas SQL: Sri Iskandar hilang dari semua dropdown & jadual.
+- **Selepas deploy:** PR #26 — skrip arkib selamat bila jadual tiada + fail `arkib-langkah-A-semak.sql` / `arkib-langkah-B-laksana.sql`. User run: 4 jadual kini di skema `arkib`; Sri Iskandar `slot_aktif_berbaki = 0`.
+- **RLS gaji/perbelanjaan = admin sahaja:** audit dapati polisi `baca` tiada di production untuk `bayaran_jurulatih` & `kewangan_perbelanjaan`. Hanya halaman admin baca jadual ini (layout admin redirect bukan-admin; `tulis_admin` FOR ALL beri admin baca), jadi DIKEKALKAN tanpa `baca` (jurulatih tak boleh baca gaji/perbelanjaan via API). `rls-ketat.sql`, `supabase/schema.sql` & `_semakan-policy-audit.sql` diselaraskan. Tiada SQL perlu di-run.
 
 
 ## ⚡ SESI 24 (24 Oktober 2026)

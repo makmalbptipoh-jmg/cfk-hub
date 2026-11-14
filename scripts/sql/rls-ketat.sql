@@ -14,8 +14,7 @@
 DO $$
 DECLARE t TEXT;
   senarai TEXT[] := ARRAY[
-    'cawangan', 'resit', 'jurulatih', 'bayaran_jurulatih',
-    'kewangan_perbelanjaan', 'aset', 'import_antrian'
+    'cawangan', 'resit', 'jurulatih', 'aset', 'import_antrian'
   ];
 BEGIN
   FOREACH t IN ARRAY senarai LOOP
@@ -24,6 +23,24 @@ BEGIN
       EXECUTE format('DROP POLICY IF EXISTS "baca" ON %I', t);
       EXECUTE format('DROP POLICY IF EXISTS "tulis_admin" ON %I', t);
       EXECUTE format('CREATE POLICY "baca" ON %I FOR SELECT TO authenticated USING (true)', t);
+      EXECUTE format('CREATE POLICY "tulis_admin" ON %I FOR ALL TO authenticated USING (is_admin(auth.uid())) WITH CHECK (is_admin(auth.uid()))', t);
+    END IF;
+  END LOOP;
+END $$;
+
+-- ---------- Gaji & perbelanjaan: ADMIN SAHAJA (baca + tulis) ----------
+-- Hanya halaman admin membaca jadual ini; tanpa "baca" jurulatih tidak
+-- boleh lihat gaji semua jurulatih / perbelanjaan melalui API.
+-- (Keadaan production sejak 14 Nov 2026 — sengaja tiada polisi "baca".)
+DO $$
+DECLARE t TEXT;
+  senarai TEXT[] := ARRAY['bayaran_jurulatih', 'kewangan_perbelanjaan'];
+BEGIN
+  FOREACH t IN ARRAY senarai LOOP
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name=t) THEN
+      EXECUTE format('DROP POLICY IF EXISTS "auth" ON %I', t);
+      EXECUTE format('DROP POLICY IF EXISTS "baca" ON %I', t);
+      EXECUTE format('DROP POLICY IF EXISTS "tulis_admin" ON %I', t);
       EXECUTE format('CREATE POLICY "tulis_admin" ON %I FOR ALL TO authenticated USING (is_admin(auth.uid())) WITH CHECK (is_admin(auth.uid()))', t);
     END IF;
   END LOOP;
