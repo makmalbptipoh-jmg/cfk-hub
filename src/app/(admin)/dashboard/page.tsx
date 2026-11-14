@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { akhirBulan as akhirBulanUtil, formatRinggit, formatTarikh, tarikhTempatan, hariMinggu, HARI, formatMasa, NAMA_BULAN } from '@/lib/utils'
 import { perluBayarBulan } from '@/lib/tunggakan'
 import { tapisSesiDibatalkan, SELECT_SESI_GAJI, SELECT_SLOT_GAJI, type SlotUntukGaji } from '@/lib/gajiSesi'
@@ -103,7 +104,7 @@ export default async function DashboardPage({
     supabase.from('resit').select('pelajar_id, jumlah, status, pelajar:pelajar_id(cawangan_daftar_id)').eq('bulan_bayaran', bulan).eq('tahun_bayaran', tahun).eq('status', 'Aktif'),
     supabase.from('resit').select('id, nombor_resit, pelajar_id, jenis, jumlah, tarikh_bayar, status, pelajar:pelajar_id(nama_penuh)').order('created_at', { ascending: false }).limit(10),
     supabase.from('cawangan').select('id, nama').eq('status', 'Aktif').order('nama'),
-    supabase.from('pengguna_profil').select('nama').eq('id', (await supabase.auth.getUser()).data.user?.id ?? '').single(),
+    supabase.from('pengguna_profil').select('nama').eq('id', (await penggunaSemasa())?.id ?? '').single(),
     supabase.from('resit').select('jumlah, tarikh_bayar, pelajar:pelajar_id(cawangan_daftar_id)').eq('status', 'Aktif').gte('tarikh_bayar', `${tahun}-01-01`).lte('tarikh_bayar', `${tahun}-12-31`),
     supabase.from('kehadiran').select('tarikh, cawangan_sesi_id').eq('status', 'Hadir').gte('tarikh', `${tahun}-01-01`).lte('tarikh', `${tahun}-12-31`),
     supabase.from('jadual_slot').select('id, jenis, masa_mula, lokasi, jurulatih_ids, cawangan:cawangan_id(nama), pelajar:pelajar_id(nama_penuh)').eq('status', 'Aktif').eq('hari_minggu', hariIni).order('masa_mula'),

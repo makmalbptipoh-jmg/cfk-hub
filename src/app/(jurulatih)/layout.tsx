@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { BottomTabBar } from '@/components/layout/BottomTabBar'
 import { NavigasiAtas } from '@/components/layout/NavigasiAtas'
 import { Sidebar } from '@/components/layout/Sidebar'
@@ -12,9 +13,7 @@ export default async function JurulatihLayout({
 }) {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
 
   if (!user) redirect('/login')
 

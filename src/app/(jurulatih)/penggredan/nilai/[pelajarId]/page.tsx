@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { ratingSemasaDariKeputusan, RATING_ASAS, umurDariTarikhLahir, bandUmurDariUmur, type BandUmur } from '@/lib/grading'
 import { BorangPenilaianKlient } from '../../_components/BorangPenilaianKlient'
 
@@ -17,7 +18,7 @@ export default async function NilaiPage({
   const { kitaran: kitaranId } = await searchParams
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
   if (!user) redirect('/login')
 
   const [rPelajar, rKitaran] = await Promise.all([

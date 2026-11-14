@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { UserX } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { KehadiranSayaKlient } from './_components/KehadiranSayaKlient'
 
 export const dynamic = 'force-dynamic'
@@ -9,9 +10,7 @@ export const dynamic = 'force-dynamic'
 export default async function KehadiranSayaPage() {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
 
   if (!user) redirect('/login')
 

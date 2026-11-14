@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { tarafGred } from '@/lib/grading'
 import { SejarahKlient, type TitikSejarah, type NaikRekod } from '../../_components/SejarahKlient'
 
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export default async function SejarahPage({ params }: { params: Promise<{ pelajarId: string }> }) {
   const { pelajarId } = await params
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
   if (!user) redirect('/login')
 
   const [rPelajar, rKitaran, rPenilaian] = await Promise.all([

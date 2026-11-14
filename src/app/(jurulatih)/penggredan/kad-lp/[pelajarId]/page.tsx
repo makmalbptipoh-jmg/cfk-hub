@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { ITEM_CHECKLIST, KUNCI_ITEM, aktivitiUntukItem } from '@/lib/gradingLittlePawn'
 import { KadLittlePawnPreview } from '../../_components/KadLittlePawnPreview'
 import type { PropsKadLP } from '@/components/pdf/BtnKadLittlePawn'
@@ -21,7 +22,7 @@ export default async function KadLittlePawnPage({
   const { kitaran: kitaranId } = await searchParams
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
   if (!user) redirect('/login')
   if (!kitaranId) return <Kosong pesan="Kitaran tidak dinyatakan." />
 
