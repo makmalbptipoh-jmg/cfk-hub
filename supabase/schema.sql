@@ -675,19 +675,29 @@ RETURNS UUID AS $$
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- ---------- Jadual teras: BACA terbuka + TULIS admin sahaja ----------
--- (ikut rls-ketat.sql: cawangan, resit, jurulatih, bayaran_jurulatih,
---  kewangan_perbelanjaan, aset, import_antrian)
+-- (ikut rls-ketat.sql: cawangan, resit, jurulatih, aset, import_antrian)
 DO $$
 DECLARE t TEXT;
   senarai TEXT[] := ARRAY[
-    'cawangan', 'resit', 'jurulatih', 'bayaran_jurulatih',
-    'kewangan_perbelanjaan', 'aset', 'import_antrian'
+    'cawangan', 'resit', 'jurulatih', 'aset', 'import_antrian'
   ];
 BEGIN
   FOREACH t IN ARRAY senarai LOOP
     EXECUTE format('DROP POLICY IF EXISTS "baca" ON %I', t);
     EXECUTE format('DROP POLICY IF EXISTS "tulis_admin" ON %I', t);
     EXECUTE format('CREATE POLICY "baca" ON %I FOR SELECT TO authenticated USING (true)', t);
+    EXECUTE format('CREATE POLICY "tulis_admin" ON %I FOR ALL TO authenticated USING (is_admin(auth.uid())) WITH CHECK (is_admin(auth.uid()))', t);
+  END LOOP;
+END $$;
+
+-- ---------- Gaji & perbelanjaan: ADMIN SAHAJA (baca + tulis) ----------
+DO $$
+DECLARE t TEXT;
+  senarai TEXT[] := ARRAY['bayaran_jurulatih', 'kewangan_perbelanjaan'];
+BEGIN
+  FOREACH t IN ARRAY senarai LOOP
+    EXECUTE format('DROP POLICY IF EXISTS "baca" ON %I', t);
+    EXECUTE format('DROP POLICY IF EXISTS "tulis_admin" ON %I', t);
     EXECUTE format('CREATE POLICY "tulis_admin" ON %I FOR ALL TO authenticated USING (is_admin(auth.uid())) WITH CHECK (is_admin(auth.uid()))', t);
   END LOOP;
 END $$;
