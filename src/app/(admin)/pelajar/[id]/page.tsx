@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { BukuRujukan, KategoriTopik, TopikPelajar } from '@/lib/progresPelajar'
 import { kiraRingkasanPertandingan, kiraSiriRating, type JenisPingat } from '@/lib/pertandingan'
 import { ProfilPelajarKlient } from './_components/ProfilPelajarKlient'
 
@@ -24,10 +23,6 @@ export default async function ProfilPelajarPage({
     { data: kehadiranBulanIni },
     { data: resit },
     { data: resitBulanIni },
-    { data: topik },
-    { data: kategoriTopik },
-    { data: buku },
-    { data: silibus },
     { data: keputusanPert },
   ] = await Promise.all([
     supabase
@@ -62,28 +57,6 @@ export default async function ProfilPelajarPage({
       .eq('pelajar_id', id)
       .eq('bulan_bayaran', bulanBayaran)
       .eq('status', 'Aktif'),
-    // Progress pembelajaran (kelas Personal). Jika migrasi progres-pelajar.sql
-    // belum dijalankan, query gagal senyap → tab papar keadaan kosong.
-    supabase
-      .from('pelajar_topik')
-      .select('id, kategori_id, tajuk, butiran, tahap, tarikh, tarikh_kuasai, buku_id, muka_surat')
-      .eq('pelajar_id', id)
-      .order('tarikh', { ascending: false }),
-    supabase
-      .from('topik_kategori')
-      .select('id, nama, susunan, status')
-      .order('susunan')
-      .order('nama'),
-    supabase
-      .from('buku_rujukan')
-      .select('id, nama, pengarang, fail_path')
-      .eq('status', 'Aktif')
-      .order('nama'),
-    supabase
-      .from('silibus')
-      .select('id, tarikh, tajuk, muka_surat, nota')
-      .eq('pelajar_id', id)
-      .order('tarikh', { ascending: false }),
     // Pencapaian pertandingan (rating terkumpul). Jika migrasi pertandingan.sql
     // belum dijalankan, query gagal senyap → kad pertandingan tidak dipapar.
     supabase
@@ -140,12 +113,6 @@ export default async function ProfilPelajarPage({
       sudahBayarBulanIni={(resitBulanIni ?? []).length > 0}
       kehadiran={kehadiran ?? []}
       resit={resit ?? []}
-      progres={{
-        topik: (topik ?? []) as TopikPelajar[],
-        kategori: (kategoriTopik ?? []) as KategoriTopik[],
-        buku: (buku ?? []) as BukuRujukan[],
-        silibus: silibus ?? [],
-      }}
     />
   )
 }

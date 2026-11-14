@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { TrendingUp, TrendingDown, Minus, Plus } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, Plus, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { akhirBulan, formatRinggit } from '@/lib/utils'
+import { akhirBulan, formatRinggit, formatTarikh } from '@/lib/utils'
+import { toast } from '@/lib/stores/toast-store'
 import { BtnLaporanLHDN } from '@/components/excel/BtnLaporanLHDN'
 
 const BULAN_MS = [
@@ -24,11 +25,23 @@ const gayaPilih: React.CSSProperties = {
   cursor: 'pointer',
 }
 
+type Transaksi = {
+  tarikh: string
+  jenisTxn: 'masuk' | 'keluar'
+  jenis: string
+  kategori: string
+  penerangan: string
+  jumlah: number
+}
+
 type DataKewangan = {
   pendapatan: number
   perbelanjaan: number
   pendapatanCawangan: Record<string, number>
   perbelanjaanCawangan: Record<string, number>
+  pendapatanJenis: Record<string, number>
+  perbelanjaanKategori: Record<string, number>
+  transaksi: Transaksi[]
   bilResit: number
   bilPendapatanLain: number
   bilBelanja: number
@@ -49,15 +62,15 @@ export default function KewanganRingkasanPage() {
 
     let resitQuery = supabase
       .from('resit')
-      .select('jumlah, pelajar:pelajar_id(cawangan:cawangan_daftar_id(nama))')
+      .select('nombor_resit, jenis, jumlah, tarikh_bayar, pelajar:pelajar_id(nama_penuh, cawangan:cawangan_daftar_id(nama))')
       .eq('tahun_bayaran', tahun)
       .eq('status', 'Aktif')
     let belanjaQuery = supabase
       .from('kewangan_perbelanjaan')
-      .select('jumlah, cawangan:cawangan_id(nama)')
+      .select('tarikh, kategori, penerangan, jumlah, cawangan:cawangan_id(nama)')
     let pendapatanLainQuery = supabase
       .from('pendapatan_lain')
-      .select('jumlah, cawangan:cawangan_id(nama)')
+      .select('tarikh, sumber, kategori, nota, jumlah, cawangan:cawangan_id(nama)')
 
     if (bulanIdx) {
       const m = +bulanIdx
@@ -96,11 +109,48 @@ export default function KewanganRingkasanPage() {
       perbelanjaanCawangan[key] = (perbelanjaanCawangan[key] ?? 0) + p.jumlah
     }
 
+    const pendapatanJenis: Record<string, number> = {}
+    for (const r of resit ?? []) pendapatanJenis[r.jenis] = (pendapatanJenis[r.jenis] ?? 0) + r.jumlah
+    for (const p of pendapatanLain ?? []) pendapatanJenis[p.kategori] = (pendapatanJenis[p.kategori] ?? 0) + p.jumlah
+
+    const perbelanjaanKategori: Record<string, number> = {}
+    for (const p of belanja ?? []) perbelanjaanKategori[p.kategori] = (perbelanjaanKategori[p.kategori] ?? 0) + p.jumlah
+
+    const transaksi: Transaksi[] = [
+      ...(resit ?? []).map((r): Transaksi => ({
+        tarikh: r.tarikh_bayar,
+        jenisTxn: 'masuk',
+        jenis: 'Pendapatan',
+        kategori: r.jenis,
+        penerangan: `${r.nombor_resit} — ${(r.pelajar as unknown as { nama_penuh: string } | null)?.nama_penuh ?? ''}`,
+        jumlah: r.jumlah,
+      })),
+      ...(pendapatanLain ?? []).map((p): Transaksi => ({
+        tarikh: p.tarikh,
+        jenisTxn: 'masuk',
+        jenis: 'Pendapatan Lain',
+        kategori: p.kategori,
+        penerangan: p.nota ? `${p.sumber} — ${p.nota}` : p.sumber,
+        jumlah: p.jumlah,
+      })),
+      ...(belanja ?? []).map((p): Transaksi => ({
+        tarikh: p.tarikh,
+        jenisTxn: 'keluar',
+        jenis: 'Perbelanjaan',
+        kategori: p.kategori,
+        penerangan: p.penerangan,
+        jumlah: p.jumlah,
+      })),
+    ].sort((a, b) => b.tarikh.localeCompare(a.tarikh))
+
     setData({
       pendapatan,
       perbelanjaan,
       pendapatanCawangan,
       perbelanjaanCawangan,
+      pendapatanJenis,
+      perbelanjaanKategori,
+      transaksi,
       bilResit: (resit ?? []).length,
       bilPendapatanLain: (pendapatanLain ?? []).length,
       bilBelanja: (belanja ?? []).length,
@@ -113,6 +163,29 @@ export default function KewanganRingkasanPage() {
   }, [muatData])
 
   const keuntungan = (data?.pendapatan ?? 0) - (data?.perbelanjaan ?? 0)
+  const labelTempoh = bulanIdx ? `${BULAN_MS[+bulanIdx - 1]} ${tahun}` : `Tahun ${tahun}`
+
+  const eksportCSV = () => {
+    if (!data) return
+    const headers = ['Tarikh', 'Jenis', 'Kategori', 'Penerangan', 'Pendapatan (RM)', 'Perbelanjaan (RM)']
+    const rows = data.transaksi.map((t) => [
+      t.tarikh,
+      t.jenis,
+      t.kategori,
+      `"${t.penerangan.replace(/"/g, '""')}"`,
+      t.jenisTxn === 'masuk' ? t.jumlah.toFixed(2) : '',
+      t.jenisTxn === 'keluar' ? t.jumlah.toFixed(2) : '',
+    ])
+    const csv = [headers, ...rows].map((r) => r.join(',')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `LaporanKewangan_${labelTempoh.replace(/\s+/g, '_')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('CSV laporan kewangan dimuat turun — semak folder Downloads.')
+  }
 
   return (
     <div>
@@ -190,7 +263,28 @@ export default function KewanganRingkasanPage() {
         >
           <Plus size={13} /> Rekod Pendapatan
         </Link>
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+          {!loading && (data?.transaksi.length ?? 0) > 0 && (
+            <button
+              onClick={eksportCSV}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '9px 14px',
+                background: 'var(--bg)',
+                border: '1.5px solid var(--border)',
+                borderRadius: '10px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text)',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              <Download size={13} /> Eksport CSV
+            </button>
+          )}
           <BtnLaporanLHDN />
         </div>
       </div>
@@ -242,6 +336,65 @@ export default function KewanganRingkasanPage() {
               data={data!.perbelanjaanCawangan}
               warnaBar="#F87171"
             />
+          </div>
+
+          {/* Pecahan per Jenis / Kategori */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+            <KadPecahan judul="Pendapatan mengikut Jenis" data={data!.pendapatanJenis} warnaBar="#84CC16" />
+            <KadPecahan judul="Perbelanjaan mengikut Kategori" data={data!.perbelanjaanKategori} warnaBar="#F87171" />
+          </div>
+
+          {/* Senarai Transaksi */}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', marginTop: '24px' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)' }}>
+                Senarai Transaksi — {labelTempoh}
+              </h3>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{data!.transaksi.length} rekod</span>
+            </div>
+
+            {data!.transaksi.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', fontSize: '13.5px', color: 'var(--text-muted)' }}>
+                Tiada transaksi untuk tempoh ini.
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
+                      {['Tarikh', 'Jenis', 'Kategori', 'Penerangan', 'Jumlah'].map((h) => (
+                        <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data!.transaksi.map((t, i) => (
+                      <tr key={i} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}>
+                        <td style={{ padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                          {formatTarikh(t.tarikh)}
+                        </td>
+                        <td style={{ padding: '10px 14px' }}>
+                          <span style={{
+                            fontSize: '11.5px', padding: '3px 9px', borderRadius: '20px', fontWeight: 600,
+                            background: t.jenisTxn === 'masuk' ? 'var(--hadir-bg)' : '#FFF1F2',
+                            color: t.jenisTxn === 'masuk' ? 'var(--hadir-text)' : '#9F1239',
+                          }}>
+                            {t.jenis}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 14px', fontSize: '12px', color: 'var(--text-muted)' }}>{t.kategori}</td>
+                        <td style={{ padding: '10px 14px', fontSize: '13px', color: 'var(--text)' }}>{t.penerangan}</td>
+                        <td style={{ padding: '10px 14px', fontSize: '13.5px', fontWeight: 700, color: t.jenisTxn === 'masuk' ? '#166534' : '#9F1239', whiteSpace: 'nowrap' }}>
+                          {t.jenisTxn === 'masuk' ? '+' : '-'}{formatRinggit(t.jumlah)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </>
       )}

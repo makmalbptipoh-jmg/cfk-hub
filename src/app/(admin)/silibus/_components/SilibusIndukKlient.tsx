@@ -9,7 +9,7 @@ import {
   STATUS_PROGRES, WARNA_PROGRES, PGN_BUCKET, petaProgres, statusSubtajuk, kiraProgresCawangan,
   type TajukBesar, type Subtajuk, type ProgresBaris, type StatusProgres,
 } from '@/lib/silibus'
-import type { Cawangan } from './LogHarianKlient'
+import type { Cawangan } from '@/lib/silibus'
 import { ModalTajuk } from './ModalTajuk'
 import { ModalSubtajuk } from './ModalSubtajuk'
 

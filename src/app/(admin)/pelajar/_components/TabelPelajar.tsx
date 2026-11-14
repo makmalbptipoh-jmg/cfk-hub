@@ -162,10 +162,10 @@ export function TabelPelajar({ pelajar, cawangan, tunggakanCount = {}, tahun }: 
           <option value="belum">⚠ Ada Tunggakan{tahun ? ` (${tahun})` : ''}</option>
         </select>
         {bilTunggakan > 0 && (
-          <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: '#C2410C' }}>
+          <Link href="/laporan/tunggakan" style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: '#C2410C', textDecoration: 'none' }}>
             <AlertCircle size={14} />
-            {bilTunggakan} pelajar bertunggak
-          </span>
+            {bilTunggakan} pelajar bertunggak →
+          </Link>
         )}
       </div>
 

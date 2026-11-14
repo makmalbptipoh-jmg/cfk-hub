@@ -11,6 +11,8 @@ export const WARNA_PROGRES: Record<StatusProgres, { bg: string; text: string; bo
   Selesai: { bg: '#ECFDF5', text: '#065F46', border: '#A7F3D0' },
 }
 
+export type Cawangan = { id: string; nama: string }
+
 export type TajukBesar = {
   id: string
   nama: string

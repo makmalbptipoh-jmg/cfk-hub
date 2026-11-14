@@ -32,17 +32,17 @@ const navUtama = [
   { href: '/silibus', label: 'Silibus Kelas', icon: BookOpen },
   { href: '/pertandingan', label: 'Pertandingan', icon: Trophy },
   { href: '/penggredan', label: 'Penggredan', icon: Award },
-  { href: '/bahan', label: 'Bahan & Buku', icon: Library },
   { href: '/jurulatih', label: 'Jurulatih', icon: GraduationCap },
   { href: '/bayaran', label: 'Bayaran & Resit', icon: Receipt },
   { href: '/laporan', label: 'Laporan', icon: BarChart3 },
   { href: '/kewangan', label: 'Kewangan', icon: Wallet },
-  { href: '/aset', label: 'Aset', icon: Archive },
   { href: '/makluman', label: 'Makluman', icon: Megaphone },
-  { href: '/notifikasi', label: 'Notifikasi', icon: Bell },
 ]
 
 const navSistem = [
+  { href: '/aset', label: 'Aset', icon: Archive },
+  { href: '/bahan', label: 'Bahan & Buku', icon: Library },
+  { href: '/notifikasi', label: 'Notifikasi', icon: Bell },
   { href: '/tetapan/pengguna', label: 'Tetapan', icon: Settings },
 ]
 
@@ -164,7 +164,7 @@ export function Sidebar({ nama }: SidebarProps) {
           )
         })}
 
-        {/* Sistem */}
+        {/* Lain-lain (jarang dibuka harian) */}
         <div
           style={{
             fontSize: '10px',
@@ -175,7 +175,7 @@ export function Sidebar({ nama }: SidebarProps) {
             padding: '16px 20px 4px',
           }}
         >
-          Sistem
+          Lain-lain
         </div>
         {navSistem.map((item) => {
           const Icon = item.icon

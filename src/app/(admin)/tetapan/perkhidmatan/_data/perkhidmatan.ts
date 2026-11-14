@@ -1,5 +1,5 @@
 import {
-  Cloud, Database, GitBranch, LogIn, CreditCard, Bug, MessageCircle, Type,
+  Cloud, Database, GitBranch, LogIn, Bug, MessageCircle, Type,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -253,60 +253,6 @@ export const PERKHIDMATAN: Perkhidmatan[] = [
 
   // ─────────────────────────────────────────────────────────────
   {
-    id: 'toyyibpay',
-    nama: 'ToyyibPay',
-    ikon: CreditCard,
-    tahap: 'Sokongan',
-    untukApa: 'Bayaran online. Admin jana link bayaran → hantar WhatsApp kepada ibu bapa → ibu bapa bayar FPX/DuitNow → resit CFK auto-jana dalam sistem.',
-    akaun: 'chessforkids80@gmail.com',
-    butiran: [
-      { label: 'Mod semasa', nilai: 'Ikut env TOYYIBPAY_MODE (sandbox = ujian, production = duit sebenar)' },
-      { label: 'Alamat ujian', nilai: 'dev.toyyibpay.com' },
-      { label: 'Alamat sebenar', nilai: 'toyyibpay.com' },
-      { label: 'Kategori bil', nilai: 'Yuran CFK' },
-    ],
-    pautan: [
-      { label: 'ToyyibPay (sebenar)', url: 'https://toyyibpay.com' },
-      { label: 'ToyyibPay Sandbox (ujian)', url: 'https://dev.toyyibpay.com' },
-      { label: 'Senarai permintaan bayaran dalam app', url: '/bayaran/permintaan' },
-    ],
-    kos: 'RM1.00 sekali transaksi FPX (ditanggung CFK). Tiada yuran bulanan.',
-    jikaGagal: 'Link bayaran online tak boleh dijana. Kutipan tunai/transfer manual TIDAK terjejas — rekod macam biasa di Rekod Bayaran.',
-    env: ['TOYYIBPAY_SECRET_KEY', 'TOYYIBPAY_CATEGORY_CODE', 'TOYYIBPAY_MODE'],
-    prosedur: [
-      {
-        tajuk: 'Semak duit sudah masuk atau belum',
-        langkah: [
-          'Log masuk toyyibpay.com → menu Transaction / Bill.',
-          'Banding dengan app: Bayaran → Permintaan Online.',
-          'Kalau ToyyibPay tunjuk sudah bayar tapi app belum, klik butang Semak Status pada baris itu dalam app — resit akan dijana.',
-        ],
-      },
-      {
-        tajuk: 'Tukar dari mod ujian (sandbox) ke duit sebenar (production)',
-        langkah: [
-          'Daftar / log masuk akaun sebenar di toyyibpay.com (bukan dev.toyyibpay.com).',
-          'User Profile → salin Secret Key.',
-          'Menu Category → cipta kategori "Yuran CFK" → salin Category Code.',
-          'Vercel → Settings → Environment Variables → kemas kini TOYYIBPAY_SECRET_KEY, TOYYIBPAY_CATEGORY_CODE, dan tukar TOYYIBPAY_MODE kepada production.',
-          'Deployments → ⋯ → Redeploy.',
-          'Uji sekali dengan jumlah kecil (contoh RM1) dan sahkan resit auto-jana dalam app.',
-        ],
-        amaran: 'Kunci sandbox dan kunci production TIDAK sama. Kalau tersilap campur, bayaran akan gagal.',
-      },
-      {
-        tajuk: 'Ibu bapa kata dah bayar tapi tiada resit',
-        langkah: [
-          'App → Bayaran → Permintaan Online → cari nama pelajar.',
-          'Klik Semak Status. Sistem akan tanya ToyyibPay semula dan jana resit kalau memang sudah dibayar.',
-          'Kalau masih Menunggu, minta bukti/rujukan transaksi dari ibu bapa dan semak di papan pemuka ToyyibPay.',
-        ],
-      },
-    ],
-  },
-
-  // ─────────────────────────────────────────────────────────────
-  {
     id: 'sentry',
     nama: 'Sentry',
     ikon: Bug,
@@ -349,7 +295,7 @@ export const PERKHIDMATAN: Perkhidmatan[] = [
     nama: 'WhatsApp',
     ikon: MessageCircle,
     tahap: 'Sokongan',
-    untukApa: 'Butang WhatsApp dalam app (peringatan tunggakan, link bayaran, pakej personal habis) hanya BUKA WhatsApp anda dengan mesej sudah siap ditaip. Anda yang tekan hantar.',
+    untukApa: 'Butang WhatsApp dalam app (peringatan tunggakan, pakej personal habis) hanya BUKA WhatsApp anda dengan mesej sudah siap ditaip. Anda yang tekan hantar.',
     akaun: 'Tiada — guna WhatsApp anda sendiri',
     butiran: [
       { label: 'Jenis', nilai: 'Pautan wa.me (tiada API, tiada kos, tiada pendaftaran)' },
@@ -482,9 +428,6 @@ export const ENV_VARS: { nama: string; untuk: string; rahsia: boolean }[] = [
   { nama: 'NEXT_PUBLIC_SUPABASE_URL', untuk: 'Alamat pangkalan data Supabase', rahsia: false },
   { nama: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', untuk: 'Kunci awam Supabase (dilindungi RLS)', rahsia: false },
   { nama: 'SUPABASE_SERVICE_ROLE_KEY', untuk: 'Kunci penuh Supabase — pintas semua kawalan', rahsia: true },
-  { nama: 'NEXT_PUBLIC_APP_URL', untuk: 'Alamat app (untuk link bayaran & redirect)', rahsia: false },
+  { nama: 'NEXT_PUBLIC_APP_URL', untuk: 'Alamat app (untuk redirect)', rahsia: false },
   { nama: 'NEXT_PUBLIC_SENTRY_DSN', untuk: 'Alamat hantar laporan ralat ke Sentry', rahsia: false },
-  { nama: 'TOYYIBPAY_SECRET_KEY', untuk: 'Kunci akaun ToyyibPay', rahsia: true },
-  { nama: 'TOYYIBPAY_CATEGORY_CODE', untuk: 'Kod kategori bil "Yuran CFK"', rahsia: false },
-  { nama: 'TOYYIBPAY_MODE', untuk: 'sandbox (ujian) atau production (duit sebenar)', rahsia: false },
 ]

@@ -8,12 +8,7 @@ export async function updateSession(request: NextRequest) {
   // Laluan awam yang TIDAK perlu maklumat auth — pulang SEGERA tanpa cipta
   // klien Supabase / round-trip getUser() (jimat TTFB → LCP lebih pantas).
   //  - /auth        : callback OAuth (kod belum jadi sesi)
-  //  - /api/bayaran + /bayaran-selesai : callback ToyyibPay & page terima kasih
-  if (
-    pathname.startsWith('/auth') ||
-    pathname.startsWith('/api/bayaran') ||
-    pathname.startsWith('/bayaran-selesai')
-  ) {
+  if (pathname.startsWith('/auth')) {
     return NextResponse.next({ request })
   }
 

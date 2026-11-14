@@ -12,7 +12,7 @@ import {
   pathBahan,
   sahkanFailBahan,
   saizFail,
-} from '@/lib/progresPelajar'
+} from '@/lib/bahan'
 
 type Buku = {
   id: string

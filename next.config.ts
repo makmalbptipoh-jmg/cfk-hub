@@ -43,6 +43,15 @@ const csp = [
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  // Laluan lama yang digabung/dibuang — elak bookmark & cache PWA jadi 404
+  async redirects() {
+    return [
+      { source: '/laporan/kewangan', destination: '/kewangan', permanent: true },
+      { source: '/laporan/pendapatan', destination: '/kewangan/yuran', permanent: true },
+      { source: '/bayaran/permintaan', destination: '/bayaran', permanent: true },
+      { source: '/tetapan/kategori', destination: '/silibus', permanent: true },
+    ]
+  },
   async headers() {
     return [
       {
