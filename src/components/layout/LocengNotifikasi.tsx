@@ -30,12 +30,19 @@ export function LocengNotifikasi() {
   const [memuat, setMemuat] = useState(false)
   const bekasRef = useRef<HTMLDivElement>(null)
 
+  const pemasaRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   const muat = useCallback(async () => {
     setMemuat(true)
     try {
       const { senarai, belumDibaca } = await janaDanMuatNotifikasi()
       setSenarai(senarai)
       setBelumDibaca(belumDibaca)
+    } catch {
+      // Gagal (cth. tab dibuka sebelum deploy baharu → "Failed to find Server
+      // Action") — henti semakan berkala; sambung semula bila halaman dimuat semula.
+      if (pemasaRef.current) clearInterval(pemasaRef.current)
+      pemasaRef.current = null
     } finally {
       setMemuat(false)
     }
@@ -44,8 +51,10 @@ export function LocengNotifikasi() {
   // Muat pada mula + setiap 5 minit
   useEffect(() => {
     muat()
-    const id = setInterval(muat, 5 * 60 * 1000)
-    return () => clearInterval(id)
+    pemasaRef.current = setInterval(muat, 5 * 60 * 1000)
+    return () => {
+      if (pemasaRef.current) clearInterval(pemasaRef.current)
+    }
   }, [muat])
 
   // Tutup bila klik di luar
