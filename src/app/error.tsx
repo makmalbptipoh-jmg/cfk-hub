@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 import { AlertTriangle, RotateCcw } from 'lucide-react'
 
 // Sempadan ralat peringkat AKAR — menangkap crash render pada halaman yang
-// TIADA error.tsx lebih dekat (cth. /login, /bayaran-selesai, halaman awam).
+// TIADA error.tsx lebih dekat (cth. /login, halaman awam).
 // Memberi mesej mesra + "Cuba Lagi" tanpa melompat ke global-error.tsx (yang
 // meletupkan seluruh <html>). Kumpulan (admin) kekal guna (admin)/error.tsx.
 export default function RootError({

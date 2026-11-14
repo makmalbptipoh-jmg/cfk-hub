@@ -9,8 +9,6 @@ with expected(tbl, pol) as (
   values
     -- batal-kelas.sql
     ('jadual_slot_batal','baca_slot_batal'),('jadual_slot_batal','tulis_admin_slot_batal'),
-    -- bayaran-online.sql
-    ('permintaan_bayaran','baca'),('permintaan_bayaran','tulis_admin'),
     -- dokumen-jualan.sql
     ('dokumen_jualan','admin_all_dokumen_jualan'),('dokumen_item','admin_all_dokumen_item'),
     -- gaji-advance-tng.sql
@@ -42,9 +40,7 @@ with expected(tbl, pol) as (
     ('pertandingan_peserta','baca_pertandingan_peserta'),('pertandingan_peserta','tulis_pertandingan_peserta'),
     ('pertandingan_keputusan','baca_pertandingan_keputusan'),('pertandingan_keputusan','tulis_pertandingan_keputusan'),
     -- progres-pelajar.sql
-    ('topik_kategori','baca_topik_kategori'),('topik_kategori','tulis_admin_topik_kategori'),
     ('buku_rujukan','baca_buku_rujukan'),('buku_rujukan','tulis_admin_buku_rujukan'),
-    ('pelajar_topik','baca_pelajar_topik'),('pelajar_topik','tulis_admin_pelajar_topik'),
     -- rls-ketat.sql (kehadiran + senarai jadual)
     ('kehadiran','baca'),('kehadiran','tambah'),('kehadiran','ubah'),('kehadiran','padam_admin'),
     ('cawangan','baca'),('cawangan','tulis_admin'),
@@ -62,7 +58,6 @@ with expected(tbl, pol) as (
     ('silibus_tajuk','baca_silibus_tajuk'),('silibus_tajuk','tulis_admin_silibus_tajuk'),
     ('silibus_subtajuk','baca_silibus_subtajuk'),('silibus_subtajuk','tulis_admin_silibus_subtajuk'),
     ('silibus_progress','baca_silibus_progress'),('silibus_progress','tulis_admin_silibus_progress'),
-    ('silibus','baca_silibus'),('silibus','tulis_admin_silibus'),
     -- storage.objects (tablename = 'objects')
     ('objects','bukti pendapatan baca'),('objects','bukti pendapatan muat naik'),
     ('objects','bukti pendapatan ganti'),('objects','bukti pendapatan padam'),

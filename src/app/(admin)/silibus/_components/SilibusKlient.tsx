@@ -1,14 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { BookOpen, ListTree, CalendarDays, UserCheck, UserCog } from 'lucide-react'
-import type { TajukBesar, Subtajuk, ProgresBaris, ProgresPelajarBaris } from '@/lib/silibus'
+import { BookOpen, ListTree, UserCheck, UserCog } from 'lucide-react'
+import type { Cawangan, TajukBesar, Subtajuk, ProgresBaris, ProgresPelajarBaris } from '@/lib/silibus'
 import { SilibusIndukKlient } from './SilibusIndukKlient'
 import { SilibusPelajarKlient, type Pelajar } from './SilibusPelajarKlient'
 import { SilibusPersonalKlient } from './SilibusPersonalKlient'
-import { LogHarianKlient, type Cawangan } from './LogHarianKlient'
+
+export type TabSilibus = 'induk' | 'pelajar' | 'personal'
 
 export function SilibusKlient({
+  tabAwal,
   cawanganAwal,
   tajukAwal,
   subtajukAwal,
@@ -16,6 +18,7 @@ export function SilibusKlient({
   pelajarAwal,
   progressPelajarAwal,
 }: {
+  tabAwal: TabSilibus
   cawanganAwal: Cawangan[]
   tajukAwal: TajukBesar[]
   subtajukAwal: Subtajuk[]
@@ -23,7 +26,7 @@ export function SilibusKlient({
   pelajarAwal: Pelajar[]
   progressPelajarAwal: ProgresPelajarBaris[]
 }) {
-  const [tab, setTab] = useState<'induk' | 'pelajar' | 'personal' | 'log'>('induk')
+  const [tab, setTab] = useState<TabSilibus>(tabAwal)
 
   const tabBtn = (aktif: boolean) => ({
     display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 16px', borderRadius: '10px',
@@ -41,7 +44,7 @@ export function SilibusKlient({
           <BookOpen size={20} style={{ color: 'var(--text-muted)' }} /> Silibus Kelas
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          Kurikulum catur berstruktur (Tajuk Besar &rarr; Subtajuk), progress setiap cawangan &amp; setiap pelajar, dan log harian.
+          Kurikulum catur berstruktur (Tajuk Besar &rarr; Subtajuk), progress setiap cawangan &amp; setiap pelajar.
         </p>
       </div>
 
@@ -55,9 +58,6 @@ export function SilibusKlient({
         </button>
         <button onClick={() => setTab('personal')} style={tabBtn(tab === 'personal')}>
           <UserCog size={15} /> Silibus Personal
-        </button>
-        <button onClick={() => setTab('log')} style={tabBtn(tab === 'log')}>
-          <CalendarDays size={15} /> Log Harian
         </button>
       </div>
 
@@ -76,7 +76,7 @@ export function SilibusKlient({
           subtajukAwal={subtajukAwal}
           progressPelajarAwal={progressPelajarAwal}
         />
-      ) : tab === 'personal' ? (
+      ) : (
         <SilibusPersonalKlient
           cawangan={cawanganAwal}
           pelajar={pelajarAwal}
@@ -84,8 +84,6 @@ export function SilibusKlient({
           subtajukAwal={subtajukAwal}
           progressPelajarAwal={progressPelajarAwal}
         />
-      ) : (
-        <LogHarianKlient cawanganAwal={cawanganAwal} />
       )}
     </div>
   )

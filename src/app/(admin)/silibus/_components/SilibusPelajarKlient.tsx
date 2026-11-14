@@ -9,7 +9,7 @@ import {
   STATUS_PROGRES, WARNA_PROGRES, petaProgresPelajar, statusSubtajuk, kiraProgresCawangan,
   type TajukBesar, type Subtajuk, type ProgresPelajarBaris, type StatusProgres,
 } from '@/lib/silibus'
-import type { Cawangan } from './LogHarianKlient'
+import type { Cawangan } from '@/lib/silibus'
 
 export type Pelajar = {
   id: string

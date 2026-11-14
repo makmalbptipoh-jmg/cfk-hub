@@ -18,7 +18,7 @@ const lagiLinks = [
   { href: '/penggredan', label: 'Penggredan', icon: Award },
   { href: '/penggredan/sesi', label: 'Pelan Sesi Hari Ini', icon: Clock },
   { href: '/penggredan/aktiviti', label: 'Panduan Aktiviti', icon: ListChecks },
-  { href: '/penggredan/jadual-little-pawn', label: 'Jadual Kelas', icon: CalendarDays },
+  { href: '/penggredan/jadual-little-pawn', label: 'Jadual Little Pawn', icon: CalendarDays },
   { href: '/makluman', label: 'Makluman', icon: Megaphone },
 ]
 

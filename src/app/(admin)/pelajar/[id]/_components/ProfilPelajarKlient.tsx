@@ -2,15 +2,12 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Edit2, UserX, UserCheck, CalendarCheck, Receipt, Star, Target } from 'lucide-react'
+import { Edit2, UserX, UserCheck, CalendarCheck, Receipt, BookOpen } from 'lucide-react'
 import { ModalNyahaktif } from '@/components/pelajar/ModalNyahaktif'
 import { formatTarikh, formatRinggit } from '@/lib/utils'
-import { kiraRating } from '@/lib/rating'
 import { WARNA_PINGAT, formatMata, type RingkasanPertandingan, type TitikGraf } from '@/lib/pertandingan'
 import { GrafProgres } from '@/components/GrafProgres'
-import { adaKelasPersonal, type BukuRujukan, type KategoriTopik, type TopikPelajar } from '@/lib/progresPelajar'
 import { BtnKadPelajar } from '@/components/pdf/BtnKadPelajar'
-import { ProgresPelajarTab, type RekodSilibus } from './ProgresPelajarTab'
 
 type Pelajar = {
   id: string
@@ -51,13 +48,6 @@ type Resit = {
   status: string
 }
 
-type Progres = {
-  topik: TopikPelajar[]
-  kategori: KategoriTopik[]
-  buku: BukuRujukan[]
-  silibus: RekodSilibus[]
-}
-
 interface ProfilPelajarKlientProps {
   pelajar: Pelajar
   stat: StatKehadiran
@@ -67,7 +57,6 @@ interface ProfilPelajarKlientProps {
   sudahBayarBulanIni: boolean
   kehadiran: Kehadiran[]
   resit: Resit[]
-  progres: Progres
 }
 
 const warnaBadge: Record<string, { bg: string; text: string }> = {
@@ -76,18 +65,17 @@ const warnaBadge: Record<string, { bg: string; text: string }> = {
   Cuti: { bg: 'var(--cuti-bg)', text: 'var(--cuti-text)' },
 }
 
-type TabProfil = 'kehadiran' | 'bayaran' | 'progres'
+type TabProfil = 'kehadiran' | 'bayaran'
 
-export function ProfilPelajarKlient({ pelajar, stat, total, ratingPertandingan, siriPertandingan, sudahBayarBulanIni, kehadiran, resit, progres }: ProfilPelajarKlientProps) {
-  // Progress pembelajaran hanya untuk pelajar yang ada kelas personal.
-  const adaProgres = adaKelasPersonal(pelajar.jenis_kelas)
+export function ProfilPelajarKlient({ pelajar, stat, total, ratingPertandingan, siriPertandingan, sudahBayarBulanIni, kehadiran, resit }: ProfilPelajarKlientProps) {
+  // Progress pembelajaran pelajar Personal dijejak di /silibus tab Silibus Personal.
+  const adaPersonal = pelajar.jenis_kelas.includes('Personal')
   const [tab, setTab] = useState<TabProfil>('kehadiran')
   const [showModal, setShowModal] = useState(false)
 
   const jumlahSesi = stat.hadir + stat.tidak_hadir + stat.cuti
   const peratus = jumlahSesi > 0 ? Math.round((stat.hadir / jumlahSesi) * 100) : 0
 
-  const rating = kiraRating(total.hadir)
   const jumlahSesiTotal = total.hadir + total.tidak_hadir + total.cuti
   const peratusTotal = jumlahSesiTotal > 0 ? Math.round((total.hadir / jumlahSesiTotal) * 100) : 0
 
@@ -222,47 +210,27 @@ export function ProfilPelajarKlient({ pelajar, stat, total, ratingPertandingan, 
         </div>
       </div>
 
-      {/* Rating & Kekuatan */}
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-          <h2 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Rating &amp; Kekuatan
+      {/* Kehadiran Sepanjang Masa */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <h2 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+            Kehadiran Sepanjang Masa
           </h2>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '5px 14px', borderRadius: '20px',
-            background: rating.level.warna, color: '#FFFFFF', fontSize: '13px', fontWeight: 800,
-          }}>
-            <span style={{ fontSize: '16px', lineHeight: 1 }}>{rating.level.ikon}</span> {rating.level.nama}
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: '18px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ fontSize: '52px', lineHeight: 1, color: rating.level.warna, flexShrink: 0 }}>{rating.level.ikon}</div>
-          <div style={{ flex: 1, minWidth: '220px' }}>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '20px', background: '#FEF3C7', border: '1px solid #FDE68A', fontSize: '14px', fontWeight: 800, color: '#92400E' }}>
-                <Star size={14} fill="#F59E0B" stroke="#F59E0B" /> {rating.bintang} Bintang
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '20px', background: '#EFF6FF', border: '1px solid #BFDBFE', fontSize: '14px', fontWeight: 800, color: '#1E40AF' }}>
-                🏅 {rating.point} Point
-              </span>
-            </div>
-            {rating.levelSeterusnya ? (
-              <>
-                <div style={{ background: '#F1F5F9', borderRadius: '6px', height: '8px', overflow: 'hidden', marginBottom: '6px' }}>
-                  <div style={{ width: `${rating.peratusKemajuan}%`, height: '100%', background: rating.level.warna, borderRadius: '6px' }} />
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  <strong style={{ color: 'var(--text)' }}>{rating.bakiKeSeterusnya}</strong> bintang lagi ke level <strong style={{ color: 'var(--text)' }}>{rating.levelSeterusnya.ikon} {rating.levelSeterusnya.nama}</strong>
-                </div>
-              </>
-            ) : (
-              <div style={{ fontSize: '13px', fontWeight: 700, color: rating.level.warna }}>👑 Tahap tertinggi dicapai!</div>
-            )}
-            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '8px' }}>
-              {total.hadir} kelas dihadiri sepanjang masa · kadar kehadiran {peratusTotal}% ({total.hadir}/{jumlahSesiTotal})
-            </div>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+            <strong style={{ color: 'var(--text)', fontSize: '18px' }}>{total.hadir}</strong> kelas dihadiri · kadar kehadiran <strong style={{ color: 'var(--text)' }}>{peratusTotal}%</strong> ({total.hadir}/{jumlahSesiTotal})
           </div>
         </div>
+        {adaPersonal && (
+          <Link href="/silibus?tab=personal"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px',
+              background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: '10px',
+              fontSize: '13px', fontWeight: 600, color: 'var(--text)', textDecoration: 'none',
+            }}
+          >
+            <BookOpen size={14} /> Silibus Personal
+          </Link>
+        )}
       </div>
 
       {/* Rating Pertandingan */}
@@ -321,13 +289,6 @@ export function ProfilPelajarKlient({ pelajar, stat, total, ratingPertandingan, 
         {[
           { key: 'kehadiran' as const, label: 'Kehadiran', icon: CalendarCheck },
           { key: 'bayaran' as const, label: 'Bayaran & Resit', icon: Receipt },
-          ...(adaProgres
-            ? [{
-                key: 'progres' as const,
-                label: progres.topik.length > 0 ? `Progress Pembelajaran (${progres.topik.length})` : 'Progress Pembelajaran',
-                icon: Target,
-              }]
-            : []),
         ].map(({ key, label, icon: Icon }) => {
           const aktif = tab === key
           return (
@@ -386,21 +347,6 @@ export function ProfilPelajarKlient({ pelajar, stat, total, ratingPertandingan, 
               </tbody>
             </table>
           )
-        )}
-
-        {tab === 'progres' && adaProgres && (
-          <ProgresPelajarTab
-            pelajar={{
-              id: pelajar.id,
-              nama_penuh: pelajar.nama_penuh,
-              cawangan_nama: pelajar.cawangan_nama,
-              jenis_kelas: pelajar.jenis_kelas,
-            }}
-            topikAwal={progres.topik}
-            kategoriAwal={progres.kategori}
-            bukuAwal={progres.buku}
-            silibus={progres.silibus}
-          />
         )}
 
         {tab === 'bayaran' && (

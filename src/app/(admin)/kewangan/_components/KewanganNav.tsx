@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 
 const tabs = [
   { href: '/kewangan', label: 'Ringkasan', exact: true },
+  { href: '/kewangan/yuran', label: 'Pendapatan Yuran' },
   { href: '/kewangan/perbelanjaan', label: 'Perbelanjaan' },
   { href: '/kewangan/pendapatan', label: 'Pendapatan Lain' },
   { href: '/kewangan/dokumen', label: 'Dokumen Jualan' },

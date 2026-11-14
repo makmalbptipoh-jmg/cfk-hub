@@ -1,9 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
-import { SilibusKlient } from './_components/SilibusKlient'
+import { SilibusKlient, type TabSilibus } from './_components/SilibusKlient'
 
 export const dynamic = 'force-dynamic'
 
-export default async function SilibusPage() {
+const TAB_SAH: TabSilibus[] = ['induk', 'pelajar', 'personal']
+
+export default async function SilibusPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
+  const { tab } = await searchParams
+  const tabAwal = TAB_SAH.find((t) => t === tab) ?? 'induk'
   const supabase = await createClient()
 
   const [rCawangan, rTajuk, rSub, rProgress, rPelajar, rProgressPelajar] = await Promise.all([
@@ -17,6 +25,7 @@ export default async function SilibusPage() {
 
   return (
     <SilibusKlient
+      tabAwal={tabAwal}
       cawanganAwal={rCawangan.data ?? []}
       tajukAwal={rTajuk.data ?? []}
       subtajukAwal={rSub.data ?? []}

@@ -1,6 +1,22 @@
 # Status Pelaksanaan — CFK HUB
 
-**Dikemaskini:** 24 Oktober 2026 (Sesi 24)
+**Dikemaskini:** 14 November 2026 (Sesi 25)
+
+## ⚡ SESI 25 (14 November 2026)
+
+### Buang ciri bertindih/tak relevan + tutup cawangan Sri Iskandar (typecheck+lint+68 ujian+build LULUS; BELUM commit/deploy, BELUM diuji browser)
+Branch `chore/buang-ciri-bertindih` (dari `main`). Keputusan user (via soalan): **buang ToyyibPay**, **KEKAL Import Google Sheets** (env GOOGLE_* memang di-set di Vercel), Sri Iskandar = **cawangan + jadual sahaja** (pelajar urus manual).
+- **Kewangan digabung:** `/laporan/kewangan` DIBUANG → pecahan Jenis/Kategori + Senarai Transaksi + Eksport CSV kini dalam `/kewangan` (Ringkasan, ikut tempoh bulan/tahun). `/laporan/pendapatan` DIPINDAH → `/kewangan/yuran` (tab "Pendapatan Yuran"). Tab Laporan kini: Kehadiran | Tunggakan | Bil. Kelas.
+- **Progress Pembelajaran lama DIBUANG** (`pelajar_topik`/`topik_kategori`, `ProgresPelajarTab`, `ModalTopik`, `LaporanProgresPDF`, `/tetapan/kategori`) — diganti tab Silibus Personal. Profil pelajar Personal kini ada butang ke `/silibus?tab=personal` (page /silibus terima `?tab=induk|pelajar|personal`). `lib/progresPelajar.ts` → `lib/bahan.ts` (utiliti fail /bahan sahaja).
+- **Rating bintang (`lib/rating.ts`) DIBUANG** — kad "Rating & Kekuatan" di profil & Kad Pelajar PDF diganti ringkasan kehadiran sepanjang masa. Rating Pertandingan (Elo) & Penggredan kekal.
+- **Log Harian silibus DIBUANG** (`LogHarianKlient`, `ModalSilibus`, `LaporanSilibusPDF`; jenis `Cawangan` dipindah ke `lib/silibus.ts`).
+- **ToyyibPay DIBUANG:** `/bayaran/permintaan`, `/bayaran-selesai`, `api/bayaran/toyyibpay/callback`, `actions/bayaran-online.ts`, `lib/toyyibpay.ts`, `lib/bayaran-online-server.ts`, kaedah "Online" dalam BorangYuran, entri Tetapan → Perkhidmatan, laluan awam dalam middleware.
+- **Kemas nav:** sidebar admin — Aset, Bahan & Buku, Notifikasi dipindah ke seksyen "Lain-lain" (bersama Tetapan). Menu jurulatih "Jadual Kelas" → "Jadual Little Pawn". Chip "N pelajar bertunggak" di /pelajar kini pautan ke `/laporan/tunggakan`.
+- `next.config.ts` +`redirects()` laluan lama (/laporan/kewangan, /laporan/pendapatan, /bayaran/permintaan, /tetapan/kategori).
+- ⚠️ **SQL (run manual SELEPAS deploy):** `scripts/sql/arkib-ciri-lama.sql` — PINDAH (bukan padam) `pelajar_topik`, `topik_kategori`, `silibus`, `permintaan_bayaran` ke skema `arkib`; ada PULIH + PADAM KEKAL (dikomen). Semak permintaan ToyyibPay 'Menunggu' dulu. `scripts/sql/tutup-cawangan-sri-iskandar.sql` — cawangan + slot jadual Aktif → Tidak Aktif. `_semakan-policy-audit.sql` dikemas (buang 4 jadual arkib).
+- **Tertunggak user:** env `TOYYIBPAY_*` di Vercel boleh dipadam. `src/types/database.ts` masih ada jenis 4 jadual arkib (tak menjejaskan build; jana semula bila sesuai).
+- **Ujian (Vercel preview):** /kewangan (bulan & Semua Bulan) → pecahan + transaksi + CSV; /kewangan/yuran PDF/Excel; /laporan tab; profil pelajar (Personal → butang Silibus Personal; Kad Pelajar PDF); /silibus 3 tab + `?tab=personal`; /bayaran/baharu (Tunai/Transfer sahaja); URL lama redirect; sidebar; selepas SQL: Sri Iskandar hilang dari semua dropdown & jadual.
+
 
 ## ⚡ SESI 24 (24 Oktober 2026)
 

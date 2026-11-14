@@ -295,9 +295,9 @@ export default function LaporanPendapatanPage() {
     <div style={{ maxWidth: '900px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}>
-            Laporan Pendapatan
-          </h1>
+          <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text)' }}>
+            Pendapatan Yuran
+          </h2>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
             Pendapatan yuran setiap cawangan &amp; kelas personal — {tempoh}
           </p>
