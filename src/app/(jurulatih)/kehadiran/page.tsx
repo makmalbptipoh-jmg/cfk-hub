@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { tarikhTempatan } from '@/lib/utils'
 import { JurulatihKehadiranKlient } from './_components/JurulatihKehadiranKlient'
 import { AdminKehadiranKlient } from './_components/AdminKehadiranKlient'
@@ -7,7 +8,7 @@ import { KehadiranAdminTabs } from './_components/KehadiranAdminTabs'
 export default async function KehadiranPage() {
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
 
   const { data: profil } = await supabase
     .from('pengguna_profil')

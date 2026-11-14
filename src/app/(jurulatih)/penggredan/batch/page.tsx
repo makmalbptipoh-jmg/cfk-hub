@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { ratingSemasaDariKeputusan } from '@/lib/grading'
 import { BatchEntryKlient } from '../_components/BatchEntryKlient'
 
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function BatchPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
   if (!user) redirect('/login')
 
   const { data: profil } = await supabase.from('pengguna_profil').select('is_admin').eq('id', user.id).single()

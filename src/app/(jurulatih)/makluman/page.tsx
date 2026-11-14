@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { akhirBulan } from '@/lib/utils'
 import { perluBayarBulan } from '@/lib/tunggakan'
 import { MaklumanKlient } from './_components/MaklumanKlient'
@@ -8,9 +9,7 @@ export const dynamic = 'force-dynamic'
 export default async function MaklumanPage() {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
 
   // Ambil pelajar aktif dengan telefon & cawangan
   const { data: pelajar } = await supabase

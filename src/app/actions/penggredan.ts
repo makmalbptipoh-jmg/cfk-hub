@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { kiraPenilaian, type InputPenilaian, type BandUmur } from '@/lib/grading'
 import { kiraLittlePawn, KUNCI_ITEM } from '@/lib/gradingLittlePawn'
 
@@ -39,7 +40,7 @@ export type InputSimpanPenilaian = {
 // kebenaran tunggal) guna kiraPenilaian — elak drift antara borang & DB.
 export async function simpanPenilaian(input: InputSimpanPenilaian): Promise<{ ralat: string | null }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
   if (!user) return { ralat: 'Sila log masuk semula.' }
 
   // Kunci edit jika kitaran Ditutup.
@@ -107,7 +108,7 @@ export async function simpanPenilaian(input: InputSimpanPenilaian): Promise<{ ra
 // Batch upsert Level 1-6 — banyak pelajar sekali (S4). Skor dikira server.
 export async function simpanBatch(rows: InputSimpanPenilaian[]): Promise<{ ralat: string | null; bil: number }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
   if (!user) return { ralat: 'Sila log masuk semula.', bil: 0 }
   if (rows.length === 0) return { ralat: null, bil: 0 }
 
@@ -164,7 +165,7 @@ export type InputSimpanLittlePawn = {
 // Upsert checklist Level 0. Skor/peringkat/graduasi dikira di server.
 export async function simpanLittlePawn(input: InputSimpanLittlePawn): Promise<{ ralat: string | null }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
   if (!user) return { ralat: 'Sila log masuk semula.' }
 
   const { data: kitaran } = await supabase

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { ChecklistLittlePawnKlient } from '../../_components/ChecklistLittlePawnKlient'
 
 export const dynamic = 'force-dynamic'
@@ -16,7 +17,7 @@ export default async function LittlePawnPage({
   const { kitaran: kitaranId } = await searchParams
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
   if (!user) redirect('/login')
 
   const [rPelajar, rKitaran] = await Promise.all([

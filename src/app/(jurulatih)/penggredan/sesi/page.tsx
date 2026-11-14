@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { PelanSesiKlient } from './_components/PelanSesiKlient'
 
 export const dynamic = 'force-dynamic'
@@ -6,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export default async function PelanSesiPage() {
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
 
   // Cawangan jurulatih (untuk teks share WhatsApp) — pilihan.
   let cawanganNama: string | null = null

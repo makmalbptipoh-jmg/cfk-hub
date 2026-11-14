@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { kiraPenilaian, tarafGred, LABEL_GRED, type InputPenilaian, type Gred } from '@/lib/grading'
 import { KadPenilaianPreview } from '../../_components/KadPenilaianPreview'
 import type { PropsKadGred } from '@/components/pdf/BtnKadGredPDF'
@@ -18,7 +19,7 @@ export default async function KadPage({
   const { kitaran: kitaranId } = await searchParams
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
   if (!user) redirect('/login')
 
   if (!kitaranId) {

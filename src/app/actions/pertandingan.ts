@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 
 type PelajarPilihan = { id: string; nama_penuh: string }
 
@@ -17,7 +18,7 @@ export async function ciptaPertandingan(input: {
   if (!input.tarikh) return { ralat: 'Sila pilih tarikh.', id: null }
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
   if (!user) return { ralat: 'Sila log masuk semula.', id: null }
 
   // jurulatih_id jika pencipta seorang jurulatih
@@ -65,7 +66,7 @@ export async function tambahPeserta(
   if (pelajar.length === 0) return { ralat: 'Tiada pelajar dipilih.', ditambah: 0 }
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
   if (!user) return { ralat: 'Sila log masuk semula.', ditambah: 0 }
 
   // Buang pelajar yang sudah menjadi peserta (elak ralat/pendua).

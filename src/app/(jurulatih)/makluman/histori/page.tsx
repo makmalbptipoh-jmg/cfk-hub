@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { HistoriMaklumanKlient } from './_components/HistoriMaklumanKlient'
 
 export const dynamic = 'force-dynamic'
@@ -7,9 +8,7 @@ export const dynamic = 'force-dynamic'
 export default async function HistoriMaklumanPage() {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
 
   if (!user) redirect('/login')
 

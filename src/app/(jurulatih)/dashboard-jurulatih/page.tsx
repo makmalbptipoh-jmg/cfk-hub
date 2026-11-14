@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { tarikhTempatan } from '@/lib/utils'
 import Link from 'next/link'
 import { CalendarCheck, Users, TrendingUp } from 'lucide-react'
@@ -6,7 +7,7 @@ import { CalendarCheck, Users, TrendingUp } from 'lucide-react'
 export default async function DashboardJurulatihPage() {
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
 
   const tarikhHariIni = tarikhTempatan()
 

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { penggunaSemasa } from '@/lib/supabase/pengguna'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { NavigasiAtas } from '@/components/layout/NavigasiAtas'
 import { AutoLogout } from '@/components/layout/AutoLogout'
@@ -11,9 +12,7 @@ export default async function AdminLayout({
 }) {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await penggunaSemasa()
 
   if (!user) redirect('/login')
 
